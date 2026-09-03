@@ -1,0 +1,27 @@
+<div class=" d-flex {% if aligntext == 'text-center' %} justify-content-center {% endif %} quote__slide quote__style_3 {{ aligntext }} ">
+    <div class="quote-wrap" style="background-color:{{ bg_item }}">
+        <div class="media mb-3 ">
+            {%- if avatar != blank -%}
+                <div class="author-avatar mr-4 mt-0">
+                  <img class="lazyload" src="{{ avatar | image_url: width: 1 , height: 1 }}" data-src="{{ avatar | image_url: width: 300 }}" 
+                    loading="lazy"
+                    width="{{ avatar.width }}"
+                    height="{{ avatar.height }}"/>
+                </div>
+            {%- endif -%}
+         
+        </div>
+        {%- if title != blank -%}
+            <h4 class="mt-2">
+                {{ title }}
+            </h4>
+        {%- endif -%}
+        <div class=" py-5 {{ size_text }}" style="color: var( --quote-color);">{{ quote }}</div>
+        <div class="media-body text-center">
+            {%- if author -%}
+                <div class="h6 mb-0 name font-family-2" style="color: var( --quote-color);">{{ author }} </div>
+            {%- endif -%}
+            {%- if info != blank -%}<span class="txt-body-60 capitalize small" style="color: var( --quote-color);">  {{ info }}</span>{%- endif -%}
+        </div>
+    </div>
+  </div>

@@ -1,0 +1,994 @@
+<!-- quotes style -->
+<style>
+  :root{
+    --quote-color: {{section.settings.color_text}};
+  }
+  .customstyle{{ section.id }}{
+    background-position:center !important;
+    background-repeat:no-repeat !important;
+    background-size:cover !important;
+  }
+  
+    .customstyle{{ section.id }} .quote-wrap{
+      {% if section.settings.enable_padding_inner %}
+        padding: 2.5rem;
+      {% else %}
+        padding: 0;
+      {% endif %}
+    }
+  
+  @media (min-width:750px){
+    .customstyle{{ section.id }} .quote-wrap{
+      width:{{ section.settings.widthcolumn }}%;
+    }
+  }
+  .customstyle{{ section.id }} .rating li.rated svg{
+    fill: {{ section.settings.color_rated }};
+  }
+  .customstyle{{ section.id }} .quote__style_3 .quote-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .customstyle{{ section.id }} .quote__style_3 .name {
+    text-transform: uppercase;
+    font-weight: 700;
+    position: relative;
+  }
+  .customstyle{{ section.id }} .quote__style_3 .name::before,  .customstyle{{ section.id }} .quote__style_3 .name::after{
+    content: "";
+    width: 40px;
+    height: 1px;
+    background-color: var(--quote-color);
+    display: block;
+    position: absolute;
+  }
+  .customstyle{{ section.id }} .quote__style_3 .name::before {
+    left: -65px;
+    top: 50%;
+  }
+  .customstyle{{ section.id }} .quote__style_3 .name::after {
+    right: -65px;
+    bottom: 50%;
+  }
+</style>
+<!-- featured-collection-2.liquid -->
+{%- liquid
+    assign colortext = section.settings.colortext
+    assign imagecol1 = section.settings.image1 
+    assign imagecol2 = section.settings.image2
+    assign imagecol3 = section.settings.image3
+    assign html1 = section.settings.colhtml1
+    assign html2 = section.settings.colhtml2
+    assign featured_collection1 = section.settings.collection1
+    assign featured_collection2 = section.settings.collection2
+    assign featured_collection3 = section.settings.collection3
+    assign collectionTitle1 = section.settings.collection_title1
+    assign collectionTitle2 = section.settings.collection_title2
+    assign collectionTitle3 = section.settings.collection_title3
+    assign subTitle3 = section.settings.sub_title3
+    assign title3 = section.settings.title3
+    assign align3 = section.settings.align-heading3
+    assign heading_size3 = section.settings.size_text_3
+    
+
+    if collectionTitle1 == blank 
+    assign collectionTitle1 = featured_collection1.title | default: 'Collection title'
+    else 
+    assign collectionTitle1 = section.settings.collection_title1
+    endif
+    if collectionTitle2 == blank 
+    assign collectionTitle2 = featured_collection2.title | default: 'Collection title'
+    else 
+    assign collectionTitle2 = section.settings.collection_title2
+    endif
+    if collectionTitle3 == blank 
+    assign collectionTitle3 = featured_collection3.title | default: 'Collection title'
+    else 
+    assign collectionTitle3 = section.settings.collection_title3
+    endif
+-%}
+{%- style -%}
+    :root{
+        --collection-color:{{ colortext.red }},{{ colortext.green }},{{ colortext.blue }};
+    }
+    .collection-item--info{
+        --color-body-text-rgb:{{ colortext.red }},{{ colortext.green }},{{ colortext.blue }};
+        bottom:0;
+        left: 0;
+        right:0;
+        pointer-events:none;
+    }
+    .collection-item--info h4 a,.collection-count{
+        color:rgba(var(--collection-color),1);
+    }
+    .customstyle{{ section.id }}{ 
+        position: relative;
+        background-position:{{ section.settings.e_pos }} !important;
+        background-repeat:{{ section.settings.e_repeat }} !important;
+        background-size:{{ section.settings.e_size }} !important;
+    }
+    .customstyle{{ section.id }} .video-section__cover-content {
+      bottom: -100px;
+      right: -50px;
+      padding: 0;
+      top: auto;
+      transform: none;
+      left: auto;
+    }
+    .customstyle{{ section.id }} .video-section__cover-content .video-text text {
+      color: #000000;
+      fill: #000000;
+      letter-spacing: 2px;
+      font-size: 10px;
+    }
+    @media screen and (max-width: 989px) {
+      .customstyle{{ section.id }} .video-section__cover-content {
+        display: none;
+      }
+    }
+    .customstyle{{ section.id }} .video-section__load-player-button--large .video-section__load-player-icon {
+      height: 30px;
+      width: 30px;
+      transform: translate(-50%, -50%);
+      margin-top: auto;
+      margin-left: auto;
+    }
+    .customstyle{{ section.id }} .video-section__load-player-button--large .video-section__load-player-button-circle {
+      background: #e9ac98;
+    }
+    .customstyle{{ section.id }} .video-section__load-player-button .video-text {
+      animation-play-state: running;
+    }
+    .customstyle{{ section.id }} .video-section__cover-content .video-text {
+      width: 130px;
+      height: 130px;
+    }
+ 
+{%- endstyle -%}
+<section class="customstyle{{ section.id }} lazyload"  
+data-bgset="{% render 'bgset', image: section.settings.image_bg %}"
+data-sizes="auto"
+data-parent-fit="cover" 
+data-aos="{{ section.settings.animation }}" 
+>
+{%- render 'style-section' -%}
+  <div class="{{ section.settings.setwidth }}" >
+    <div class="section-block">
+      {%- render 'section-heading' -%}
+      <div class="collectionlist-wrapper">
+        <div class="row">
+          <div class="col-lg-6 col-12 pr-xl-5 ">
+            <div class="pr-xl-2 position-relative">
+            {%- if html1 != blank -%}
+              <div class="collection-html2 " data-aos="{{ section.settings.animation }}" data-aos-duration="500" >{{ html1 }}</div>
+            {%- endif -%}
+              <div class="collection-item" data-aos="{{ section.settings.animation }}" data-aos-duration="700">
+                {%- if imagecol1 != blank -%}
+                  <noscript>
+                    <img src="{{ imagecol1 | image_url: width: 600 }}" alt="{{ imagecol1.alt }}" class="image-content__image" loading="lazy"
+                      width="{{ imagecol1.width }}"
+                      height="{{ imagecol1.height }}">
+                  </noscript>
+                  <div class="image-content__image-container">
+                    <a title="{{ collectionTitle1 | escape }}" href="{{ featured_collection1.url | default : '#' }}" class="image-content__image-wrapper" style="padding-top:{{ 1 | divided_by: imagecol1.aspect_ratio | times: 100 }}%;">
+                      {% assign img_url = imagecol1 | image_url: width: 1 | replace: 'width=1', 'width={width}' %}
+                      <img class="image-content__image lazyload"
+                        src="{{ imagecol1 | image_url: width: 1, height: 1 }}"
+                        data-src="{{ img_url }}"
+                        data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 1944, 2048]"
+                        data-aspectratio="{{ imagecol1.aspect_ratio }}"
+                        data-sizes="auto"
+                        alt="{{ collectionTitle1 | escape }}"
+                        loading="lazy"
+                        width="{{ imagecol1.width }}"
+                        height="{{ imagecol1.height }}">
+                    </a>
+                  </div>
+                {%- else -%}
+                  <div class="image-content__image">
+                    {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+                  </div>
+                {%- endif -%}
+              </div>
+              {%- if section.settings.text_circle != blank -%}
+            <div class="video-section__cover-content">
+              <button class="video-section__load-player-button video-section__load-player-button--large position-relative">
+                <span class="visually-hidden">{{ 'video.play' | t }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 120 120" class="video-text">
+                <defs>
+                <path d="M 60, 60 m -60, 0 a 60,60 0 0,1 120,0 a 60,60 0 0,1 -120,0" id="txt-path"></path>
+                </defs>
+                <text>
+                <textPath startOffset="0" xlink:href="#txt-path"> {{ section.settings.text_circle }}</textPath>
+                </text>
+                </svg>
+                <div class="video-section__load-player-icon">
+                  <div class="video-section__load-player-mark">
+                    <!-- <div class="anim-mark"></div>
+                    <div class="anim-mark anim-mark2"></div> -->
+                  </div>
+                  <div class="video-section__load-player-button-circle"></div>
+                </div>
+                
+              </button>
+              
+              </div>
+            {%- endif -%}
+              {% if section.settings.enableQuote %}
+              <div class="collection-item" data-aos="{{ section.settings.animation }}" data-aos-duration="900" >
+              <quotes-section class="d-block py-5 {% if section.settings.quote_image_bg != blank %} lazyload {% endif %}" 
+              data-aos="{{ section.settings.quote_animation }}" 
+              style="{% if section.settings.quote_image_bg != blank %}background-image:url({{ section.settings.quote_image_bg | image_url: width: 1, height: 1 }}){% endif %}"
+              data-bgset="{% render 'bgset', image: section.settings.quote_image_bg %}" loading="lazy">
+                {%- render 'style-section' -%}
+              <div class="">
+                <div class="section-block">
+                  {%- if section.blocks.size > 0 -%}
+                  <div class="quotes-wrapper dots-negative " > 
+                    <div class="quotes-slider row" id="Quotes-{{ section.id }}" 
+                         data-rows="1"
+                         data-slidesToShow="{{ section.settings.show }}"
+                         data-slidestoscroll="{{ section.settings.show }}"
+                         data-arrows="{{ section.settings.arrows }}"
+                         data-dots="{{ section.settings.dots }}" 
+                         data-draggable="{{ section.settings.draggable }}" 
+                         data-infinite="{{ section.settings.infinite }}" 
+                         data-section-id="{{ section.id }}" 
+                         data-section-type="slickCarousels">
+                      {%- for block in section.blocks -%}
+                      <div class="quote__slide-wrapper carousel__slide-wrapper--{{ block.id }}" {{ block.shopify_attributes }}>
+                        {%- liquid
+                          assign style = section.settings.style
+                          assign title = block.settings.quote_title
+                          assign quote = block.settings.quote
+                          assign rate = block.settings.rate
+                          assign avatar = block.settings.avatar
+                          assign author = block.settings.author
+                          assign info = block.settings.info
+                          assign bg_item = section.settings.quote_bg_item
+                          assign size_text = section.settings.quote_size_text
+                          assign aligntext = section.settings.quote_aligntext
+              
+                          case style
+                          when 'style-1'
+                          render 'quote-style-1', title: title, quote: quote, rate: rate, avatar: avatar, author: author, info: info, bg_item: bg_item, size_text: size_text, aligntext: aligntext
+                          when 'style-2'
+                          render 'quote-style-2', title: title, quote: quote, rate: rate, avatar: avatar, author: author, info: info, bg_item: bg_item, size_text: size_text, aligntext: aligntext
+                          when 'style-3'
+                          render 'quote-style-4', title: title, quote: quote, avatar: avatar, author: author, info: info, bg_item: bg_item, size_text: size_text, aligntext: aligntext
+                          endcase
+                        -%}
+                        
+                      </div>
+                      {%- endfor -%}
+                    </div>
+                  </div>
+                  {%- endif -%}
+              
+                  {%- if section.blocks.size == 0 -%}
+                  {%- render 'no-blocks' -%}
+                  {%- endif -%}
+                </div>
+              </div>
+              </quotes-section >
+              </div>
+                {% endif %}
+            </div>
+          </div>
+              <div class="col-lg-6 col-12">
+                <div class=" pl-xl-5 d-flex flex-column {% if section.settings.reverse_column %} flex-column-reverse {% endif %}">
+              <div class="pl-xl-2 ">
+                <div class="collection-item mt-xl-0 mt-3" data-aos="{{ section.settings.animation }}" data-aos-duration="800">
+                    {%- if imagecol3 != blank -%}
+                      <noscript>
+                        <img src="{{ imagecol3 | image_url: width: 600 }}" alt="{{ imagecol3.alt }}" class="image-content__image"  loading="lazy"
+                          width="{{ imagecol3.width }}"
+                          height="{{ imagecol3.height }}">
+                      </noscript>
+                      <div class="image-content__image-container">
+                        <a title="{{ collectionTitle3 | escape }}" href="{{ featured_collection3.url | default : '#' }}" class="image-content__image-wrapper" style="padding-top:{{ 1 | divided_by: imagecol3.aspect_ratio | times: 100 }}%;">
+                          {% assign img_url = imagecol3 | image_url: width: 1 | replace: 'width=1', 'width={width}' %}
+                          <img class="image-content__image lazyload"
+                            src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+                            data-src="{{ img_url }}"
+                            data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 1944, 2048]"
+                            data-aspectratio="{{ imagecol3.aspect_ratio }}"
+                            data-sizes="auto"
+                            alt="{{ collectionTitle3 | escape }}"
+                            loading="lazy"
+                            width="{{ imagecol3.width }}"
+                            height="{{ imagecol3.height }}"
+                            >
+                        </a>
+                      </div>
+                    {%- else -%}
+                      <div class="image-content__image">
+                        {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+                      </div>
+                    {%- endif -%}
+                </div>
+              </div>
+              <div class="pl-xl-2 text-{{align3}} pt-3">
+                <p class="subtop mt-2">{{ subTitle3 }}</p>
+                <h4 class="mt-2 {{ heading_size3 }}">{{ title3 }}</h4>
+                {%- if html2 != blank -%}
+                  <div class="collection-html2 mt-xl-4 mb-xl-5 mt-2 mb-2" data-aos="{{ section.settings.animation }}" data-aos-duration="1000">{{html2}}</div>
+                {%- endif -%}
+                <div class="mt-lg-0 mt-4 mb-4 flex-lg-row flex-column">
+                  <div class="js-countdown countdown-item" data-time="{{ section.settings.data_countdown }}"></div>
+                  {%- if section.settings.e_button_3 -%}
+                      <div>
+                          <a href="{{ section.settings.link_button }}" class="btn {{ section.settings.style_btn }} mt-4 mt-lg-0">{{ section.settings.txt_button }}</a>
+                      </div>
+                  {%- endif -%} 
+                  
+              </div>
+              </div>
+            </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Quote Creative",
+  "class": "index-section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "animation",
+      "options": [
+        {
+          "value": "",
+          "label": "None"
+        },
+        {
+          "value": "fade",
+          "label": "Fade"
+        },
+        {
+          "value": "fade-up",
+          "label": "Fade Up"
+        },
+        {
+          "value": "fade-down",
+          "label": "Fade Down"
+        },
+        {
+          "value": "fade-left",
+          "label": "Fade Left"
+        },
+        {
+          "value": "fade-right",
+          "label": "Fade Right"
+        },
+        {
+          "value": "fade-up-right",
+          "label": "Fade Up Right"
+        },
+        {
+          "value": "fade-up-left",
+          "label": "Fade Up Left"
+        },
+        {
+          "value": "fade-down-right",
+          "label": "Fade Down Right"
+        },
+        {
+          "value": "fade-down-left",
+          "label": "Fade Down Left"
+        },
+        {
+          "value": "flip-up",
+          "label": "Flip Up"
+        },
+        {
+          "value": "flip-down",
+          "label": "Flip Down"
+        },
+        {
+          "value": "flip-left",
+          "label": "Flip Left"
+        },
+        {
+          "value": "flip-right",
+          "label": "Flip Right"
+        },
+        {
+          "value": "slide-up",
+          "label": "Slide Up"
+        },
+        {
+          "value": "slide-down",
+          "label": "Slide Down"
+        },
+        {
+          "value": "slide-left",
+          "label": "Slide Left"
+        },
+        {
+          "value": "slide-right",
+          "label": "Slide Right"
+        },
+        {
+          "value": "zoom-in",
+          "label": "Zoom In"
+        },
+        {
+          "value": "zoom-in-up",
+          "label": "Zoom In Up"
+        },
+        {
+          "value": "zoom-in-down",
+          "label": "Zoom In Down"
+        },
+        {
+          "value": "zoom-in-left",
+          "label": "Zoom In Left"
+        },
+        {
+          "value": "zoom-in-right",
+          "label": "Zoom In Right"
+        },
+        {
+          "value": "zoom-out",
+          "label": "Zoom Out"
+        },
+        {
+          "value": "zoom-out-up",
+          "label": "Zoom Out Up"
+        },
+        {
+          "value": "zoom-out-down",
+          "label": "Zoom Out Down"
+        },
+        {
+          "value": "zoom-out-left",
+          "label": "Zoom Out Feft"
+        },
+        {
+          "value": "zoom-out-right",
+          "label": "Zoom Out Right"
+        }
+      ],
+      "label": "Select Animation"
+    },
+    {
+      "type": "select",
+      "id": "setwidth",
+      "label": "Full Width",
+      "default": "container",
+      "options": [
+        {
+          "value": "container",
+          "label": "Box"
+        },
+        {
+          "value": "container-fluid",
+          "label": "Container Fluid"
+        },
+        {
+          "value": "full",
+          "label": "Full"
+        }
+      ]
+    },
+    {
+      "type": "color",
+      "id": "bgsection",
+      "label": "Background Section",
+      "default": "#ffffff"
+    },
+    {
+      "type": "image_picker",
+      "id": "image_bg",
+      "label": "Background image"
+    },
+    {
+      "type": "select",
+      "id": "e_size",
+      "label": "Background Size",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Auto"
+        },
+        {
+          "value": "cover",
+          "label": "Cover"
+        },
+        {
+          "value": "contain",
+          "label": "Contain"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "e_repeat",
+      "label": "Background Repeat",
+      "default": "no-repeat",
+      "options": [
+        {
+          "value": "no-repeat",
+          "label": "No-repeat"
+        },
+        {
+          "value": "repeat",
+          "label": "Repeat"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "e_pos",
+      "label": "Background Position",
+      "default": "center center",
+      "options": [
+        {
+          "value": "center center",
+          "label": "Center"
+        },
+        {
+          "value": "top center",
+          "label": "Top Center"
+        },
+        {
+          "value": "top right",
+          "label": "Top Right"
+        },
+        {
+          "value": "top left",
+          "label": "Top Left"
+        },
+        {
+          "value": "bottom center",
+          "label": "Bottom Center"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "title_top",
+      "label": "Sub Title Top",
+      "default": "Sub Title Top"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "Collection list"
+    },
+    {
+      "type": "textarea",
+      "id": "des",
+      "label": "HTML / Description"
+    },
+    {
+      "type": "select",
+      "id": "align-heading",
+      "label": "Align Heading",
+      "default": "center",
+      "options": [
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Left column"
+    },
+    {
+      "id": "image1",
+      "type": "image_picker",
+      "label": "Image left column"
+    },
+    {
+      "type": "text",
+      "id": "text_circle",
+      "label": "Text Circle"
+    },
+    {
+      "type": "textarea",
+      "id": "colhtml1",
+      "label": "HTML / Description"
+    },
+    {
+      "type": "color",
+      "id": "quote_bgsection",
+      "label": "Background Section",
+      "default": "#ffffff"
+    },
+    {
+      "type": "image_picker",
+      "id": "quote_image_bg",
+      "label": "Background image"
+    },
+    {
+      "type": "header",
+      "content": "Item"
+    },
+    {
+      "type": "checkbox",
+      "id": "enableQuote",
+      "label": "Enable Quote",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "quote_aligntext",
+      "label": "Text Align ",
+      "default": "text-left",
+      "options": [
+        {
+          "value": "text-left",
+          "label": "Left"
+        },
+        {
+          "value": "text-center",
+          "label": "Center"
+        },
+        {
+          "value": "text-right",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "style",
+      "label": "Style Testimonial ",
+      "default": "style-3",
+      "options": [
+        {
+          "value": "style-1",
+          "label": "Style - 1"
+        },
+        {
+          "value": "style-2",
+          "label": "Style - 2"
+        },
+        {
+          "value": "style-3",
+          "label": "Style - 3"
+        }
+      ]
+    },
+    {
+      "type": "color",
+      "id": "color_rate",
+      "label": "Color Rate",
+      "default": "#f1f1f1"
+    },
+    {
+      "type": "color",
+      "id": "color_rated",
+      "label": "Color Rated",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "color_text",
+      "label": "Color Text",
+      "default": "#000000"
+    },
+    {
+      "type": "select",
+      "id": "quote_size_text",
+      "default": "h5",
+      "options": [
+        {
+          "value": "h3",
+          "label": "H3"
+        },
+        {
+          "value": "h4",
+          "label": "H4"
+        },
+        {
+          "value": "h5",
+          "label": "H5"
+        },
+        {
+          "value": "h6",
+          "label": "H6"
+        },
+        {
+          "value": "txt-body",
+          "label": "Body"
+        }
+      ],
+      "label": "Text Size"
+    },
+    {
+      "type": "color",
+      "id": "quote_bg_item",
+      "label": "Background Item",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "widthcolumn",
+      "min": 50,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "Width of Column",
+      "default": 100
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_padding_inner",
+      "label": "Enable Padding Inner",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Carousel"
+    },
+    {
+      "type": "checkbox",
+      "id": "arrows",
+      "label": "Arrows",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "draggable",
+      "label": "Draggable",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "dots",
+      "label": "Dots",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "infinite",
+      "label": "Infinite",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "----- Right Column"
+    },
+    {
+      "id": "image3",
+      "type": "image_picker",
+      "label": "Image Collection 3"
+    },
+    {
+      "type": "header",
+      "content": "-----"
+    },
+    {
+      "type": "checkbox",
+      "id": "reverse_column",
+      "label": "Reverse Column",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "sub_title3",
+      "label": "Sub Title 3"
+    },
+    {
+      "type": "text",
+      "id": "title3",
+      "label": "Title 3"
+    },
+    {
+      "type": "textarea",
+      "id": "colhtml2",
+      "label": "HTML / Description"
+    },
+    {
+      "type": "select",
+      "id": "align-heading3",
+      "label": "Align Heading",
+      "default": "center",
+      "options": [
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "size_text_3",
+      "label": "Heading Size",
+      "default": "h5",
+      "options": [
+        {
+          "value": "h2",
+          "label": "H2"
+        },
+        {
+          "value": "h3",
+          "label": "H3"
+        },
+        {
+          "value": "h4",
+          "label": "H4"
+        },
+        {
+          "value": "h5",
+          "label": "H5"
+        },
+        {
+          "value": "h6",
+          "label": "H6"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "e_button_3",
+      "label": "Enable Button",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "txt_button",
+      "label": "Text Button",
+      "default": "Shop Collection"
+    },
+    {
+      "type": "select",
+      "id": "style_btn",
+      "label": "Style Button",
+      "default": "btn-outline",
+      "options": [
+        {
+          "value": "btn-theme",
+          "label": "Button Box"
+        },
+        {
+          "value": "btn-theme btn-white",
+          "label": "Button Box White"
+        },
+        {
+          "value": "btn-underline",
+          "label": "Button Line"
+        },
+        {
+          "value": "btn-underline btn-underline-white",
+          "label": "Button Line White"
+        },
+        {
+          "value": "btn-outline",
+          "label": "Button Outline"
+        },
+        {
+          "value": "btn-outline btn-outline-white",
+          "label": "Button Outline White"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Section Padding "
+    },
+    {
+      "type": "text",
+      "id": "paddingsection",
+      "label": "Padding Section",
+      "default": "0px 0px 0px 0px",
+      "info": "Padding: Top Right Bottom Left"
+    },
+    {
+      "type": "text",
+      "id": "paddingmobile",
+      "label": "Padding Section Mobile",
+      "default": "40px 0px 40px 0px",
+      "info": "Padding: Top Right Bottom Left"
+    },
+    {
+      "type": "header",
+      "content": "Section Margin "
+    },
+    {
+      "type": "text",
+      "id": "marginsection",
+      "label": "Margin Section",
+      "default": "0px 0px 0px 0px",
+      "info": "Margin: Top Right Bottom Left"
+    },
+    {
+      "type": "text",
+      "id": "marginmobile",
+      "label": "Margin Mobile",
+      "default": "0px 0px 0px 0px",
+      "info": "Margin: Top Right Bottom Left"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "quote",
+      "name": "Quote",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Comment",
+          "default": "Comment"
+        },
+        {
+          "type": "image_picker",
+          "id": "avatar",
+          "label": "Avatar"
+        },
+        {
+          "type": "text",
+          "id": "author",
+          "label": "Author",
+          "default": "Author's name"
+        },
+        {
+          "type": "text",
+          "id": "info",
+          "label": "Author's info"
+        },
+        {
+          "type": "range",
+          "id": "rate",
+          "min": 0,
+          "max": 5,
+          "step": 1,
+          "label": "Rating",
+          "default": 5
+        },
+        {
+          "type": "textarea",
+          "id": "quote",
+          "label": "Text",
+          "default": "Add customer reviews and testimonials to showcase your store’s happy customers."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Quote Creative",
+      "blocks": [
+        {
+          "type": "quote"
+        },
+        {
+          "type": "quote"
+        },
+        {
+          "type": "quote"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

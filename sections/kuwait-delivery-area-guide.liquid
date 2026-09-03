@@ -1,0 +1,1438 @@
+{% comment %}
+  Kuwait Delivery Area Guide
+  Reusable Shopify section
+{% endcomment %}
+
+<section
+  id="KuwaitDeliveryGuide-{{ section.id }}"
+  class="kuwait-delivery-guide"
+  style="
+    --kdg-pink: {{ section.settings.pink }};
+    --kdg-light-pink: {{ section.settings.light_pink }};
+    --kdg-purple: {{ section.settings.purple }};
+    --kdg-light: {{ section.settings.light_background }};
+    --kdg-white: {{ section.settings.white }};
+  "
+>
+  <div class="kdg-page-width">
+
+    {% if section.settings.heading != blank or section.settings.subheading != blank %}
+      <div class="kdg-header">
+
+        {% if section.settings.eyebrow != blank %}
+          <div class="kdg-eyebrow">
+            <span class="kdg-eyebrow-icon">♥</span>
+            <span>{{ section.settings.eyebrow }}</span>
+          </div>
+        {% endif %}
+
+        {% if section.settings.heading != blank %}
+          <h2 class="kdg-heading">
+            {{ section.settings.heading }}
+          </h2>
+        {% endif %}
+
+        {% if section.settings.subheading != blank %}
+          <div class="kdg-subheading">
+            {{ section.settings.subheading }}
+          </div>
+        {% endif %}
+
+      </div>
+    {% endif %}
+
+
+    <!-- Delivery pricing -->
+    <div class="kdg-delivery-box">
+
+      <div class="kdg-fees">
+
+        <div class="kdg-fee-card">
+          <div class="kdg-fee-icon">
+            ✦
+          </div>
+
+          <div class="kdg-fee-content">
+            <span class="kdg-fee-label">
+              Standard Delivery
+            </span>
+
+            <span class="kdg-fee-detail">
+              All regular areas
+            </span>
+          </div>
+
+          <strong class="kdg-fee-price">
+            2 KD
+          </strong>
+        </div>
+
+
+        <div class="kdg-fee-card kdg-fee-card--purple">
+          <div class="kdg-fee-icon">
+            ◆
+          </div>
+
+          <div class="kdg-fee-content">
+            <span class="kdg-fee-label">
+              Special Delivery
+            </span>
+
+            <span class="kdg-fee-detail">
+              2 areas
+            </span>
+          </div>
+
+          <strong class="kdg-fee-price">
+            4 KD
+          </strong>
+        </div>
+
+
+        <div class="kdg-fee-card">
+          <div class="kdg-fee-icon">
+            ♥
+          </div>
+
+          <div class="kdg-fee-content">
+            <span class="kdg-fee-label">
+              Premium Delivery
+            </span>
+
+            <span class="kdg-fee-detail">
+              1 area
+            </span>
+          </div>
+
+          <strong class="kdg-fee-price">
+            5 KD
+          </strong>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- Governorate cards -->
+    <div class="kdg-grid">
+
+
+      <!-- Capital Governorate -->
+      <article class="kdg-card">
+
+        <div class="kdg-card__heading">
+          <span class="kdg-location-icon"></span>
+          <h3>Capital Governorate</h3>
+        </div>
+
+        <div class="kdg-area-columns">
+
+          <ul>
+            <li>Rawda</li>
+            <li>Mansouriya</li>
+            <li>Kaifan</li>
+            <li>Mirqab</li>
+            <li>Kuwait City</li>
+            <li>Adailiya</li>
+            <li>Nuzha</li>
+            <li>Doha</li>
+            <li>Qibla</li>
+            <li>Dasman</li>
+            <li>Khaldiya</li>
+            <li>Fayha</li>
+            <li>Dasma</li>
+            <li>Sharq</li>
+            <li>Qadsiya</li>
+          </ul>
+
+          <ul>
+            <li>Shamiya</li>
+            <li>Daiya</li>
+            <li>Shuwaikh</li>
+            <li>Yarmouk</li>
+            <li>Surra</li>
+            <li>Qurtuba</li>
+            <li>Qayrawan</li>
+            <li>Nahda</li>
+            <li>Doha</li>
+            <li>Sulaibikhat</li>
+            <li>Granada</li>
+            <li>Jaber Al Ahmad City</li>
+            <li>Abdullah Al Salem</li>
+            <li>Bneid Al Qar</li>
+            <li>Northwest Sulaibikhat</li>
+          </ul>
+
+        </div>
+      </article>
+
+
+      <!-- Hawalli Governorate -->
+      <article class="kdg-card">
+
+        <div class="kdg-card__heading">
+          <span class="kdg-location-icon"></span>
+          <h3>Hawalli Governorate</h3>
+        </div>
+
+        <div class="kdg-area-columns">
+
+          <ul>
+            <li>Jabriya</li>
+            <li>Rumaithiya</li>
+            <li>Salmiya</li>
+            <li>Shaab</li>
+            <li>Hawalli</li>
+            <li>Al Naqra</li>
+            <li>Bidaa</li>
+            <li>Bayan</li>
+            <li>Mishref</li>
+          </ul>
+
+          <ul>
+            <li>Al Siddiq</li>
+            <li>Zahra</li>
+            <li>Hittin</li>
+            <li>South Surra</li>
+            <li>Salwa</li>
+            <li>Al Shuhada</li>
+            <li>Salam</li>
+            <li>Mubarak Al Abdullah Al Jaber</li>
+          </ul>
+
+        </div>
+      </article>
+
+
+      <!-- Farwaniya Governorate -->
+      <article class="kdg-card">
+
+        <div class="kdg-card__heading kdg-card__heading--purple">
+          <span class="kdg-location-icon"></span>
+          <h3>Farwaniya Governorate</h3>
+        </div>
+
+        <div class="kdg-area-columns">
+
+          <ul>
+            <li>Khaitan</li>
+            <li>Ishbiliya</li>
+            <li>Andalus</li>
+            <li>Ardiya</li>
+            <li>Omariya</li>
+            <li>New Khaitan</li>
+            <li>Farwaniya</li>
+          </ul>
+
+          <ul>
+            <li>Ferdous</li>
+            <li>Sabah Al Nasser</li>
+            <li>Riggae</li>
+            <li>Rehab</li>
+            <li>Rabia</li>
+            <li>West Abdullah Al Mubarak</li>
+            <li>Abdullah Al Mubarak</li>
+          </ul>
+
+        </div>
+      </article>
+
+
+      <!-- Jahra Governorate -->
+      <article class="kdg-card">
+
+        <div class="kdg-card__heading">
+          <span class="kdg-location-icon"></span>
+          <h3>Jahra Governorate</h3>
+        </div>
+
+        <div class="kdg-area-columns">
+
+          <ul>
+            <li>Waha</li>
+            <li>Qasr</li>
+            <li>Naeem</li>
+            <li>Sulaibiya</li>
+            <li>Qaisariya</li>
+            <li>Oyoun</li>
+            <li>Naseem</li>
+          </ul>
+
+          <ul>
+            <li>Taima</li>
+
+            <li class="kdg-special">
+              Mutlaa
+              <span>4 KD</span>
+            </li>
+
+            <li>Salmi</li>
+            <li>Saad Al Abdullah City</li>
+            <li>New Jahra</li>
+            <li>Old Jahra</li>
+            <li>South Jahra</li>
+          </ul>
+
+        </div>
+      </article>
+
+
+      <!-- Ahmadi Governorate -->
+      <article class="kdg-card">
+
+        <div class="kdg-card__heading">
+          <span class="kdg-location-icon"></span>
+          <h3>Ahmadi Governorate</h3>
+        </div>
+
+        <div class="kdg-area-columns">
+
+          <ul>
+            <li>Mahboula</li>
+            <li>Dhaher</li>
+            <li>Egaila</li>
+            <li>Fintas</li>
+            <li>Mangaf</li>
+            <li>Sabah Al Ahmad</li>
+            <li>Abu Halifa</li>
+            <li>Hadiya</li>
+            <li>Riqqa</li>
+            <li>Khiran</li>
+          </ul>
+
+          <ul>
+            <li>Wafra</li>
+            <li>Ahmadi</li>
+            <li>Fahaheel</li>
+
+            <li class="kdg-premium">
+              Sabah Al Ahmad City
+              <span>5 KD</span>
+            </li>
+
+            <li>Fahad Al Ahmad</li>
+            <li>Jaber Al Ali</li>
+            <li>Khiran City</li>
+            <li>East Ahmadi</li>
+
+            <li class="kdg-special">
+              Ali Sabah Al Salem – Umm Al Hayman
+              <span>4 KD</span>
+            </li>
+          </ul>
+
+        </div>
+      </article>
+
+
+      <!-- Mubarak Al-Kabeer Governorate -->
+      <article class="kdg-card">
+
+        <div class="kdg-card__heading kdg-card__heading--purple">
+          <span class="kdg-location-icon"></span>
+          <h3>Mubarak Al-Kabeer Governorate</h3>
+        </div>
+
+        <div class="kdg-area-columns">
+
+          <ul>
+            <li>Messila</li>
+            <li>Abu Al Hasaniya</li>
+            <li>Qurain</li>
+            <li>Qusour</li>
+            <li>Adan</li>
+            <li>Al Masayel</li>
+          </ul>
+
+          <ul>
+            <li>Funaitees</li>
+            <li>Subhan</li>
+            <li>Abu Fatira</li>
+            <li>Sabah Al Salem</li>
+            <li>Mubarak Al Kabeer</li>
+          </ul>
+
+        </div>
+      </article>
+
+    </div>
+
+
+    <!-- Bottom summary -->
+    <div class="kdg-summary">
+
+      <div class="kdg-summary__item">
+        <span class="kdg-summary__icon">♥</span>
+
+        <div>
+          <small>Most areas</small>
+          <strong>2 KD</strong>
+        </div>
+      </div>
+
+
+      <div class="kdg-summary__divider"></div>
+
+
+      <div class="kdg-summary__item">
+        <span class="kdg-summary__icon">◆</span>
+
+        <div>
+          <small>2 special areas</small>
+          <strong>4 KD</strong>
+        </div>
+      </div>
+
+
+      <div class="kdg-summary__divider"></div>
+
+
+      <div class="kdg-summary__item">
+        <span class="kdg-summary__icon">✦</span>
+
+        <div>
+          <small>1 premium area</small>
+          <strong>5 KD</strong>
+        </div>
+      </div>
+
+
+      <div class="kdg-summary__divider"></div>
+
+
+      <div class="kdg-summary__message">
+        Fast, reliable &amp; right to your doorstep!
+      </div>
+
+    </div>
+
+
+    {% if section.settings.note != blank %}
+      <div class="kdg-note">
+        {{ section.settings.note }}
+      </div>
+    {% endif %}
+
+  </div>
+</section>
+
+
+<style>
+
+  /* ==========================================
+     SECTION
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }} {
+    background:
+      radial-gradient(
+        circle at 8% 5%,
+        rgba(255, 162, 210, 0.20),
+        transparent 27%
+      ),
+      radial-gradient(
+        circle at 93% 8%,
+        rgba(188, 144, 213, 0.14),
+        transparent 28%
+      ),
+      var(--kdg-white);
+
+    padding:
+      {{ section.settings.padding_top }}px
+      20px
+      {{ section.settings.padding_bottom }}px;
+
+    color: #252331;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }} * {
+    box-sizing: border-box;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-page-width {
+    width: 100%;
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+  }
+
+
+  /* ==========================================
+     HEADER
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-header {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto 48px;
+    text-align: center;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    margin-bottom: 17px;
+
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    color: var(--kdg-pink);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-eyebrow-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+
+    background: var(--kdg-pink);
+    color: #ffffff;
+
+    font-size: 12px;
+  }
+
+
+  /*
+    Main heading:
+    Maximum = 64px
+  */
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-heading {
+    margin: 0;
+
+    font-size: clamp(36px, 4.5vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+
+    color: var(--kdg-pink);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-subheading {
+    max-width: 700px;
+
+    margin: 18px auto 0;
+
+    font-size: 17px;
+    line-height: 1.55;
+
+    color: var(--kdg-pink);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-subheading p {
+    margin: 0;
+  }
+
+
+  /* ==========================================
+     DELIVERY PRICING BOX
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-delivery-box {
+    margin-bottom: 34px;
+
+    padding: clamp(20px, 3vw, 38px);
+
+    border:
+      1px solid
+      rgba(254, 128, 188, 0.42);
+
+    border-radius: 30px;
+
+    background:
+      linear-gradient(
+        135deg,
+        rgba(255, 162, 210, 0.12),
+        rgba(188, 144, 213, 0.08)
+      );
+  }
+
+
+  /*
+    No map / no image upload.
+
+    The three delivery options now use
+    the full section width.
+  */
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-fees {
+    display: grid;
+
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    gap: 18px;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-fee-card {
+    display: grid;
+
+    grid-template-columns:
+      54px minmax(0, 1fr) auto;
+
+    align-items: center;
+
+    gap: 15px;
+
+    min-height: 100px;
+
+    padding: 18px 20px;
+
+    border:
+      1px solid
+      rgba(254, 128, 188, 0.38);
+
+    border-radius: 20px;
+
+    background:
+      rgba(255, 255, 255, 0.9);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-card--purple {
+    border-color:
+      rgba(188, 144, 213, 0.40);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: 50%;
+
+    background: var(--kdg-pink);
+    color: #ffffff;
+
+    font-size: 18px;
+    line-height: 1;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-card--purple
+  .kdg-fee-icon {
+    background: var(--kdg-purple);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-content {
+    min-width: 0;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-label,
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-detail {
+    display: block;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-label {
+    margin-bottom: 4px;
+
+    font-size: 15px;
+    line-height: 1.3;
+    font-weight: 750;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-detail {
+    font-size: 13px;
+    line-height: 1.35;
+
+    opacity: 0.68;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-price {
+    font-size: clamp(26px, 2.5vw, 40px);
+    line-height: 1;
+
+    color: var(--kdg-pink);
+
+    white-space: nowrap;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-fee-card--purple
+  .kdg-fee-price {
+    color: var(--kdg-purple);
+  }
+
+
+  /* ==========================================
+     GOVERNORATE GRID
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-grid {
+    display: grid;
+
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    gap: 18px;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }} .kdg-card {
+    overflow: hidden;
+
+    border:
+      1px solid
+      rgba(254, 128, 188, 0.35);
+
+    border-radius: 22px;
+
+    background:
+      rgba(255, 255, 255, 0.94);
+
+    box-shadow:
+      0 12px 34px
+      rgba(75, 50, 75, 0.04);
+  }
+
+
+  /* ==========================================
+     GOVERNORATE HEADINGS
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-card__heading {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    min-height: 66px;
+
+    padding: 15px 18px;
+
+    background:
+      linear-gradient(
+        90deg,
+        rgba(254, 128, 188, 0.14),
+        rgba(255, 162, 210, 0.05)
+      );
+
+    border-bottom:
+      1px solid
+      rgba(254, 128, 188, 0.26);
+
+    color: #ec4c94;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-card__heading--purple {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(188, 144, 213, 0.17),
+        rgba(245, 245, 245, 0.20)
+      );
+
+    color: #8f5ab7;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-card__heading h3 {
+    margin: 0;
+
+    font-size: 17px;
+    line-height: 1.25;
+    font-weight: 750;
+  }
+
+
+  /* ==========================================
+     LOCATION PIN ICON
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-location-icon {
+    position: relative;
+
+    display: block;
+
+    width: 27px;
+    height: 27px;
+
+    flex: 0 0 27px;
+
+    border: 6px solid currentColor;
+
+    border-radius:
+      50% 50% 50% 0;
+
+    transform: rotate(-45deg);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-location-icon::after {
+    content: "";
+
+    position: absolute;
+
+    top: 4px;
+    left: 4px;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #ffffff;
+  }
+
+
+  /* ==========================================
+     CITY / AREA LISTS
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-area-columns {
+    display: grid;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 8px 22px;
+
+    padding: 22px 20px 24px;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-area-columns ul {
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+  }
+
+
+  /*
+    Increased city / area font size
+  */
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-area-columns li {
+    position: relative;
+
+    margin-bottom: 9px;
+
+    padding-left: 15px;
+
+    font-size: 14.5px;
+    line-height: 1.4;
+    font-weight: 500;
+
+    color: #282532;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-area-columns li:last-child {
+    margin-bottom: 0;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-area-columns li::before {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 0.62em;
+
+    width: 5px;
+    height: 5px;
+
+    border-radius: 50%;
+
+    background:
+      var(--kdg-pink);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-card:nth-child(3n)
+  .kdg-area-columns li::before {
+    background:
+      var(--kdg-purple);
+  }
+
+
+  /* ==========================================
+     SPECIAL PRICED AREAS
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-special,
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-premium {
+    font-weight: 750 !important;
+
+    color:
+      #ec3f8f !important;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-special span,
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-premium span {
+    display: inline-flex;
+
+    align-items: center;
+
+    margin-left: 4px;
+
+    padding: 3px 8px;
+
+    border-radius: 999px;
+
+    background:
+      rgba(254, 128, 188, 0.17);
+
+    font-size: 10px;
+    line-height: 1.3;
+
+    white-space: nowrap;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-premium span {
+    background:
+      rgba(188, 144, 213, 0.20);
+
+    color: #8050a3;
+  }
+
+
+  /* ==========================================
+     BOTTOM SUMMARY
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary {
+    display: flex;
+    flex-wrap: wrap;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 22px;
+
+    margin-top: 24px;
+
+    padding: 18px 24px;
+
+    border:
+      1px solid
+      rgba(254, 128, 188, 0.38);
+
+    border-radius: 999px;
+
+    background:
+      rgba(255, 255, 255, 0.92);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary__item {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary__icon {
+    font-size: 25px;
+    line-height: 1;
+
+    color: var(--kdg-pink);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary__item small,
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary__item strong {
+    display: block;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary__item small {
+    margin-bottom: 2px;
+
+    font-size: 12px;
+
+    opacity: 0.68;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary__item strong {
+    font-size: 18px;
+    line-height: 1.2;
+
+    color: var(--kdg-purple);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary__divider {
+    width: 1px;
+    height: 38px;
+
+    background:
+      rgba(254, 128, 188, 0.30);
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-summary__message {
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 700;
+  }
+
+
+  /* ==========================================
+     NOTE
+  ========================================== */
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-note {
+    max-width: 850px;
+
+    margin: 20px auto 0;
+
+    text-align: center;
+
+    font-size: 13px;
+    line-height: 1.6;
+
+    opacity: 0.72;
+  }
+
+
+  #KuwaitDeliveryGuide-{{ section.id }}
+  .kdg-note p {
+    margin: 0;
+  }
+
+
+  /* ==========================================
+     TABLET
+  ========================================== */
+
+  @media screen and (max-width: 1100px) {
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fees {
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fee-card {
+      grid-template-columns:
+        46px minmax(0, 1fr);
+
+      gap: 12px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fee-price {
+      grid-column: 1 / -1;
+
+      padding-top: 10px;
+
+      border-top:
+        1px solid
+        rgba(254, 128, 188, 0.20);
+
+      text-align: center;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-grid {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    }
+
+  }
+
+
+  /* ==========================================
+     MOBILE
+  ========================================== */
+
+  @media screen and (max-width: 749px) {
+
+    #KuwaitDeliveryGuide-{{ section.id }} {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-header {
+      margin-bottom: 30px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-heading {
+      font-size:
+        clamp(34px, 11vw, 50px);
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-subheading {
+      margin-top: 14px;
+
+      font-size: 15px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-delivery-box {
+      padding: 15px;
+
+      border-radius: 22px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fees {
+      grid-template-columns: 1fr;
+
+      gap: 12px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fee-card {
+      grid-template-columns:
+        44px minmax(0, 1fr) auto;
+
+      min-height: 0;
+
+      padding: 14px;
+
+      border-radius: 17px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fee-icon {
+      width: 42px;
+      height: 42px;
+
+      font-size: 15px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fee-price {
+      grid-column: auto;
+
+      padding-top: 0;
+
+      border-top: 0;
+
+      text-align: left;
+
+      font-size: 25px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-grid {
+      grid-template-columns: 1fr;
+
+      gap: 14px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-card__heading {
+      min-height: 60px;
+
+      padding: 14px 16px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-card__heading h3 {
+      font-size: 16px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-area-columns {
+      padding: 18px 16px 20px;
+
+      gap: 8px 16px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-area-columns li {
+      margin-bottom: 8px;
+
+      font-size: 13.5px;
+      line-height: 1.42;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-summary {
+      border-radius: 22px;
+
+      gap: 15px;
+
+      padding: 17px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-summary__divider {
+      display: none;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-summary__message {
+      width: 100%;
+
+      padding-top: 13px;
+
+      border-top:
+        1px solid
+        rgba(254, 128, 188, 0.25);
+
+      text-align: center;
+    }
+
+  }
+
+
+  /* ==========================================
+     SMALL MOBILE
+  ========================================== */
+
+  @media screen and (max-width: 430px) {
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-heading {
+      font-size:
+        clamp(31px, 10.5vw, 42px);
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-eyebrow {
+      font-size: 12px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-area-columns {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+      gap: 8px 12px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-area-columns li {
+      padding-left: 12px;
+
+      font-size: 12.5px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-area-columns li::before {
+      width: 4px;
+      height: 4px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fee-label {
+      font-size: 13px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fee-detail {
+      font-size: 11px;
+    }
+
+
+    #KuwaitDeliveryGuide-{{ section.id }}
+    .kdg-fee-price {
+      font-size: 22px;
+    }
+
+  }
+
+</style>
+
+
+{% schema %}
+{
+  "name": "Kuwait delivery guide",
+  "tag": "section",
+  "class": "section-kuwait-delivery-guide",
+
+  "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow",
+      "default": "Delivery area guide"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "We Deliver All Across Kuwait"
+    },
+    {
+      "type": "richtext",
+      "id": "subheading",
+      "label": "Description",
+      "default": "<p>Find your governorate and area below to check the applicable delivery fee.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "note",
+      "label": "Bottom note",
+      "default": "<p>Standard delivery is 2 KD. Mutlaa and Ali Sabah Al Salem – Umm Al Hayman are 4 KD. Sabah Al Ahmad City is 5 KD.</p>"
+    },
+
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "pink",
+      "label": "Primary pink",
+      "default": "#FE80BC"
+    },
+    {
+      "type": "color",
+      "id": "light_pink",
+      "label": "Light pink",
+      "default": "#FFA2D2"
+    },
+    {
+      "type": "color",
+      "id": "purple",
+      "label": "Purple",
+      "default": "#BC90D5"
+    },
+    {
+      "type": "color",
+      "id": "light_background",
+      "label": "Light background",
+      "default": "#F5F5F5"
+    },
+    {
+      "type": "color",
+      "id": "white",
+      "label": "White",
+      "default": "#FFFFFF"
+    },
+
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 900,
+      "max": 1600,
+      "step": 50,
+      "unit": "px",
+      "label": "Maximum width",
+      "default": 1400
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Top padding",
+      "default": 64
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "label": "Bottom padding",
+      "default": 64
+    }
+  ],
+
+  "presets": [
+    {
+      "name": "Kuwait delivery guide"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,2149 @@
+/**
+ * ============================================================================
+ * BRACELET & WATCH BUILDER - ENGINE
+ * ============================================================================
+ */
+
+(function () {
+  'use strict';
+
+  class BraceletBuilder {
+    constructor(container) {
+      this.container = container;
+      this.sectionId = container.dataset.sectionId;
+
+      // Load Config Data
+      const dataEl = container.querySelector('#bracelet-builder-data-' + this.sectionId) ||
+                     container.querySelector('.bb-data-json');
+      if (!dataEl) {
+        console.error('BraceletBuilder: Configuration data not found.');
+        return;
+      }
+
+      try {
+        this.config = JSON.parse(dataEl.textContent);
+      } catch (e) {
+        console.error('BraceletBuilder: Error parsing configuration JSON', e);
+        console.warn('Raw JSON snippet:', (dataEl.textContent || '').substring(0, 300));
+        this.config = {};
+      }
+
+      // Initial State
+      this.models = (this.config && Array.isArray(this.config.models) && this.config.models.length > 0)
+        ? this.config.models
+        : [
+            {
+              id: 'original-bracelet',
+              title: 'Original Bracelet',
+              type: 'bracelet',
+              slots: 16,
+              price: 2499,
+              defaultColor: 'silver',
+              image: '',
+              variants: [
+                { id: 'var-silver', title: 'Silver', price: 2499, available: true },
+                { id: 'var-gold', title: 'Gold', price: 2999, available: true },
+                { id: 'var-rose', title: 'Rose Gold', price: 2999, available: true },
+                { id: 'var-black', title: 'Black', price: 2699, available: true }
+              ]
+            }
+          ];
+
+      this.charms = (this.config && Array.isArray(this.config.charms)) ? this.config.charms : [];
+      this.settings = (this.config && this.config.settings) || {};
+      this.assetUrls = (this.config && this.config.assetUrls) || {};
+
+      this.swatches = {
+        silver: (this.settings.swatches && this.settings.swatches.silver) || '#d9dcdb',
+        gold: (this.settings.swatches && this.settings.swatches.gold) || '#d4a748',
+        rose: (this.settings.swatches && this.settings.swatches.rose) || '#e5a494',
+        black: (this.settings.swatches && this.settings.swatches.black) || '#222224'
+      };
+
+      this.selectedModel = this.models[0] || {
+        id: 'original-bracelet',
+        title: 'Original Bracelet',
+        type: 'bracelet',
+        slots: 16,
+        price: 2499,
+        image: ''
+      };
+
+      const defaultVariants = (this.selectedModel.variants && this.selectedModel.variants.length > 0)
+        ? this.selectedModel.variants
+        : [
+            { id: 'var-silver', title: 'Silver', price: this.selectedModel.price || 2499, available: true },
+            { id: 'var-gold', title: 'Gold', price: (this.selectedModel.price || 2499) + 500, available: true },
+            { id: 'var-rose', title: 'Rose Gold', price: (this.selectedModel.price || 2499) + 500, available: true },
+            { id: 'var-black', title: 'Black', price: (this.selectedModel.price || 2499) + 200, available: true }
+          ];
+
+      this.selectedVariant = defaultVariants[0] || { id: 'var-silver', title: 'Silver', price: 2499 };
+      const initialHandle = this.getMetalHandle(this.selectedVariant.title || 'Silver');
+      this.selectedColor = {
+        id: this.selectedVariant.id,
+        title: this.selectedVariant.title || 'Silver',
+        handle: initialHandle,
+        price: this.selectedVariant.price || 2499,
+        swatch: this.swatches[initialHandle] || '#d9dcdb',
+        image: this.selectedVariant.image || null
+      };
+
+      // State
+      this.slotsCount = parseInt(this.selectedModel.slots, 10) || 16;
+      if (this.selectedModel && this.selectedModel.type === 'watch' && this.slotsCount % 2 !== 0) {
+        this.slotsCount = 14;
+      }
+      this.slots = new Array(this.slotsCount).fill(null);
+      this.activeThemes = new Set();
+      this.activeColors = new Set();
+      this.searchQuery = '';
+      this.activeDrawerCharm = null;
+      this.dragSource = null; // 'catalog' | { slotIndex: number }
+      this.draggedCharmData = null;
+
+      // DOM Elements Cache
+      this.cacheDOMElements();
+
+      // Preload metal link backgrounds for instantaneous drag avatars
+      this.preloadedLinks = {};
+      this.preloadMetalLinks();
+
+      // Load saved state from localStorage if available (prevents losing design on refresh)
+      this.loadPersistedState();
+
+      // Initialize
+      this.init();
+    }
+
+    cacheDOMElements() {
+      const c = this.container;
+      this.dom = {
+        modelBtn: c.querySelector('[data-model-btn]'),
+        modelMenu: c.querySelector('[data-model-menu]'),
+        colorBtn: c.querySelector('[data-color-btn]'),
+        colorMenu: c.querySelector('[data-color-menu]'),
+        colorSelectWrap: c.querySelector('[data-color-select-wrap]'),
+        searchControl: c.querySelector('[data-search-control]'),
+        searchToggleBtn: c.querySelector('[data-search-toggle-btn]'),
+        searchInput: c.querySelector('[data-search-input]'),
+        searchClear: c.querySelector('[data-search-clear]'),
+        resetBtn: c.querySelector('[data-reset-btn]'),
+        helpBtn: c.querySelector('[data-help-btn]'),
+        howLink: c.querySelector('[data-how-link]'),
+        themeFilterBtn: c.querySelector('[data-theme-filter-btn]'),
+        themePopover: c.querySelector('[data-theme-popover]'),
+        colorFilterBtn: c.querySelector('[data-color-filter-btn]'),
+        colorPopover: c.querySelector('[data-color-popover]'),
+        clearFiltersBtn: c.querySelector('[data-clear-filters-btn]'),
+        catalogGrid: c.querySelector('[data-catalog-grid]'),
+        catalogCount: c.querySelector('[data-catalog-count]'),
+        canvasContainer: c.querySelector('.bb-canvas-container'),
+        braceletScrollWrap: c.querySelector('.bb-bracelet-scroll-wrap'),
+        braceletRow: c.querySelector('[data-bracelet-row]'),
+        stageStatus: c.querySelector('[data-stage-status]'),
+        summaryThumb: c.querySelector('[data-summary-thumb]'),
+        summaryTitle: c.querySelector('[data-summary-title]'),
+        summaryMeta: c.querySelector('[data-summary-meta]'),
+        summaryPrice: c.querySelector('[data-summary-price]'),
+        sidebarHeading: c.querySelector('[data-sidebar-heading]'),
+        charmsCountBadge: c.querySelector('[data-charms-count-badge]'),
+        charmsList: c.querySelector('[data-charms-list]'),
+        totalAmount: c.querySelector('[data-total-amount]'),
+        checkoutBtn: c.querySelector('[data-checkout-btn]'),
+        copySummaryLink: c.querySelector('[data-copy-summary]'),
+        headerCount: c.querySelector('[data-header-count]'),
+        headerPrice: c.querySelector('[data-header-price]'),
+        drawer: c.querySelector('[data-details-drawer]'),
+        drawerOverlay: c.querySelector('[data-drawer-overlay]'),
+        drawerClose: c.querySelector('[data-drawer-close]'),
+        drawerBody: c.querySelector('[data-drawer-body]'),
+        helpModal: c.querySelector('[data-help-modal]'),
+        helpModalClose: c.querySelector('[data-help-modal-close]'),
+        resetModal: c.querySelector('[data-reset-modal]'),
+        resetModalClose: c.querySelector('[data-reset-modal-close]'),
+        resetModalCancel: c.querySelector('[data-reset-modal-cancel]'),
+        resetModalConfirm: c.querySelector('[data-reset-modal-confirm]'),
+        toast: c.querySelector('[data-toast]')
+      };
+    }
+
+    getMetalHandle(title) {
+      const t = (title || '').toLowerCase();
+      if (t.includes('rose')) return 'rose';
+      if (t.includes('gold')) return 'gold';
+      if (t.includes('black')) return 'black';
+      return 'silver';
+    }
+
+    getStorageKey() {
+      return `chimcham_builder_state_${this.sectionId || 'main'}`;
+    }
+
+    savePersistedState() {
+      try {
+        const stateToSave = {
+          modelId: this.selectedModel ? this.selectedModel.id : null,
+          variantId: this.selectedVariant ? this.selectedVariant.id : null,
+          colorTitle: this.selectedColor ? this.selectedColor.title : null,
+          slotsCount: this.slotsCount,
+          slots: this.slots.map(s => {
+            if (!s || !s.charm) return null;
+            return {
+              charmId: s.charm.id,
+              isDoubleStart: !!s.isDoubleStart,
+              isDoubleEnd: !!s.isDoubleEnd,
+              isHanging: !!s.isHanging,
+              charm: {
+                id: s.charm.id,
+                title: s.charm.title,
+                price: s.charm.price,
+                image: s.charm.image,
+                theme: s.charm.theme,
+                color: s.charm.color,
+                type: s.charm.type,
+                slots: s.charm.slots,
+                variantId: s.charm.variantId
+              }
+            };
+          }),
+          updatedAt: Date.now()
+        };
+        localStorage.setItem(this.getStorageKey(), JSON.stringify(stateToSave));
+      } catch (err) {
+        console.warn('BraceletBuilder: Unable to save state to localStorage', err);
+      }
+    }
+
+    loadPersistedState() {
+      try {
+        const raw = localStorage.getItem(this.getStorageKey());
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (!saved || typeof saved !== 'object') return;
+
+        // 1. Restore Model
+        if (saved.modelId) {
+          const matchedModel = this.models.find(m => String(m.id) === String(saved.modelId));
+          if (matchedModel) {
+            this.selectedModel = matchedModel;
+            this.slotsCount = parseInt(matchedModel.slots, 10) || 16;
+            if (matchedModel.type === 'watch' && this.slotsCount % 2 !== 0) {
+              this.slotsCount = 14;
+            }
+          }
+        }
+
+        // 2. Restore Variant / Color
+        const modelVariants = (this.selectedModel && Array.isArray(this.selectedModel.variants) && this.selectedModel.variants.length > 0)
+          ? this.selectedModel.variants
+          : [];
+
+        let matchedVariant = null;
+        if (saved.variantId && modelVariants.length > 0) {
+          matchedVariant = modelVariants.find(v => String(v.id) === String(saved.variantId));
+        }
+        if (!matchedVariant && saved.colorTitle && modelVariants.length > 0) {
+          matchedVariant = modelVariants.find(v => (v.title || '').toLowerCase() === saved.colorTitle.toLowerCase());
+        }
+
+        if (matchedVariant) {
+          this.selectedVariant = matchedVariant;
+          const finishHandle = this.getMetalHandle(matchedVariant.title);
+          this.selectedColor = {
+            id: matchedVariant.id,
+            title: matchedVariant.title,
+            handle: finishHandle,
+            price: matchedVariant.price,
+            swatch: this.swatches[finishHandle] || '#d9dcdb',
+            image: matchedVariant.image || null
+          };
+        }
+
+        // 3. Restore Slots
+        if (Array.isArray(saved.slots)) {
+          this.slots = new Array(this.slotsCount).fill(null);
+          const limit = Math.min(saved.slots.length, this.slotsCount);
+          for (let i = 0; i < limit; i++) {
+            const savedItem = saved.slots[i];
+            if (!savedItem) continue;
+
+            const charmId = savedItem.charmId || (savedItem.charm && savedItem.charm.id);
+            const matchedCharm = this.charms.find(ch => String(ch.id) === String(charmId)) || savedItem.charm;
+            if (matchedCharm) {
+              this.slots[i] = {
+                charm: matchedCharm,
+                isDoubleStart: !!savedItem.isDoubleStart,
+                isDoubleEnd: !!savedItem.isDoubleEnd,
+                isHanging: !!savedItem.isHanging
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('BraceletBuilder: Unable to restore state from localStorage', err);
+      }
+    }
+
+    clearPersistedState() {
+      try {
+        localStorage.removeItem(this.getStorageKey());
+      } catch (e) {
+        console.warn('BraceletBuilder: Error clearing localStorage', e);
+      }
+    }
+
+    updateModelToolbarUI() {
+      const found = this.selectedModel;
+      if (!found) return;
+
+      // Update active highlight in model dropdown menu
+      if (this.dom.modelMenu) {
+        this.dom.modelMenu.querySelectorAll('[data-model-id]').forEach(item => {
+          if (String(item.dataset.modelId) === String(found.id)) {
+            item.classList.add('is-active');
+          } else {
+            item.classList.remove('is-active');
+          }
+        });
+      }
+
+      // Update Toolbar Model Button Text
+      if (this.dom.modelBtn) {
+        const modelThumb = found.image || (found.type === 'watch' ? this.getWatchImageSrc(found) : this.getMetalLinkImageSrc(this.selectedColor?.handle || 'silver'));
+        const iconHtml = modelThumb 
+          ? `<span class="bb-pill-icon" style="background-image: url('${modelThumb}');"></span>`
+          : `<span class="bb-swatch swatch-${this.selectedColor?.handle || 'silver'}"></span>`;
+        this.dom.modelBtn.innerHTML = `
+          ${iconHtml}
+          <span>${found.title}</span>
+          <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        `;
+      }
+    }
+
+    setupCanvasScrollOverflow() {
+      this.checkCanvasOverflow();
+
+      if (window.ResizeObserver && this.dom.canvasContainer) {
+        this.resizeObserver = new ResizeObserver(() => {
+          this.checkCanvasOverflow();
+        });
+        this.resizeObserver.observe(this.dom.canvasContainer);
+      } else {
+        window.addEventListener('resize', () => {
+          this.checkCanvasOverflow();
+        });
+      }
+
+      window.addEventListener('load', () => {
+        this.checkCanvasOverflow();
+      });
+    }
+
+    checkCanvasOverflow() {
+      if (!this.dom || !this.dom.braceletScrollWrap || !this.dom.braceletRow) return;
+
+      const wrap = this.dom.braceletScrollWrap;
+      const row = this.dom.braceletRow;
+
+      // When the bracelet row exceeds the visible container, align to start
+      // so Slot 1 and Slot 16 are 100% visible on scroll with comfortable padding
+      const isOverflowing = row.scrollWidth > wrap.clientWidth;
+      if (isOverflowing) {
+        wrap.classList.add('is-overflowing');
+      } else {
+        wrap.classList.remove('is-overflowing');
+      }
+    }
+
+    init() {
+      try { this.renderDynamicFilters(); } catch (e) { console.warn('BraceletBuilder: Dynamic filters error', e); }
+      try { this.renderColorDropdown(); } catch (e) { console.warn('BraceletBuilder: Color dropdown error', e); }
+      this.updateModelToolbarUI();
+      this.bindEvents();
+      this.renderCanvas();
+      this.setupCanvasScrollOverflow();
+      this.renderCatalog();
+      this.updateSidebar();
+      this.updateHeaderMeta();
+    }
+
+    bindEvents() {
+      // Dropdown Toggles
+      this.dom.modelBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.dom.modelBtn, this.dom.modelMenu);
+      });
+
+      this.dom.colorBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.dom.colorBtn, this.dom.colorMenu);
+      });
+
+      this.dom.themeFilterBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.dom.themeFilterBtn, this.dom.themePopover);
+      });
+
+      this.dom.colorFilterBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.dom.colorFilterBtn, this.dom.colorPopover);
+      });
+
+      // Search Toggle
+      this.dom.searchToggleBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = this.dom.searchControl?.classList.contains('is-open');
+        if (isOpen) {
+          if (!this.searchQuery) {
+            this.closeSearch();
+          } else {
+            this.dom.searchInput?.focus();
+          }
+        } else {
+          this.openSearch();
+        }
+      });
+
+      this.dom.searchControl?.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      // Close popovers and search on outside click
+      document.addEventListener('click', (e) => {
+        this.closeAllDropdowns();
+        if (this.dom.searchControl?.classList.contains('is-open')) {
+          if (!e.target.closest('[data-search-control]')) {
+            this.closeSearch();
+          }
+        }
+      });
+
+      // Escape key closes search, modals & menus
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          this.closeAllDropdowns();
+          this.closeSearch();
+          this.closeResetModal();
+          this.dom.helpModal?.classList.remove('is-open');
+        }
+      });
+
+      // Model Select Items
+      this.dom.modelMenu?.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-model-id]');
+        if (!item) return;
+        const modelId = item.dataset.modelId;
+        this.selectModel(modelId);
+        this.closeAllDropdowns();
+      });
+
+      // Color Select Items
+      this.dom.colorMenu?.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-color-id]');
+        if (!item) return;
+        const colorId = item.dataset.colorId;
+        this.selectColor(colorId);
+        this.closeAllDropdowns();
+      });
+
+      // Search
+      this.dom.searchInput?.addEventListener('input', (e) => {
+        this.searchQuery = e.target.value.trim().toLowerCase();
+        this.renderCatalog();
+      });
+
+      this.dom.searchClear?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.dom.searchInput) {
+          this.dom.searchInput.value = '';
+          this.searchQuery = '';
+          this.renderCatalog();
+          this.dom.searchInput.focus();
+        }
+      });
+
+      // Reset Button (Opens Custom Modal)
+      this.dom.resetBtn?.addEventListener('click', () => {
+        if (this.hasPlacedCharms()) {
+          this.openResetModal();
+        } else {
+          this.showToast('Your bracelet is already empty');
+        }
+      });
+
+      // Reset Modal Actions
+      const closeReset = () => this.closeResetModal();
+      this.dom.resetModalClose?.addEventListener('click', closeReset);
+      this.dom.resetModalCancel?.addEventListener('click', closeReset);
+      this.dom.resetModal?.addEventListener('click', (e) => {
+        if (e.target === this.dom.resetModal) {
+          closeReset();
+        }
+      });
+
+      this.dom.resetModalConfirm?.addEventListener('click', () => {
+        this.closeResetModal();
+        this.resetDesign();
+      });
+
+      // Help Modal
+      const openHelp = () => {
+        this.dom.helpModal?.classList.add('is-open');
+      };
+      this.dom.helpBtn?.addEventListener('click', openHelp);
+      this.dom.howLink?.addEventListener('click', openHelp);
+      this.dom.helpModalClose?.addEventListener('click', () => {
+        this.dom.helpModal?.classList.remove('is-open');
+      });
+      this.dom.helpModal?.addEventListener('click', (e) => {
+        if (e.target === this.dom.helpModal) {
+          this.dom.helpModal.classList.remove('is-open');
+        }
+      });
+
+      // Drawer Close
+      this.dom.drawerClose?.addEventListener('click', () => this.closeDrawer());
+      this.dom.drawerOverlay?.addEventListener('click', () => this.closeDrawer());
+
+      // Filter Checkboxes
+      this.dom.themePopover?.addEventListener('change', (e) => {
+        if (e.target.type === 'checkbox') {
+          const val = e.target.value;
+          if (e.target.checked) this.activeThemes.add(val);
+          else this.activeThemes.delete(val);
+          this.updateFilterButtons();
+          this.renderCatalog();
+        }
+      });
+
+      this.dom.colorPopover?.addEventListener('change', (e) => {
+        if (e.target.type === 'checkbox') {
+          const val = e.target.value;
+          if (e.target.checked) this.activeColors.add(val);
+          else this.activeColors.delete(val);
+          this.updateFilterButtons();
+          this.renderCatalog();
+        }
+      });
+
+      this.dom.clearFiltersBtn?.addEventListener('click', () => {
+        this.activeThemes.clear();
+        this.activeColors.clear();
+        this.container.querySelectorAll('[data-theme-popover] input, [data-color-popover] input').forEach(cb => {
+          cb.checked = false;
+        });
+        this.updateFilterButtons();
+        this.renderCatalog();
+      });
+
+      // Copy Design Summary
+      this.dom.copySummaryLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.copyDesignSummary();
+      });
+
+      // Checkout Button
+      this.dom.checkoutBtn?.addEventListener('click', () => {
+        this.handleCheckout();
+      });
+
+      // Drag & Drop Listeners on Canvas & Catalog
+      this.bindDragDrop();
+    }
+
+    toggleDropdown(btn, menu) {
+      const isOpen = menu?.classList.contains('is-open');
+      this.closeAllDropdowns();
+      if (!isOpen && menu && btn) {
+        menu.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    closeAllDropdowns() {
+      this.container.querySelectorAll('.bb-dropdown-menu, .bb-filter-popover').forEach(el => {
+        el.classList.remove('is-open');
+      });
+      this.container.querySelectorAll('[aria-expanded="true"]').forEach(el => {
+        el.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    openSearch() {
+      if (!this.dom.searchControl) return;
+      this.closeAllDropdowns();
+      this.dom.searchControl.classList.add('is-open');
+      setTimeout(() => {
+        this.dom.searchInput?.focus();
+      }, 50);
+    }
+
+    closeSearch() {
+      if (!this.dom.searchControl) return;
+      this.dom.searchControl.classList.remove('is-open');
+      if (this.dom.searchInput) {
+        this.dom.searchInput.blur();
+        if (this.searchQuery) {
+          this.dom.searchInput.value = '';
+          this.searchQuery = '';
+          this.renderCatalog();
+        }
+      }
+    }
+
+    openResetModal() {
+      this.closeAllDropdowns();
+      this.closeSearch();
+      this.dom.resetModal?.classList.add('is-open');
+    }
+
+    closeResetModal() {
+      this.dom.resetModal?.classList.remove('is-open');
+    }
+
+    updateFilterButtons() {
+      // Theme Button
+      if (this.dom.themeFilterBtn) {
+        const count = this.activeThemes.size;
+        if (count > 0) {
+          this.dom.themeFilterBtn.classList.add('has-active');
+          this.dom.themeFilterBtn.innerHTML = `Theme (${count}) <svg aria-hidden="true" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`;
+        } else {
+          this.dom.themeFilterBtn.classList.remove('has-active');
+          this.dom.themeFilterBtn.innerHTML = `Theme <svg aria-hidden="true" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`;
+        }
+      }
+
+      // Color Button
+      if (this.dom.colorFilterBtn) {
+        const count = this.activeColors.size;
+        if (count > 0) {
+          this.dom.colorFilterBtn.classList.add('has-active');
+          this.dom.colorFilterBtn.innerHTML = `Charms Color (${count}) <svg aria-hidden="true" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`;
+        } else {
+          this.dom.colorFilterBtn.classList.remove('has-active');
+          this.dom.colorFilterBtn.innerHTML = `Charms Color <svg aria-hidden="true" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`;
+        }
+      }
+
+      // Clear Filters Link
+      if (this.dom.clearFiltersBtn) {
+        if (this.activeThemes.size > 0 || this.activeColors.size > 0) {
+          this.dom.clearFiltersBtn.style.display = 'inline-block';
+        } else {
+          this.dom.clearFiltersBtn.style.display = 'none';
+        }
+      }
+    }
+
+    renderDynamicFilters() {
+      try {
+        // 1. Gather all unique themes and colors from this.charms
+        const themesSet = new Set();
+        const colorsSet = new Set();
+
+        (this.charms || []).forEach(ch => {
+          if (!ch) return;
+          if (ch.theme && String(ch.theme).trim()) {
+            themesSet.add(String(ch.theme).trim());
+          }
+          if (ch.color && String(ch.color).trim()) {
+            colorsSet.add(String(ch.color).trim());
+          }
+          if (Array.isArray(ch.tags)) {
+            ch.tags.forEach(tag => {
+              if (!tag) return;
+              const t = String(tag).trim();
+              const tLower = t.toLowerCase();
+              if (tLower.startsWith('theme:')) {
+                const themeVal = t.slice(6).trim();
+                if (themeVal) themesSet.add(themeVal);
+              } else if (tLower.startsWith('color:')) {
+                const colorVal = t.slice(6).trim();
+                if (colorVal) colorsSet.add(colorVal);
+              }
+            });
+          }
+        });
+
+        // If charm products provided themes, rebuild theme popover
+        if (themesSet.size > 0 && this.dom && this.dom.themePopover) {
+          const themesList = Array.from(themesSet).sort();
+          const titleEl = this.dom.themePopover.querySelector('.bb-filter-title');
+          const titleHtml = titleEl ? titleEl.outerHTML : '<div class="bb-filter-title">Shop by Story</div>';
+          
+          this.dom.themePopover.innerHTML = `
+            ${titleHtml}
+            <div class="bb-filter-grid-2col">
+              ${themesList.map(name => `
+                <label class="bb-checkbox-label">
+                  <input type="checkbox" value="${name}" ${this.activeThemes.has(name) ? 'checked' : ''}>
+                  <span>${name}</span>
+                </label>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        // If charm products provided colors, rebuild color popover
+        if (colorsSet.size > 0 && this.dom && this.dom.colorPopover) {
+          const colorsList = Array.from(colorsSet).sort();
+          const titleEl = this.dom.colorPopover.querySelector('.bb-filter-title');
+          const titleHtml = titleEl ? titleEl.outerHTML : '<div class="bb-filter-title">Choose a finish</div>';
+
+          this.dom.colorPopover.innerHTML = `
+            ${titleHtml}
+            <div>
+              ${colorsList.map(name => {
+                const handle = this.getMetalHandle(name);
+                const swatch = this.swatches[handle] || '#d9dcdb';
+                return `
+                  <label class="bb-checkbox-label">
+                    <input type="checkbox" value="${name}" ${this.activeColors.has(name) ? 'checked' : ''}>
+                    <span class="bb-swatch swatch-${handle}" style="background: ${swatch};"></span>
+                    <span>${name}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.warn('BraceletBuilder: Error rendering dynamic filters', err);
+      }
+    }
+
+    renderColorDropdown() {
+      try {
+        if (!this.dom || !this.dom.colorMenu) return;
+
+        const variants = (this.selectedModel && Array.isArray(this.selectedModel.variants) && this.selectedModel.variants.length > 0)
+          ? this.selectedModel.variants
+          : [
+              { id: 'var-silver', title: 'Silver', price: this.selectedModel?.price || 2499, available: true },
+              { id: 'var-gold', title: 'Gold', price: (this.selectedModel?.price || 2499) + 500, available: true },
+              { id: 'var-rose', title: 'Rose Gold', price: (this.selectedModel?.price || 2499) + 500, available: true },
+              { id: 'var-black', title: 'Black', price: (this.selectedModel?.price || 2499) + 200, available: true }
+            ];
+
+        // Try to preserve current color finish handle (e.g. 'gold', 'silver', 'rose', 'black')
+        const currentHandle = this.selectedColor ? this.selectedColor.handle : (this.selectedModel?.defaultColor || 'silver');
+        let matchedVariant = (this.selectedVariant && variants.find(v => String(v.id) === String(this.selectedVariant.id))) ||
+                             variants.find(v => this.getMetalHandle(v?.title) === currentHandle);
+        if (!matchedVariant) {
+          matchedVariant = variants[0] || { id: 'var-silver', title: 'Silver', price: 2499, available: true };
+        }
+
+        this.selectedVariant = matchedVariant;
+        const finishHandle = this.getMetalHandle(matchedVariant?.title || 'Silver');
+        const swatchHex = this.swatches[finishHandle] || '#d9dcdb';
+
+        this.selectedColor = {
+          id: matchedVariant.id,
+          title: matchedVariant.title || 'Silver',
+          handle: finishHandle,
+          price: matchedVariant.price || 2499,
+          swatch: swatchHex,
+          image: matchedVariant.image || null
+        };
+
+        // Build HTML for color dropdown options
+        this.dom.colorMenu.innerHTML = variants.map(v => {
+          const vHandle = this.getMetalHandle(v?.title || 'Silver');
+          const vSwatch = this.swatches[vHandle] || '#d9dcdb';
+          const isActive = (String(v.id) === String(this.selectedVariant.id));
+          const vPriceFormatted = this.formatMoney(v.price || 2499);
+
+          return `
+            <button type="button" 
+                    class="bb-dropdown-item ${isActive ? 'is-active' : ''}" 
+                    data-color-id="${v.id}">
+              <div class="bb-item-left">
+                <span class="bb-swatch swatch-${vHandle}" style="background: ${vSwatch};"></span>
+                <span class="bb-item-title">${v.title}</span>
+              </div>
+              <span class="bb-item-price">${vPriceFormatted}</span>
+            </button>
+          `;
+        }).join('');
+
+        // Update Toolbar Color Button
+        if (this.dom.colorBtn) {
+          this.dom.colorBtn.innerHTML = `
+            <span class="bb-swatch swatch-${finishHandle}" style="background: ${swatchHex};"></span>
+            <span>Color: ${matchedVariant.title}</span>
+            <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          `;
+        }
+      } catch (err) {
+        console.warn('BraceletBuilder: Error rendering color dropdown', err);
+      }
+    }
+
+    selectModel(modelId) {
+      const found = this.models.find(m => String(m.id) === String(modelId));
+      if (!found) return;
+
+      this.selectedModel = found;
+      this.slotsCount = parseInt(found.slots, 10) || 16;
+      if (found.type === 'watch' && this.slotsCount % 2 !== 0) {
+        this.slotsCount = 14;
+      }
+
+      // Re-populate color dropdown dynamically from new model's variants
+      this.renderColorDropdown();
+
+      // Resize slots array gracefully preserving placed charms
+      const newSlots = new Array(this.slotsCount).fill(null);
+      for (let i = 0; i < Math.min(this.slots.length, this.slotsCount); i++) {
+        newSlots[i] = this.slots[i];
+      }
+      this.slots = newSlots;
+
+      // Update Toolbar Model Button Text and dropdown highlight
+      this.updateModelToolbarUI();
+
+      // Always show color select wrap (never hide it, even for watches)
+      if (this.dom.colorSelectWrap) {
+        this.dom.colorSelectWrap.style.display = 'block';
+      }
+
+      // Re-render
+      this.renderCanvas();
+      this.updateSidebar();
+      this.updateHeaderMeta();
+      this.savePersistedState();
+    }
+
+    selectColor(variantId) {
+      const variants = (this.selectedModel && this.selectedModel.variants && this.selectedModel.variants.length > 0)
+        ? this.selectedModel.variants
+        : [
+            { id: 'var-silver', title: 'Silver', price: this.selectedModel.price || 2499, available: true },
+            { id: 'var-gold', title: 'Gold', price: (this.selectedModel.price || 2499) + 500, available: true },
+            { id: 'var-rose', title: 'Rose Gold', price: (this.selectedModel.price || 2499) + 500, available: true },
+            { id: 'var-black', title: 'Black', price: (this.selectedModel.price || 2499) + 200, available: true }
+          ];
+
+      const found = variants.find(v => String(v.id) === String(variantId)) ||
+                    variants.find(v => this.getMetalHandle(v.title) === String(variantId).toLowerCase());
+      if (!found) return;
+
+      this.selectedVariant = found;
+      const finishHandle = this.getMetalHandle(found.title);
+      const swatchHex = this.swatches[finishHandle] || '#d9dcdb';
+
+      this.selectedColor = {
+        id: found.id,
+        title: found.title,
+        handle: finishHandle,
+        price: found.price,
+        swatch: swatchHex,
+        image: found.image || null
+      };
+
+      // Update active highlight in color dropdown menu
+      if (this.dom.colorMenu) {
+        this.dom.colorMenu.querySelectorAll('[data-color-id]').forEach(item => {
+          if (String(item.dataset.colorId) === String(found.id)) {
+            item.classList.add('is-active');
+          } else {
+            item.classList.remove('is-active');
+          }
+        });
+      }
+
+      // Update Toolbar Color Button Text
+      if (this.dom.colorBtn) {
+        this.dom.colorBtn.innerHTML = `
+          <span class="bb-swatch swatch-${finishHandle}" style="background: ${swatchHex};"></span>
+          <span>Color: ${found.title}</span>
+          <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        `;
+      }
+
+      // Re-render
+      this.renderCanvas();
+      this.updateSidebar();
+      this.updateHeaderMeta();
+      this.savePersistedState();
+    }
+
+    getWatchImageSrc(model) {
+      const modelId = ((model && model.id) || (this.selectedModel && this.selectedModel.id) || '').toLowerCase();
+      const dialColor = ((model && model.dial_color) || (model && model.dialColor) || '').toLowerCase();
+      const assetUrls = this.assetUrls || {};
+
+      // 1. Prioritize transparent watch dial graphics for canvas centerpiece
+      if (modelId.includes('blue') || dialColor === 'blue') return assetUrls.watch001 || 'watch-001.png';
+      if (modelId.includes('pink') || dialColor === 'pink') return assetUrls.watch002 || 'watch-002.png';
+      if (modelId.includes('silver-white') || (modelId.includes('white') && !modelId.includes('gold')) || dialColor === 'white') return assetUrls.watch003 || 'watch-003.png';
+      if (modelId.includes('black') || dialColor === 'black') return assetUrls.watch004 || 'watch-004.png';
+      if (modelId.includes('gold-white') || (modelId.includes('gold') && modelId.includes('white'))) return assetUrls.watch005 || 'watch-005.png';
+      if (modelId.includes('emerald') || dialColor === 'emerald') return assetUrls.watch006 || 'watch-006.png';
+
+      // 2. Fallbacks
+      if (model && model.image && !model.image.includes('bracelet-')) return model.image;
+      if (this.selectedVariant && this.selectedVariant.image) return this.selectedVariant.image;
+      if (this.selectedColor && this.selectedColor.image) return this.selectedColor.image;
+
+      return assetUrls.watch001 || 'watch-001.png';
+    }
+
+    getMetalLinkImageSrc(handle) {
+      const assetUrls = this.assetUrls || {};
+      const h = (handle || '').toLowerCase();
+      if (h.includes('gold') && !h.includes('rose')) return assetUrls.braceletGold || 'bracelet-gold.png';
+      if (h.includes('rose')) return assetUrls.braceletRose || 'bracelet-rose-gold.png';
+      if (h.includes('black')) return assetUrls.braceletBlack || 'bracelet-black.png';
+      return assetUrls.braceletSilver || 'bracelet-silver.png';
+    }
+
+    preloadMetalLinks() {
+      if (!this.preloadedLinks) this.preloadedLinks = {};
+      const handles = ['silver', 'gold', 'rose', 'black'];
+      handles.forEach(handle => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = this.getMetalLinkImageSrc(handle);
+        this.preloadedLinks[handle] = img;
+      });
+    }
+
+    renderCanvas() {
+      if (!this.dom.braceletRow) return;
+
+      const finishHandle = this.selectedColor.handle || 'silver';
+      const finishClass = `metal-${finishHandle}`;
+      const linkImg = this.getMetalLinkImageSrc(finishHandle);
+
+      this.dom.braceletRow.className = `bb-bracelet-row ${finishClass}`;
+      this.dom.braceletRow.style.setProperty('--bracelet-link', `url('${linkImg}')`);
+      this.dom.braceletRow.innerHTML = '';
+
+      const isWatch = this.selectedModel.type === 'watch';
+      if (isWatch && this.slotsCount % 2 !== 0) {
+        this.slotsCount = 14;
+      }
+      const totalSlots = this.slotsCount;
+      const leftCount = isWatch ? (totalSlots / 2) : totalSlots;
+
+      // Render Left Links
+      for (let i = 0; i < leftCount; i++) {
+        const slotEl = this.createSlotElement(i);
+        this.dom.braceletRow.appendChild(slotEl);
+      }
+
+      // Render Center Watch Dial if Watch Model
+      if (isWatch) {
+        const watchDialEl = document.createElement('div');
+        watchDialEl.className = 'bb-watch-dial-slot watch-on-bracelet';
+        watchDialEl.setAttribute('role', 'img');
+        watchDialEl.setAttribute('aria-label', this.selectedModel.title);
+
+        const watchSrc = this.getWatchImageSrc(this.selectedModel);
+        watchDialEl.innerHTML = `<img src="${watchSrc}" alt="${this.selectedModel.title}">`;
+
+        this.dom.braceletRow.appendChild(watchDialEl);
+
+        // Render Right Links
+        for (let i = leftCount; i < totalSlots; i++) {
+          const slotEl = this.createSlotElement(i);
+          this.dom.braceletRow.appendChild(slotEl);
+        }
+      }
+
+      this.updateStageStatus();
+      this.checkCanvasOverflow();
+    }
+
+    processImageTransparency(imageUrl, callback, isCharm = true) {
+      if (!imageUrl) {
+        callback(imageUrl, null);
+        return;
+      }
+      // Never process or alter watch images (they are official transparent centerpieces, not charms)
+      if (!isCharm || imageUrl.includes('watch') || imageUrl.includes('watch-') || imageUrl.includes('watch00')) {
+        callback(imageUrl, null);
+        return;
+      }
+      if (!this.transparentCache) this.transparentCache = {};
+      if (!this.charmMetaCache) this.charmMetaCache = {};
+
+      if (this.transparentCache[imageUrl]) {
+        callback(this.transparentCache[imageUrl], this.charmMetaCache[imageUrl] || null);
+        return;
+      }
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+          const len = data.length;
+
+          // Remove white/near-white studio photo background (make transparent)
+          for (let i = 0; i < len; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            // If near-white with low color saturation (pure studio background)
+            if (r > 225 && g > 225 && b > 225 && Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b)) < 20) {
+              data[i + 3] = 0; // Alpha 0 = 100% transparent
+            }
+          }
+
+          ctx.putImageData(imgData, 0, 0);
+
+          // Find exact content bounding box of physical charm (trim all whitespace padding)
+          let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
+          for (let y = 0; y < canvas.height; y++) {
+            const rowOffset = y * canvas.width * 4;
+            for (let x = 0; x < canvas.width; x++) {
+              const idx = rowOffset + x * 4;
+              if (data[idx + 3] > 20) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+
+          let finalUrl = canvas.toDataURL('image/png');
+          let meta = { aspectRatio: 1, isHanging: false };
+
+          if (maxX >= minX && maxY >= minY) {
+            const contentW = maxX - minX + 1;
+            const contentH = maxY - minY + 1;
+            const aspectRatio = contentH / contentW;
+            const isHanging = aspectRatio > 1.22;
+
+            meta = {
+              aspectRatio,
+              isHanging,
+              contentW,
+              contentH
+            };
+
+            if (isHanging) {
+              // DUAL-ZONE CALIBRATION FOR HANGING CHARMS:
+              // 1. Analyze row widths in the top section to find the link body boundaries
+              const rowInfo = new Array(maxY + 1);
+              let topMaxW = 0;
+              const searchLimit = Math.min(maxY, minY + Math.round(contentH * 0.45));
+
+              for (let y = minY; y <= maxY; y++) {
+                let rMinX = canvas.width, rMaxX = -1;
+                const rowOffset = y * canvas.width * 4;
+                for (let x = 0; x < canvas.width; x++) {
+                  if (data[rowOffset + x * 4 + 3] > 20) {
+                    if (x < rMinX) rMinX = x;
+                    if (x > rMaxX) rMaxX = x;
+                  }
+                }
+                const rw = rMaxX >= rMinX ? (rMaxX - rMinX + 1) : 0;
+                rowInfo[y] = { minX: rMinX, maxX: rMaxX, w: rw };
+                if (y <= searchLimit && rw > topMaxW) {
+                  topMaxW = rw;
+                }
+              }
+
+              // Detect link body boundaries in top section
+              let linkMinX = canvas.width, linkMaxX = -1;
+              let linkBottomY = minY;
+              let hasFoundWide = false;
+
+              for (let y = minY; y <= searchLimit; y++) {
+                const rw = rowInfo[y].w;
+                if (rw >= topMaxW * 0.75) {
+                  hasFoundWide = true;
+                  if (rowInfo[y].minX < linkMinX) linkMinX = rowInfo[y].minX;
+                  if (rowInfo[y].maxX > linkMaxX) linkMaxX = rowInfo[y].maxX;
+                  linkBottomY = y;
+                } else if (hasFoundWide && rw < topMaxW * 0.6) {
+                  break; // Transition: link body ends, ring/pendant begins
+                }
+              }
+
+              const linkW = (linkMaxX >= linkMinX) ? (linkMaxX - linkMinX + 1) : topMaxW;
+              const linkH = (linkBottomY > minY) ? (linkBottomY - minY + 1) : Math.round(linkW * 0.82);
+
+              // 2. Compute uniform pendant dimensions (harmonious ~42px height, max 50px width)
+              const pendantSourceY = linkBottomY;
+              const pendantH = Math.max(1, maxY - pendantSourceY + 1);
+              const pendantW = Math.max(1, contentW);
+
+              const TARGET_DANGLE_H = 42;
+              const MAX_DANGLE_W = 50;
+              const scale = Math.min(TARGET_DANGLE_H / pendantH, MAX_DANGLE_W / pendantW);
+
+              const destPendantW = Math.round(pendantW * scale);
+              const destPendantH = Math.round(pendantH * scale);
+
+              const canvasW = Math.max(64, destPendantW);
+              const canvasH = 64 + destPendantH;
+              const offsetX = Math.round((canvasW - 64) / 2);
+
+              const compCanvas = document.createElement('canvas');
+              compCanvas.width = canvasW;
+              compCanvas.height = canvasH;
+              const cCtx = compCanvas.getContext('2d');
+
+              // A. Draw link body to fill exactly 64px width and 64px height (spanning lines 1-2 and 3-4)
+              cCtx.drawImage(
+                canvas,
+                linkMinX, minY, linkW, linkH,
+                offsetX, 0, 64, 64
+              );
+
+              // B. Draw hanging pendant below y = 64px, centered horizontally
+              const destPendantX = Math.round(offsetX + (64 - destPendantW) / 2);
+              cCtx.drawImage(
+                canvas,
+                minX, pendantSourceY, pendantW, pendantH,
+                destPendantX, 64, destPendantW, destPendantH
+              );
+
+              finalUrl = compCanvas.toDataURL('image/png');
+            } else {
+              // Standard / Flat charm or Double charm: trim whitespace and scale flush
+              const trimmedCanvas = document.createElement('canvas');
+              trimmedCanvas.width = contentW;
+              trimmedCanvas.height = contentH;
+              const tCtx = trimmedCanvas.getContext('2d');
+              tCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, contentW, contentH);
+              finalUrl = trimmedCanvas.toDataURL('image/png');
+            }
+          }
+
+          this.transparentCache[imageUrl] = finalUrl;
+          this.charmMetaCache[imageUrl] = meta;
+          callback(finalUrl, meta);
+        } catch (e) {
+          this.transparentCache[imageUrl] = imageUrl;
+          callback(imageUrl, null);
+        }
+      };
+      img.onerror = () => {
+        this.transparentCache[imageUrl] = imageUrl;
+        callback(imageUrl, null);
+      };
+      img.src = imageUrl;
+    }
+
+    createSlotElement(index) {
+      const slot = document.createElement('div');
+      slot.className = 'bb-slot';
+      slot.dataset.slotIndex = index;
+      slot.setAttribute('role', 'button');
+      slot.setAttribute('tabindex', '0');
+      slot.setAttribute('aria-label', `Bracelet link position ${index + 1} of ${this.slotsCount}`);
+
+      if (this.selectedModel && this.selectedModel.type === 'watch') {
+        const leftCount = this.slotsCount / 2;
+        if (index === leftCount - 1) {
+          slot.classList.add('is-before-watch');
+        }
+      }
+
+      const finishHandle = this.selectedColor.handle || 'silver';
+      const linkImg = this.getMetalLinkImageSrc(finishHandle);
+      const placed = this.slots[index];
+
+      if (!placed) {
+        // Clean authentic Nomination link slot with real physical metal link image
+        slot.innerHTML = `<img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">`;
+      } else {
+        slot.classList.add('is-occupied');
+        slot.setAttribute('draggable', 'true');
+
+        if (placed.isDoubleStart) {
+          slot.classList.add('is-double-start');
+        } else if (placed.isDoubleEnd) {
+          slot.classList.add('is-double-end');
+        }
+
+        const meta = this.charmMetaCache && this.charmMetaCache[placed.charm.image];
+        const isDouble = placed.isDoubleStart;
+        const isHanging = (placed.charm.type === 'drop' || placed.charm.type === 'hanging' || (meta && meta.isHanging));
+
+        if (isHanging) {
+          slot.classList.add('is-hanging');
+        }
+
+        const charmImgSrc = this.transparentCache && this.transparentCache[placed.charm.image]
+          ? this.transparentCache[placed.charm.image]
+          : placed.charm.image;
+
+        slot.innerHTML = `
+          <img class="bb-slot-base-img ${isDouble ? 'span-2' : ''}" src="${linkImg}" alt="link" draggable="false">
+          <div class="placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''}">
+            <img class="bb-slot-charm-img" src="${charmImgSrc}" alt="${placed.charm.title}">
+          </div>
+        `;
+
+        if (!this.transparentCache || !this.transparentCache[placed.charm.image]) {
+          this.processImageTransparency(placed.charm.image, (transUrl, charmMeta) => {
+            const currentImg = slot.querySelector('.bb-slot-charm-img');
+            if (currentImg && transUrl) {
+              currentImg.src = transUrl;
+            }
+            if (charmMeta && charmMeta.isHanging) {
+              slot.classList.add('is-hanging');
+              const placedWrap = slot.querySelector('.placed-charm');
+              if (placedWrap) placedWrap.classList.add('kind-hanging');
+            }
+          });
+        }
+      }
+
+      return slot;
+    }
+
+    updateStageStatus() {
+      if (!this.dom.stageStatus) return;
+
+      const placedCount = this.getPlacedCharmsCount();
+      const openCount = this.slotsCount - placedCount;
+
+      this.dom.stageStatus.innerHTML = `
+        <span><strong>${placedCount}</strong> of ${this.slotsCount} charms</span>
+        <span class="bb-status-dot"></span>
+        <span>${openCount} open links</span>
+        <span class="bb-status-dot"></span>
+        <span class="bb-drag-tip">${this.settings.dragTipText || 'Drag a placed charm back to the catalog to remove it'}</span>
+      `;
+    }
+
+    renderCatalog() {
+      if (!this.dom.catalogGrid) return;
+
+      const filtered = this.charms.filter(charm => {
+        if (!charm) return false;
+
+        // Search Filter
+        if (this.searchQuery) {
+          const matchTitle = (charm.title ? String(charm.title).toLowerCase() : '').includes(this.searchQuery);
+          const matchTags = Array.isArray(charm.tags) && charm.tags.some(t => String(t).toLowerCase().includes(this.searchQuery));
+          if (!matchTitle && !matchTags) return false;
+        }
+
+        // Theme Filter (OR condition within themes if any selected)
+        if (this.activeThemes.size > 0) {
+          const charmTheme = (charm.theme ? String(charm.theme).toLowerCase() : '');
+          const charmTags = Array.isArray(charm.tags) ? charm.tags.map(t => String(t).toLowerCase()) : [];
+          let matchTheme = false;
+          for (const theme of this.activeThemes) {
+            const tLower = String(theme).toLowerCase();
+            if (charmTheme === tLower || charmTags.includes(tLower) || charmTags.includes('theme:' + tLower)) {
+              matchTheme = true;
+              break;
+            }
+          }
+          if (!matchTheme) return false;
+        }
+
+        // Color / Finish Filter
+        if (this.activeColors.size > 0) {
+          const charmColor = (charm.color ? String(charm.color).toLowerCase() : '');
+          const charmTags = Array.isArray(charm.tags) ? charm.tags.map(t => String(t).toLowerCase()) : [];
+          let matchColor = false;
+          for (const color of this.activeColors) {
+            const cLower = String(color).toLowerCase();
+            if (charmColor === cLower || charmTags.includes(cLower) || charmTags.includes('color:' + cLower)) {
+              matchColor = true;
+              break;
+            }
+          }
+          if (!matchColor) return false;
+        }
+
+        return true;
+      });
+
+      // Update Catalog Count
+      if (this.dom.catalogCount) {
+        this.dom.catalogCount.textContent = `${filtered.length} charms`;
+      }
+
+      if (filtered.length === 0) {
+        this.dom.catalogGrid.innerHTML = `
+          <div class="bb-catalog-empty">
+            <p>${this.settings.noResultsText || 'No charms match your current filters.'}</p>
+          </div>
+        `;
+        return;
+      }
+
+      this.dom.catalogGrid.innerHTML = filtered.map(charm => {
+        let badgeHtml = '';
+        if (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links') {
+          badgeHtml = '<span class="bb-kind-badge">2 links</span>';
+        } else if (charm.type === 'drop' || charm.type === 'hanging') {
+          badgeHtml = '<span class="bb-kind-badge">Drop</span>';
+        }
+
+        const priceFormatted = this.formatMoney(charm.price);
+        const colorLabel = charm.color || 'Standard';
+
+        return `
+          <article class="bb-charm-card" 
+                   data-charm-id="${charm.id}" 
+                   draggable="true" 
+                   role="button" 
+                   tabindex="0" 
+                   aria-label="${charm.title}, ${priceFormatted}">
+            <button class="bb-card-quick-add" type="button" data-quick-add-id="${charm.id}" title="Add to bracelet" aria-label="Add ${charm.title} to bracelet">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <div class="bb-charm-img-wrap">
+              <img class="bb-charm-img" src="${charm.image}" alt="${charm.title}" crossorigin="anonymous">
+            </div>
+            ${badgeHtml}
+            <div class="bb-card-tooltip">
+              <strong>${charm.title}</strong>
+              <span>${colorLabel} · ${priceFormatted}</span>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      // Background-warm transparency cache for visible catalog items so first-time drag is immediately available
+      const warmup = () => {
+        const count = Math.min(filtered.length, 60);
+        for (let i = 0; i < count; i++) {
+          const ch = filtered[i];
+          if (ch && ch.image && (!this.transparentCache || !this.transparentCache[ch.image])) {
+            this.processImageTransparency(ch.image, () => {});
+          }
+        }
+      };
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(warmup);
+      } else {
+        setTimeout(warmup, 120);
+      }
+    }
+
+    bindDragDrop() {
+      const c = this.container;
+
+      // 1. Drag Start from Catalog Cards & Bracelet Slots
+      c.addEventListener('dragstart', (e) => {
+        const card = e.target.closest('.bb-charm-card');
+        const slot = e.target.closest('.bb-slot.is-occupied');
+
+        if (card) {
+          const charmId = card.dataset.charmId;
+          const charm = this.charms.find(ch => String(ch.id) === String(charmId));
+          if (charm) {
+            this.dragSource = 'catalog';
+            this.draggedCharmData = charm;
+            e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'catalog', charmId }));
+            e.dataTransfer.effectAllowed = 'copyMove';
+            card.classList.add('is-dragging');
+            this.createDragGhost(e, charm, card);
+          }
+        } else if (slot) {
+          const slotIndex = parseInt(slot.dataset.slotIndex, 10);
+          const placed = this.slots[slotIndex];
+          if (placed) {
+            this.dragSource = { slotIndex };
+            this.draggedCharmData = placed.charm;
+            e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'slot', slotIndex }));
+            e.dataTransfer.effectAllowed = 'move';
+            slot.classList.add('is-dragging');
+            this.createDragGhost(e, placed.charm, slot);
+          }
+        }
+      });
+
+      // 2. Drag End Cleanup
+      c.addEventListener('dragend', (e) => {
+        c.querySelectorAll('.is-dragging, .is-dragover, .is-drop-remove').forEach(el => {
+          el.classList.remove('is-dragging', 'is-dragover', 'is-drop-remove');
+        });
+        this.dragSource = null;
+        this.draggedCharmData = null;
+      });
+
+      // 3. Drag Over & Drag Enter on Slots or Charms Container
+      c.addEventListener('dragover', (e) => {
+        const slot = e.target.closest('.bb-slot');
+        const isDraggingFromSlot = this.dragSource && typeof this.dragSource.slotIndex === 'number';
+
+        if (slot) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          slot.classList.add('is-dragover');
+        } else if (isDraggingFromSlot) {
+          // Allow dropping anywhere in the charms container or workspace to remove charm
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          const catalog = e.target.closest('.bb-catalog-section, [data-catalog-grid]');
+          if (catalog) {
+            catalog.classList.add('is-drop-remove');
+          }
+        }
+      });
+
+      c.addEventListener('dragleave', (e) => {
+        const slot = e.target.closest('.bb-slot');
+        if (slot) {
+          slot.classList.remove('is-dragover');
+        }
+        const catalog = e.target.closest('.bb-catalog-section, [data-catalog-grid]');
+        if (catalog && !catalog.contains(e.relatedTarget)) {
+          catalog.classList.remove('is-drop-remove');
+        }
+      });
+
+      // 4. Drop onto Slot or Charms Container / Canvas Area
+      c.addEventListener('drop', (e) => {
+        const slot = e.target.closest('.bb-slot');
+        c.querySelectorAll('.is-dragging, .is-dragover, .is-drop-remove').forEach(el => {
+          el.classList.remove('is-dragging', 'is-dragover', 'is-drop-remove');
+        });
+
+        if (slot) {
+          e.preventDefault();
+          const targetIndex = parseInt(slot.dataset.slotIndex, 10);
+
+          if (this.dragSource === 'catalog' && this.draggedCharmData) {
+            this.placeCharmAtSlot(this.draggedCharmData, targetIndex);
+          } else if (this.dragSource && typeof this.dragSource.slotIndex === 'number') {
+            this.moveCharmSlot(this.dragSource.slotIndex, targetIndex);
+          }
+        } else if (this.dragSource && typeof this.dragSource.slotIndex === 'number') {
+          // Drop on charms container / area = Remove placed charm from bracelet!
+          e.preventDefault();
+          const fromIndex = this.dragSource.slotIndex;
+          const placedItem = this.slots[fromIndex];
+          const charmTitle = (placedItem && placedItem.charm && placedItem.charm.title) || '';
+          this.removeCharmAtSlot(fromIndex);
+          if (charmTitle) {
+            this.showToast(`Removed "${charmTitle}" from bracelet`);
+          }
+          this.dragSource = null;
+          this.draggedCharmData = null;
+        }
+      });
+
+      // Window-level drop fallback: If released anywhere outside the bracelet canvas, remove it cleanly
+      window.addEventListener('dragover', (e) => {
+        if (this.dragSource && typeof this.dragSource.slotIndex === 'number') {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }
+      });
+
+      window.addEventListener('drop', (e) => {
+        if (this.dragSource && typeof this.dragSource.slotIndex === 'number') {
+          const slot = e.target.closest('.bb-slot');
+          if (!slot) {
+            e.preventDefault();
+            const fromIndex = this.dragSource.slotIndex;
+            const placedItem = this.slots[fromIndex];
+            const charmTitle = (placedItem && placedItem.charm && placedItem.charm.title) || '';
+            this.removeCharmAtSlot(fromIndex);
+            if (charmTitle) {
+              this.showToast(`Removed "${charmTitle}" from bracelet`);
+            }
+            this.dragSource = null;
+            this.draggedCharmData = null;
+          }
+        }
+      });
+
+      // 5. Click on Catalog Card or Occupied Slot -> Open Slide-Over Drawer
+      c.addEventListener('click', (e) => {
+        // Quick Add Button on Card
+        const quickAddBtn = e.target.closest('[data-quick-add-id]');
+        if (quickAddBtn) {
+          e.stopPropagation();
+          const qId = quickAddBtn.dataset.quickAddId;
+          const charm = this.charms.find(ch => String(ch.id) === String(qId));
+          if (charm) {
+            this.addCharmToFirstAvailableSlot(charm);
+          }
+          return;
+        }
+
+        const card = e.target.closest('.bb-charm-card');
+        const occupiedSlot = e.target.closest('.bb-slot.is-occupied');
+        if (card) {
+          const charmId = card.dataset.charmId;
+          const charm = this.charms.find(ch => String(ch.id) === String(charmId));
+          if (charm) {
+            this.openDrawer(charm);
+          }
+        } else if (occupiedSlot) {
+          const slotIndex = parseInt(occupiedSlot.dataset.slotIndex, 10);
+          const placed = this.slots[slotIndex];
+          if (placed && placed.charm) {
+            this.openDrawer(placed.charm);
+          }
+        }
+
+        // Delete Button in Sidebar
+        const delBtn = e.target.closest('[data-delete-slot]');
+        if (delBtn) {
+          const slotIndex = parseInt(delBtn.dataset.deleteSlot, 10);
+          this.removeCharmAtSlot(slotIndex);
+        }
+
+        // Recommendation Item Click in Drawer
+        const recItem = e.target.closest('[data-rec-charm-id]');
+        if (recItem) {
+          const recId = recItem.dataset.recCharmId;
+          const recCharm = this.charms.find(ch => String(ch.id) === String(recId));
+          if (recCharm) {
+            this.openDrawer(recCharm);
+          }
+        }
+
+        // Add Charm from Drawer Button
+        const addDrawerBtn = e.target.closest('[data-drawer-add-btn]');
+        if (addDrawerBtn && this.activeDrawerCharm) {
+          this.addCharmToFirstAvailableSlot(this.activeDrawerCharm);
+          this.closeDrawer();
+        }
+      });
+
+      // Double-click on card -> Quick Add directly
+      c.addEventListener('dblclick', (e) => {
+        const card = e.target.closest('.bb-charm-card');
+        if (card) {
+          const charmId = card.dataset.charmId;
+          const charm = this.charms.find(ch => String(ch.id) === String(charmId));
+          if (charm) {
+            this.addCharmToFirstAvailableSlot(charm);
+          }
+        }
+      });
+    }
+
+    createDragGhost(e, charm, sourceEl) {
+      if (!e.dataTransfer || !e.dataTransfer.setDragImage) return;
+
+      const meta = this.charmMetaCache && this.charmMetaCache[charm.image];
+      const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
+      const isHanging = (charm.type === 'drop' || charm.type === 'hanging' || (meta && meta.isHanging));
+      const slotWidth = isDouble ? 128 : 64;
+      const slotHeight = 64;
+      const finishHandle = this.selectedColor.handle || 'silver';
+      const finishClass = `metal-${finishHandle}`;
+      const linkImg = this.getMetalLinkImageSrc(finishHandle);
+
+      // 1. Locate the already-rendered <img> inside the source element (card or slot)
+      const existingImg = sourceEl ? sourceEl.querySelector('.bb-charm-img, .bb-slot-charm-img') : null;
+      const imgW = (existingImg && existingImg.naturalWidth) ? existingImg.naturalWidth : slotWidth;
+      const imgH = (existingImg && existingImg.naturalHeight) ? existingImg.naturalHeight : slotHeight;
+
+      const canvasWidth = isHanging ? Math.max(slotWidth, imgW) : slotWidth;
+      const canvasHeight = isHanging ? Math.max(104, imgH) : slotHeight;
+
+      // 2. High-DPI Canvas for crisp, synchronously-rendered drag feedback
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasWidth * dpr;
+      canvas.height = canvasHeight * dpr;
+      canvas.style.width = `${canvasWidth}px`;
+      canvas.style.height = `${canvasHeight}px`;
+      canvas.style.position = 'fixed';
+      canvas.style.top = '-9999px';
+      canvas.style.left = '-9999px';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '999999';
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const linkOffsetX = Math.round((canvasWidth - slotWidth) / 2);
+
+      // Draw base metal link (top 64px)
+      const linkObj = this.preloadedLinks && this.preloadedLinks[finishHandle];
+      if (linkObj && linkObj.complete && linkObj.naturalWidth > 0) {
+        ctx.drawImage(linkObj, linkOffsetX, 0, slotWidth, slotHeight);
+      } else {
+        ctx.fillStyle = finishHandle === 'gold' ? '#dfbe75' : finishHandle === 'rose' ? '#e2a799' : finishHandle === 'black' ? '#2b2b2b' : '#e6e8e7';
+        ctx.fillRect(linkOffsetX, 0, slotWidth, slotHeight);
+        ctx.strokeStyle = finishHandle === 'gold' ? '#bfa058' : finishHandle === 'rose' ? '#c88c80' : finishHandle === 'black' ? '#1a1a1a' : '#c0c4c2';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(linkOffsetX, 0, slotWidth, slotHeight);
+      }
+
+      // Draw charm image directly from existing rendered image
+      let charmDrawn = false;
+      if (existingImg && existingImg.complete && existingImg.naturalWidth > 0) {
+        try {
+          if (isHanging) {
+            // Center the calibrated hanging charm image over the 64px link
+            const dx = Math.round((canvasWidth - imgW) / 2);
+            ctx.drawImage(existingImg, dx, 0, imgW, imgH);
+          } else {
+            // Edge-to-edge flush on block face (from 1-2 and 3-4)
+            ctx.drawImage(existingImg, linkOffsetX, 0, slotWidth, slotHeight);
+          }
+          charmDrawn = true;
+        } catch (err) {
+          charmDrawn = false;
+        }
+      }
+
+      if (charmDrawn) {
+        document.body.appendChild(canvas);
+        try {
+          e.dataTransfer.setDragImage(canvas, canvasWidth / 2, slotHeight / 2);
+          requestAnimationFrame(() => {
+            if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+          });
+          return;
+        } catch (err) {
+          if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+        }
+      }
+
+      // 3. Fallback: DOM element with cloned existing image
+      const ghost = document.createElement('div');
+      ghost.className = `bb-slot ${finishClass} is-occupied ${isDouble ? 'is-double-start' : ''} ${isHanging ? 'is-hanging' : ''}`;
+      ghost.style.position = 'fixed';
+      ghost.style.top = '-9999px';
+      ghost.style.left = '-9999px';
+      ghost.style.width = `${slotWidth}px`;
+      ghost.style.height = `${slotHeight}px`;
+      ghost.style.zIndex = '999999';
+      ghost.style.pointerEvents = 'none';
+
+      const baseImg = document.createElement('img');
+      baseImg.className = `bb-slot-base-img ${isDouble ? 'span-2' : ''}`;
+      baseImg.src = linkImg;
+      baseImg.draggable = false;
+      ghost.appendChild(baseImg);
+
+      const placedDiv = document.createElement('div');
+      placedDiv.className = `placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''}`;
+
+      if (existingImg && existingImg.complete && existingImg.naturalWidth > 0) {
+        const cloned = existingImg.cloneNode(true);
+        cloned.className = 'bb-slot-charm-img';
+        if (isHanging) {
+          cloned.style.width = '64px';
+          cloned.style.height = 'auto';
+          cloned.style.position = 'absolute';
+          cloned.style.top = '0';
+          cloned.style.left = '0';
+          cloned.style.objectFit = 'contain';
+        } else {
+          cloned.style.width = '100%';
+          cloned.style.height = '100%';
+          cloned.style.objectFit = 'fill';
+        }
+        placedDiv.appendChild(cloned);
+      } else {
+        const charmImg = document.createElement('img');
+        charmImg.className = 'bb-slot-charm-img';
+        charmImg.src = (this.transparentCache && this.transparentCache[charm.image]) || charm.image;
+        charmImg.alt = charm.title || '';
+        placedDiv.appendChild(charmImg);
+      }
+
+      ghost.appendChild(placedDiv);
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, slotWidth / 2, slotHeight / 2);
+
+      requestAnimationFrame(() => {
+        if (ghost.parentNode) {
+          ghost.parentNode.removeChild(ghost);
+        }
+      });
+    }
+
+    placeCharmAtSlot(charm, targetIndex) {
+      const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
+
+      if (isDouble) {
+        if (targetIndex >= this.slotsCount - 1) {
+          targetIndex = this.slotsCount - 2; // Shift left so it fits
+        }
+        if (this.selectedModel && this.selectedModel.type === 'watch') {
+          const leftCount = this.slotsCount / 2;
+          if (targetIndex === leftCount - 1) {
+            targetIndex = leftCount - 2; // Shift left so it does not bridge across watch
+          }
+        }
+        this.slots[targetIndex] = {
+          charm,
+          isDoubleStart: true,
+          isDoubleEnd: false,
+          isHanging: charm.type === 'drop' || charm.type === 'hanging'
+        };
+        this.slots[targetIndex + 1] = {
+          charm,
+          isDoubleStart: false,
+          isDoubleEnd: true,
+          isHanging: false
+        };
+      } else {
+        this.slots[targetIndex] = {
+          charm,
+          isDoubleStart: false,
+          isDoubleEnd: false,
+          isHanging: charm.type === 'drop' || charm.type === 'hanging'
+        };
+      }
+
+      this.renderCanvas();
+      this.updateSidebar();
+      this.updateHeaderMeta();
+      this.savePersistedState();
+    }
+
+    moveCharmSlot(fromIndex, toIndex) {
+      if (fromIndex === toIndex) return;
+
+      const itemFrom = this.slots[fromIndex];
+      const itemTo = this.slots[toIndex];
+
+      if (!itemFrom) return;
+
+      // Swap slots
+      this.slots[toIndex] = itemFrom;
+      this.slots[fromIndex] = itemTo;
+
+      this.renderCanvas();
+      this.updateSidebar();
+      this.updateHeaderMeta();
+      this.savePersistedState();
+    }
+
+    removeCharmAtSlot(slotIndex) {
+      const placed = this.slots[slotIndex];
+      if (!placed) return;
+
+      if (placed.isDoubleStart && slotIndex + 1 < this.slotsCount && this.slots[slotIndex + 1]?.isDoubleEnd) {
+        this.slots[slotIndex + 1] = null;
+      } else if (placed.isDoubleEnd && slotIndex - 1 >= 0 && this.slots[slotIndex - 1]?.isDoubleStart) {
+        this.slots[slotIndex - 1] = null;
+      }
+
+      this.slots[slotIndex] = null;
+
+      this.renderCanvas();
+      this.updateSidebar();
+      this.updateHeaderMeta();
+      this.savePersistedState();
+    }
+
+    addCharmToFirstAvailableSlot(charm) {
+      const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
+      let targetIndex = -1;
+
+      if (isDouble) {
+        for (let i = 0; i < this.slotsCount - 1; i++) {
+          if (!this.slots[i] && !this.slots[i + 1]) {
+            targetIndex = i;
+            break;
+          }
+        }
+      } else {
+        for (let i = 0; i < this.slotsCount; i++) {
+          if (!this.slots[i]) {
+            targetIndex = i;
+            break;
+          }
+        }
+      }
+
+      if (targetIndex !== -1) {
+        this.placeCharmAtSlot(charm, targetIndex);
+        this.showToast(`Added "${charm.title}" to position ${targetIndex + 1}`);
+        if (this.dom.charmsList) {
+          requestAnimationFrame(() => {
+            const row = this.dom.charmsList.querySelector(`[data-placed-slot="${targetIndex}"]`);
+            if (row) {
+              row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          });
+        }
+      } else {
+        alert(this.settings.braceletFullText || 'Your bracelet has no open links left! Drag or remove a charm to make room.');
+      }
+    }
+
+    hasPlacedCharms() {
+      return this.slots.some(s => s !== null);
+    }
+
+    getPlacedCharmsCount() {
+      let count = 0;
+      for (let i = 0; i < this.slots.length; i++) {
+        const slot = this.slots[i];
+        if (slot) {
+          if (!slot.isDoubleEnd) count++;
+        }
+      }
+      return count;
+    }
+
+    resetDesign() {
+      this.slots = new Array(this.slotsCount).fill(null);
+      this.renderCanvas();
+      this.updateSidebar();
+      this.updateHeaderMeta();
+      this.savePersistedState();
+      this.showToast('Design reset to empty');
+    }
+
+    updateSidebar() {
+      const placedCount = this.getPlacedCharmsCount();
+
+      // 1. YOUR BRACELET Summary
+      if (this.dom.summaryTitle) {
+        this.dom.summaryTitle.textContent = this.selectedModel.title;
+      }
+      if (this.dom.summaryMeta) {
+        this.dom.summaryMeta.textContent = (this.selectedVariant && this.selectedVariant.title) || this.selectedColor.title || '';
+      }
+      if (this.dom.summaryThumb) {
+        if (this.selectedVariant && this.selectedVariant.image) {
+          this.dom.summaryThumb.src = this.selectedVariant.image;
+        } else if (this.selectedModel.image) {
+          this.dom.summaryThumb.src = this.selectedModel.image;
+        } else if (this.selectedModel.type === 'watch') {
+          this.dom.summaryThumb.src = this.getWatchImageSrc(this.selectedModel);
+        } else {
+          this.dom.summaryThumb.src = this.getMetalLinkImageSrc(this.selectedColor.handle || 'silver');
+        }
+      }
+
+      // Base Price (from selected model variant)
+      const basePrice = parseInt((this.selectedVariant && this.selectedVariant.price) || this.selectedColor.price || this.selectedModel.price, 10) || 2499;
+      const effectiveBasePrice = basePrice;
+
+      if (this.dom.summaryPrice) {
+        this.dom.summaryPrice.textContent = this.formatMoney(basePrice);
+      }
+
+      if (this.dom.sidebarHeading) {
+        this.dom.sidebarHeading.textContent = this.selectedModel.type === 'watch' ? 'YOUR WATCH' : 'YOUR BRACELET';
+      }
+
+      // 3. YOUR CHARMS List
+      if (this.dom.charmsCountBadge) {
+        this.dom.charmsCountBadge.textContent = `${placedCount}/${this.slotsCount}`;
+      }
+
+      if (this.dom.charmsList) {
+        const placedItems = [];
+        for (let i = 0; i < this.slots.length; i++) {
+          const item = this.slots[i];
+          if (item && !item.isDoubleEnd) {
+            placedItems.push({
+              slotIndex: i,
+              item
+            });
+          }
+        }
+
+        if (placedItems.length === 0) {
+          this.dom.charmsList.innerHTML = `
+            <div class="bb-charms-empty">
+              <div class="bb-empty-plus-icon">+</div>
+              <div class="bb-empty-title">${this.settings.emptyStateTitle || 'Your story starts here.'}</div>
+              <div class="bb-empty-sub">${this.settings.emptyStateSub || 'Drag or tap any charm to begin.'}</div>
+            </div>
+          `;
+        } else {
+          this.dom.charmsList.innerHTML = placedItems.map(({ slotIndex, item }) => {
+            const charm = item.charm;
+            const posLabel = item.isDoubleStart
+              ? `Positions ${slotIndex + 1}-${slotIndex + 2}/${this.slotsCount}`
+              : `Position ${slotIndex + 1}/${this.slotsCount}`;
+
+            return `
+              <div class="bb-charms-row" data-placed-slot="${slotIndex}">
+                <img class="bb-row-thumb" src="${charm.image}" alt="${charm.title}">
+                <div class="bb-row-info">
+                  <div class="bb-row-title">${charm.title}</div>
+                  <div class="bb-row-meta">
+                    <span class="bb-row-status-dot">•</span> Available &nbsp;·&nbsp; ${posLabel}
+                  </div>
+                </div>
+                <div class="bb-row-price-wrap">
+                  <span class="bb-row-price">${this.formatMoney(charm.price)}</span>
+                  <button class="bb-row-delete-btn" data-delete-slot="${slotIndex}" aria-label="Remove charm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // 4. Calculate Total Price
+      let charmsTotal = 0;
+      for (let i = 0; i < this.slots.length; i++) {
+        const item = this.slots[i];
+        if (item && !item.isDoubleEnd) {
+          charmsTotal += parseInt(item.charm.price, 10) || 0;
+        }
+      }
+
+      const grandTotal = effectiveBasePrice + charmsTotal;
+      const totalFormatted = this.formatMoney(grandTotal);
+
+      if (this.dom.totalAmount) {
+        this.dom.totalAmount.textContent = totalFormatted;
+      }
+      if (this.dom.headerPrice) {
+        this.dom.headerPrice.textContent = totalFormatted;
+      }
+    }
+
+    updateHeaderMeta() {
+      const placedCount = this.getPlacedCharmsCount();
+      if (this.dom.headerCount) {
+        this.dom.headerCount.textContent = `${placedCount} charms`;
+      }
+    }
+
+    openDrawer(charm) {
+      this.activeDrawerCharm = charm;
+      if (!this.dom.drawerBody) return;
+
+      const priceFormatted = this.formatMoney(charm.price);
+      const category = charm.theme || 'Story Charm';
+      const colorFinish = charm.color || 'Standard';
+
+      // Find recommendations (other charms from same theme or random 4)
+      const recs = this.charms
+        .filter(ch => String(ch.id) !== String(charm.id))
+        .slice(0, 4);
+
+      this.dom.drawerBody.innerHTML = `
+        <div class="bb-drawer-img-wrap">
+          <img class="bb-drawer-img" src="${charm.image}" alt="${charm.title}">
+        </div>
+        <div>
+          <div class="bb-drawer-eyebrow">${category} · ${colorFinish}</div>
+          <h2 class="bb-drawer-title">${charm.title}</h2>
+          <div class="bb-drawer-price">${priceFormatted}</div>
+          <div class="bb-drawer-desc">${charm.description || 'A classic Italian link charm, made to mix, match, and make your own story.'}</div>
+        </div>
+        <button class="bb-drawer-add-btn" data-drawer-add-btn type="button">
+          ${this.settings.addCharmBtnText || 'Add charm'}
+        </button>
+        ${recs.length > 0 ? `
+          <div class="bb-drawer-recs-wrap">
+            <div class="bb-recs-title">${this.settings.recsEyebrow || 'Complete the story'}</div>
+            <div class="bb-recs-heading">${this.settings.recsTitle || 'You might also like'}</div>
+            <div class="bb-recs-grid">
+              ${recs.map(rec => `
+                <div class="bb-rec-item" data-rec-charm-id="${rec.id}">
+                  <div class="bb-rec-thumb">
+                    <img src="${rec.image}" alt="${rec.title}">
+                  </div>
+                  <span class="bb-rec-price">${this.formatMoney(rec.price)}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      `;
+
+      this.dom.drawer?.classList.add('is-open');
+      this.dom.drawerOverlay?.classList.add('is-open');
+    }
+
+    closeDrawer() {
+      this.dom.drawer?.classList.remove('is-open');
+      this.dom.drawerOverlay?.classList.remove('is-open');
+      this.activeDrawerCharm = null;
+    }
+
+    copyDesignSummary() {
+      const placedCount = this.getPlacedCharmsCount();
+      let summaryText = `Charm Atelier Custom Bracelet Build\n`;
+      summaryText += `Model: ${this.selectedModel.title} (${this.selectedColor.title})\n`;
+      summaryText += `Total Charms: ${placedCount}/${this.slotsCount}\n\n`;
+      summaryText += `Layout:\n`;
+
+      for (let i = 0; i < this.slots.length; i++) {
+        const item = this.slots[i];
+        if (item && !item.isDoubleEnd) {
+          const pos = item.isDoubleStart ? `Slots ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
+          summaryText += `- ${pos}: ${item.charm.title} (${this.formatMoney(item.charm.price)})\n`;
+        }
+      }
+
+      summaryText += `\nTotal: ${this.dom.totalAmount?.textContent || ''}`;
+
+      navigator.clipboard.writeText(summaryText).then(() => {
+        this.showToast(this.settings.copiedToastText || 'Design summary copied to clipboard!');
+      }).catch(() => {
+        this.showToast('Copied to clipboard');
+      });
+    }
+
+    showToast(message) {
+      if (!this.dom.toast) return;
+      this.dom.toast.textContent = message;
+      this.dom.toast.classList.add('is-visible');
+      setTimeout(() => {
+        this.dom.toast?.classList.remove('is-visible');
+      }, 2500);
+    }
+
+    formatMoney(cents) {
+      if (typeof cents === 'string') {
+        cents = parseFloat(cents.replace(/[^0-9.-]+/g, '')) * (cents.includes('.') ? 100 : 1);
+      }
+      const numCents = parseInt(cents, 10) || 0;
+      const amount = (numCents / 100).toFixed(2);
+      const currencyCode = this.settings.currencyCode || this.settings.currencySymbol || 'KWD';
+      const format = this.settings.moneyFormat || window.theme?.moneyFormat;
+
+      if (format && format.includes('{{')) {
+        let res = format.replace(/\{\{\s*amount\s*\}\}/g, amount)
+                        .replace(/\{\{\s*amount_no_decimals\s*\}\}/g, Math.round(numCents / 100))
+                        .replace(/\{\{\s*amount_with_comma_separator\s*\}\}/g, amount)
+                        .replace(/\{\{\s*amount_no_decimals_with_comma_separator\s*\}\}/g, Math.round(numCents / 100));
+        // Normalize any Arabic Dinar symbol to clean KWD code
+        res = res.replace(/د\.ك\.?/g, currencyCode).trim();
+        return res;
+      }
+
+      return `${amount} ${currencyCode}`;
+    }
+
+    async handleCheckout() {
+      if (this.dom.checkoutBtn) {
+        this.dom.checkoutBtn.disabled = true;
+        this.dom.checkoutBtn.textContent = 'Preparing checkout...';
+      }
+
+      const bundleId = `cb-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      const placedCount = this.getPlacedCharmsCount();
+
+      // Build items array for Shopify Ajax Cart API
+      const items = [];
+
+      // 1. Base Bracelet Item
+      const baseVariantId = (this.selectedVariant && this.selectedVariant.id) || 
+                            (this.selectedColor && this.selectedColor.variantId) || 
+                            this.selectedModel.variantId || 
+                            this.selectedModel.id;
+
+      if (baseVariantId && !String(baseVariantId).startsWith('var-')) {
+        const layoutSummary = [];
+        for (let i = 0; i < this.slots.length; i++) {
+          const item = this.slots[i];
+          if (item && !item.isDoubleEnd) {
+            const pos = item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
+            layoutSummary.push(`${pos}: ${item.charm.title}`);
+          }
+        }
+
+        items.push({
+          id: parseInt(baseVariantId, 10),
+          quantity: 1,
+          properties: {
+            '_bundle_id': bundleId,
+            '_bundle_role': 'base_bracelet',
+            'Bracelet Model': this.selectedModel.title,
+            'Color / Finish': (this.selectedVariant && this.selectedVariant.title) || this.selectedColor.title,
+            'Total Charms': `${placedCount} charms`,
+            'Design Layout': layoutSummary.join(' | ')
+          }
+        });
+      }
+
+      // 2. Individual Charm Items
+      for (let i = 0; i < this.slots.length; i++) {
+        const item = this.slots[i];
+        const charmVarId = (item && !item.isDoubleEnd && item.charm) ? (item.charm.variantId || item.charm.id) : null;
+        if (charmVarId && !String(charmVarId).startsWith('demo-')) {
+          const pos = item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
+          items.push({
+            id: parseInt(charmVarId, 10),
+            quantity: 1,
+            properties: {
+              '_bundle_id': bundleId,
+              '_bundle_role': 'charm',
+              'Bracelet Position': `${pos} of ${this.slotsCount}`,
+              'Bracelet Model': this.selectedModel.title
+            }
+          });
+        }
+      }
+
+      if (items.length === 0) {
+        // Fallback if demo/unconfigured products are being previewed without numeric IDs
+        alert('Your custom bracelet design is ready! In a live Shopify store, each placed charm and bracelet variant will be added directly to the cart.');
+        if (this.dom.checkoutBtn) {
+          this.dom.checkoutBtn.disabled = false;
+          this.dom.checkoutBtn.innerHTML = `Check out &rarr;`;
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ items })
+        });
+
+        if (res.ok) {
+          window.location.href = '/checkout';
+        } else {
+          const errData = await res.json();
+          console.warn('Shopify Cart Add response:', errData);
+          window.location.href = '/cart';
+        }
+      } catch (err) {
+        console.error('Error adding bracelet bundle to cart', err);
+        window.location.href = '/cart';
+      }
+    }
+  }
+
+  // Auto-mount on DOM Ready
+  function initBraceletBuilders() {
+    document.querySelectorAll('[data-bracelet-builder-section]').forEach(el => {
+      if (!el._braceletBuilderInstance) {
+        el._braceletBuilderInstance = new BraceletBuilder(el);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBraceletBuilders);
+  } else {
+    initBraceletBuilders();
+  }
+
+  // Shopify Theme Customizer Section Lifecycle Hooks
+  document.addEventListener('shopify:section:load', (e) => {
+    const section = e.target.querySelector('[data-bracelet-builder-section]');
+    if (section) {
+      section._braceletBuilderInstance = new BraceletBuilder(section);
+    }
+  });
+
+})();

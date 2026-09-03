@@ -1,0 +1,165 @@
+{% comment %} {%- capture current -%}{%- cycle 1, 2, 3, 4, 5, 6 -%}{%- endcapture -%}
+{%- assign collectionTitle = featured_collection.title | default: 'Collection title' -%}
+{%- liquid 
+  if featured_image != blank 
+    assign featured_image = featured_image
+  else
+    if featured_collection.image
+      assign featured_image = featured_collection.image | image_url: width: 1200
+    else
+      assign featured_image = featured_collection.products.first | image_url: width: 1200 
+    endif  
+  endif 
+  
+-%}
+<div class="collection-card-1 text-center {% if column != 'none' %} col-lg-4 col-12  {% endif %}" {{ block.shopify_attributes }}>
+  <div class="mb-2 collection-carditem">
+    <div class="collection-card__image overflow-hidden position-relative ">
+      <a class="hv-image-saturate image-content__image-wrapper {{ size_image }}" href="{{ featured_collection.url | default : '#' }}" 
+      {%- if featured_image != blank -%}
+      style="padding-top:{{ 1 | divided_by: featured_image.aspect_ratio | times: 100 }}%;"
+      {% elsif featured_collection.image != blank %} 
+      style="padding-top:{{ 1 | divided_by: featured_collection.image.aspect_ratio | times: 100 }}%;"
+      {% else %}
+      style=""
+      {%- endif -%}
+      >
+        
+        {%- if featured_image != blank -%}
+        {% assign img_url = featured_image | image_url: width: 1 | replace: 'width=1', 'width={width}' %}
+        <img class="lazyload transition" 
+        src="{{ featured_image | image_url: width: 800 }}"
+        data-src="{{ img_url }}"
+        data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 1944, 2048]"
+        data-aspectratio="{{ featured_image.aspect_ratio }}"
+        data-sizes="auto"
+        loading="lazy"
+        width="{{ featured_image.width }}"
+        height="{{ featured_image.height }}">
+        {%- elsif featured_collection.image != blank -%}
+        {% assign img_url = featured_collection.image | image_url: width: 1 | replace: 'width=1', 'width={width}' %}
+        <img class="lazyload transition" 
+        src="{{ featured_collection.image | image_url: width: 800 }}"
+        data-src="{{ img_url }}" 
+        data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 1944, 2048]"
+        data-aspectratio="{{ featured_collection.image.aspect_ratio }}"
+        data-sizes="auto"
+        loading="lazy"
+        width="{{ featured_collection.image.width }}"
+        height="{{ featured_collection.image.height }}">
+        {%- else -%}
+        {%- if size_image == 'auto' -%}
+        {%- assign class = 'placeholder-svg' -%}
+        {%- else -%}
+          {%- assign class = 'placeholder-svg position-absolute' -%}
+        {%- endif -%}
+        {{ 'collection-' | append: current | placeholder_svg_tag: class }}
+        {%- endif -%}
+      </a>
+    </div>
+  </div>
+  <div class="position-relative d-inline-block">
+    <h4 class="pt-3 m-0 {{ headinglist }}">
+      <a class="" href="{{ featured_collection.url | default : '#' }}">
+        {{ collectionTitle }}
+      </a>
+    </h4>
+    <p class="text-theme collection-count "> {{ featured_collection.products_count }}
+    </p>
+  </div>
+</div> {% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{%- capture current -%}{%- cycle 1, 2, 3, 4, 5, 6 -%}{%- endcapture -%}
+{%- assign collectionTitle = featured_collection.title | default: 'Collection title' -%}
+{%- liquid 
+  if featured_image != blank 
+    assign featured_image = featured_image
+  else
+    if featured_collection.image
+      assign featured_image = featured_collection.image | image_url: width: 1200
+    else
+      assign featured_image = featured_collection.products.first | image_url: width: 1200 
+    endif  
+  endif 
+  
+-%}
+<div class="collection-card-1 text-center {% if grid_item_width != blank %}{{ grid_item_width }}{% elsif column != 'none' %} col-lg-4 col-12  {% endif %}" {{ block.shopify_attributes }}>
+  <div class="mb-2 collection-carditem">
+    <div class="collection-card__image overflow-hidden position-relative ">
+      <a class="hv-image-saturate image-content__image-wrapper {{ size_image }}" href="{{ featured_collection.url | default : '#' }}" 
+      {%- if featured_image != blank -%}
+      style="padding-top:{{ 1 | divided_by: featured_image.aspect_ratio | times: 100 }}%;"
+      {% elsif featured_collection.image != blank %} 
+      style="padding-top:{{ 1 | divided_by: featured_collection.image.aspect_ratio | times: 100 }}%;"
+      {% else %}
+      style=""
+      {%- endif -%}
+      >
+        
+        {%- if featured_image != blank -%}
+        {% assign img_url = featured_image | image_url: width: 1 | replace: 'width=1', 'width={width}' %}
+        <img class="lazyload transition" 
+        src="{{ featured_image | image_url: width: 800 }}"
+        data-src="{{ img_url }}"
+        data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 1944, 2048]"
+        data-aspectratio="{{ featured_image.aspect_ratio }}"
+        data-sizes="auto"
+        loading="lazy"
+        width="{{ featured_image.width }}"
+        height="{{ featured_image.height }}">
+        {%- elsif featured_collection.image != blank -%}
+        {% assign img_url = featured_collection.image | image_url: width: 1 | replace: 'width=1', 'width={width}' %}
+        <img class="lazyload transition" 
+        src="{{ featured_collection.image | image_url: width: 800 }}"
+        data-src="{{ img_url }}" 
+        data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 1944, 2048]"
+        data-aspectratio="{{ featured_collection.image.aspect_ratio }}"
+        data-sizes="auto"
+        loading="lazy"
+        width="{{ featured_collection.image.width }}"
+        height="{{ featured_collection.image.height }}">
+        {%- else -%}
+        {%- if size_image == 'auto' -%}
+        {%- assign class = 'placeholder-svg' -%}
+        {%- else -%}
+          {%- assign class = 'placeholder-svg position-absolute' -%}
+        {%- endif -%}
+        {{ 'collection-' | append: current | placeholder_svg_tag: class }}
+        {%- endif -%}
+      </a>
+    </div>
+  </div>
+  <div class="position-relative d-inline-block">
+    <h4 class="pt-3 m-0 {{ headinglist }}">
+      <a class="" href="{{ featured_collection.url | default : '#' }}">
+        {{ collectionTitle }}
+      </a>
+    </h4>
+    {% unless hide_counts %}
+    <p class="text-theme collection-count "> {{ featured_collection.products_count }}
+    </p>
+    {% endunless %}
+  </div>
+</div>

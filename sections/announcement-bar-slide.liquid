@@ -1,0 +1,519 @@
+{%- if section.settings.enable -%}
+  {%- liquid
+    assign type = section.settings.announ_type
+    assign scroll_type = section.settings.scroll_type
+    assign speed = section.settings.speed
+    assign size_icon = section.settings.size_icon
+  -%}
+  <style>
+    .announcement-slide {
+      background: {%- if section.settings.gradient_bg != blank -%}
+        {{ section.settings.gradient_bg }}
+      {%- else -%}
+        {{ section.settings.background }}
+      {%- endif -%};
+      color: {{ section.settings.text }}
+      ;
+      --color-body-text-rgb: {{ section.settings.text.red }}
+      , {{ section.settings.text.green }}
+      , {{ section.settings.text.blue }}
+      ;
+
+    }
+    .site-announcement-bar {
+      --announcement-text-hover:{{ section.settings.text_hover }};
+    }
+    .announcement-swiper {
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      overflow: hidden;
+      list-style: none;
+      padding: 0;
+      z-index: 1;
+    }
+
+    .announcement-swiper .swiper-button-prev,
+    .announcement-swiper .swiper-button-next {
+      background: transparent;
+      box-shadow: none;
+    }
+    .announcement-swiper .swiper-button-prev:after,
+    .announcement-swiper .swiper-button-next:after {
+      color: {{ section.settings.text }}
+      ;
+    }
+    .announcement-swiper .rte a {
+      color: rgb(var(--color-body-text-rgb));
+      /* text-decoration-color:rgba(--color-body-text-rgb, alpha); */
+    }
+    @media(max-width:749px) {
+      .announcement-slide {
+        overflow-x: hidden;
+      }
+      .announcement-swiper {
+        overflow: inherit;
+      }
+      .announcement-swiper .swiper-button-prev {
+        left: -20px;
+      }
+      .announcement-swiper .swiper-button-next {
+        right: -20px;
+      }
+    }
+    .announcement-slide.announcement-single .swiper-button-prev,
+    .announcement-slide.announcement-single .swiper-button-next {
+      display: none;
+    }
+    .announcement-scroll {
+      grid: auto / auto-flow max-content;
+      justify-content: center;
+      display: grid;
+      overflow: hidden;
+    }
+
+    .announcement-item {
+      grid: auto / auto-flow auto 10rem;
+      place-items: center;
+      display: grid;
+      animation-duration: {{ speed }}
+      s;
+    }
+    .announcement-dot {
+      width: 4px;
+      height: 4px;
+      display: block;
+      border-radius: 50%;
+      background-color: {{ section.settings.text }}
+      ;
+    }
+    .announcement-line {
+      width: 32px;
+      height: 1px;
+      display: block;
+      background-color: {{ section.settings.text }}
+      ;
+    }
+    .announcement-item__in .image-content__image {
+      width: {{ size_icon }}px;
+    }
+    .announcement-item__in .link {
+      color: rgba(var(--color-body-text-rgb), 1);
+      text-decoration-color: rgba(var(--color-body-text-rgb), 1);
+    }
+    .site-announcement-bar__list {
+      list-style: none;
+    }
+    .site-announcement-bar__list-item {
+      line-height: 1;
+      padding: 0 18px;
+      border-right: 1px solid #e3e3e3;
+    }
+    .site-announcement-bar__list-item:last-child {
+      border: none;
+      padding: 0;
+      padding-left: 18px;
+    }
+    .site-announcement-bar a:hover {
+      color:var(--announcement-text-hover);
+    }
+    @media(max-width:749px) {
+      .site-announcement-contain {
+        display: none;
+      }
+    }
+   
+  </style>
+  <!-- announcement-bar-slide.liquid -->
+
+  {% if type == 'default' %}
+    <div class="announcement-slide announcement-bar-carousel"  
+      data-aos="{{ section.settings.animation }}"
+      data-aos-duration="100"
+      data-section-id="{{ section.id }}"
+      data-section-id="{{ section.id }}"
+      data-section-type="announcementswiper">
+      {%- for block in section.blocks -%}
+        {%- case block.type -%}
+          {%- when 'item_default' -%}
+          <div class="{{ section.settings.setwidth }} site-announcement-contain">
+            <div class="py-2 {{ section.settings.size_text }} justify-content-between d-flex align-items-center">
+              {{ block.settings.code }}
+              <div>
+                {%- for block in section.blocks -%}
+                  {%- case block.type -%}
+                    {%- when 'item_default' -%}
+                    {%- if linklists[block.settings.link_list].links.size > 0 -%}
+                      <div class="site-announcement-bar">
+
+                        {%- if linklists[block.settings.link_list].title != blank and block.settings.enable_title -%}
+                          <h4 class="h5 site-announcement-bar-title">{{ linklists[block.settings.link_list].title }}</h4>
+                        {%- endif -%}
+
+                        <ul class="site-announcement-bar__list d-flex">
+                          {%- for link in linklists[block.settings.link_list].links -%}
+                            <li class="site-announcement-bar__list-item">
+                              <a href="{{ link.url }}">{{ link.title }}</a>
+                            </li>
+                          {%- endfor -%}
+                        </ul>
+                      </div>
+                    {%- endif -%}
+                  {%- endcase -%}
+                {%- endfor -%}
+              </div>
+            </div>
+          </div>
+        {%- endcase -%}
+      {%- endfor -%}
+    </div>
+  {%- else -%}
+
+    <div
+      class="announcement-bar-carousel announcement-slide d-flex {% if section.blocks.size == 1 %} announcement-single {% endif %}"
+      data-aos="{{ section.settings.animation }}"
+      data-aos-duration="100"
+      data-section-id="{{ section.id }}"
+      data-section-type="announcementswiper">
+      {%- if type == 'carousel' -%}
+        <div class="announcement-wrapper container text-center ">
+          <div class="row justify-content-center">
+            <div class="col-lg-7 col-12">
+              <div class="swiper announcement-swiper announswipercol-{{ section.id }}">
+                <div class="swiper-wrapper">
+                  {%- for block in section.blocks -%}
+                    {%- case block.type -%}
+                      {%- when 'Item' -%}
+                      <div class="swiper-slide rte m-0">
+                        <div class="py-2 {{ section.settings.size_text }}">
+                          {{ block.settings.code }}
+                          {% if block.settings.button_text != blank %}
+                            <a class="d-inline-block px-2" href="{{ block.settings.button_link }}">{{ block.settings.button_text }}</a>
+                          {% endif %}
+                        </div>
+                      </div>
+                    {%- endcase -%}
+                  {%- endfor -%}
+                </div>
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-button-next"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      {%- else -%}
+        <div class="announcement-wrapper announcement-scroll py-2">
+          {%- for i in (1..10) -%}
+            <span class="announcement-item  {% if scroll_type == 'from-left' %} anim-loop-left {% else %} anim-loop-right {% endif %}">
+              {%- for block in section.blocks -%}
+                <span class="announcement-item__in {{ section.settings.size_text }} d-flex align-items-center">
+                  {% if block.settings.image != blank %}
+                    <img
+                      class="image-content__image mr-2"
+                      src="{{ block.settings.image | image_url: width: 240 }}"
+                      alt="{{ block.settings.image.alt | escape }}"
+                      loading="lazy"
+                      width="{{ block.settings.image.width }}"
+                      height="{{ block.settings.image.height }}">
+                  {% endif %}
+                  {{ block.settings.code }}
+                  {% if block.settings.button_text != blank %}
+                    <a class="d-inline-block px-2 link" href="{{ block.settings.button_link }}">
+                      {{ block.settings.button_text }}</a>
+                  {% endif %}
+                </span>
+                <span class="announcement-{{ section.settings.scroll_dot }}"></span>
+              {%- endfor -%}
+            </span>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+
+    </div>
+
+  {%- endif -%}
+{%- endif -%}
+
+{% schema %}
+  {
+    "name": "Announcement Bar",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "enable",
+        "label": "Enable",
+        "default": true
+      },
+      {
+      "type": "select",
+      "id": "setwidth",
+      "label": "Full Width",
+      "default": "container",
+      "options": [
+        {
+          "value": "container",
+          "label": "Box"
+        },
+        {
+          "value": "container-fluid",
+          "label": "Container Fluid"
+        },
+        {
+          "value": "full",
+          "label": "Full"
+        }
+      ]
+    },
+      {
+        "type": "select",
+        "id": "animation",
+        "options": [
+          {
+            "value": "",
+            "label": "None"
+          },
+          {
+            "value": "fade",
+            "label": "Fade"
+          },
+          {
+            "value": "fade-up",
+            "label": "Fade Up"
+          },
+          {
+            "value": "fade-down",
+            "label": "Fade Down"
+          }, {
+            "value": "fade-left",
+            "label": "Fade Left"
+          }, {
+            "value": "fade-right",
+            "label": "Fade Right"
+          }, {
+            "value": "fade-up-right",
+            "label": "Fade Up Right"
+          }, {
+            "value": "fade-up-left",
+            "label": "Fade Up Left"
+          }, {
+            "value": "fade-down-right",
+            "label": "Fade Down Right"
+          }, {
+            "value": "fade-down-left",
+            "label": "Fade Down Left"
+          }, {
+            "value": "flip-up",
+            "label": "Flip Up"
+          }, {
+            "value": "flip-down",
+            "label": "Flip Down"
+          }, {
+            "value": "flip-left",
+            "label": "Flip Left"
+          }, {
+            "value": "flip-right",
+            "label": "Flip Right"
+          }, {
+            "value": "slide-up",
+            "label": "Slide Up"
+          }, {
+            "value": "slide-down",
+            "label": "Slide Down"
+          }, {
+            "value": "slide-left",
+            "label": "Slide Left"
+          }, {
+            "value": "slide-right",
+            "label": "Slide Right"
+          }, {
+            "value": "zoom-in",
+            "label": "Zoom In"
+          }, {
+            "value": "zoom-in-up",
+            "label": "Zoom In Up"
+          }, {
+            "value": "zoom-in-down",
+            "label": "Zoom In Down"
+          }, {
+            "value": "zoom-in-left",
+            "label": "Zoom In Left"
+          }, {
+            "value": "zoom-in-right",
+            "label": "Zoom In Right"
+          }, {
+            "value": "zoom-out",
+            "label": "Zoom Out"
+          }, {
+            "value": "zoom-out-up",
+            "label": "Zoom Out Up"
+          }, {
+            "value": "zoom-out-down",
+            "label": "Zoom Out Down"
+          }, {
+            "value": "zoom-out-left",
+            "label": "Zoom Out Feft"
+          }, {
+            "value": "zoom-out-right",
+            "label": "Zoom Out Right"
+          }
+        ],
+        "label": "Select Animation"
+      },
+      {
+        "type": "select",
+        "id": "size_text",
+        "options": [
+          {
+            "value": "small",
+            "label": "Small"
+          }, {
+            "value": "normal",
+            "label": "Normal"
+          }
+        ],
+        "label": "Text Size"
+      },
+      {
+        "type": "select",
+        "id": "announ_type",
+        "options": [
+          {
+            "value": "carousel",
+            "label": "Carousel"
+          }, {
+            "value": "scroll",
+            "label": "Auto - Scrolling"
+          }, {
+            "value": "default",
+            "label": "Default"
+          }
+        ],
+        "label": "Type"
+      }, {
+        "type": "header",
+        "content": "Auto - Scrolling",
+        "info": "This config only work with Auto - Scrolling"
+      }, {
+        "type": "select",
+        "id": "scroll_dot",
+        "default": "dot",
+        "options": [
+          {
+            "value": "dot",
+            "label": "Dot"
+          }, {
+            "value": "line",
+            "label": "Line"
+          }, {
+            "value": "none",
+            "label": "None"
+          }
+        ],
+        "label": "Dot,Line"
+      }, {
+        "type": "range",
+        "id": "size_icon",
+        "label": "Icon Size",
+        "unit": "px",
+        "min": 4,
+        "max": 120,
+        "step": 4,
+        "default": 24
+      }, {
+        "type": "range",
+        "id": "speed",
+        "label": "Scrolling Speed",
+        "unit": "s",
+        "min": 10,
+        "max": 30,
+        "step": 1,
+        "default": 10,
+        "info": "Auto - Scrolling"
+      }, {
+        "type": "select",
+        "id": "scroll_type",
+        "default": "from-right",
+        "options": [
+          {
+            "value": "from-left",
+            "label": "From Left"
+          }, {
+            "value": "from-right",
+            "label": "From Right"
+          }
+        ],
+        "label": "Scroll Animation",
+        "info": "Auto - Scrolling"
+      }, {
+        "type": "header",
+        "content": "Color",
+        "info": "Background, Color"
+      }, {
+        "type": "color",
+        "id": "background",
+        "label": "Background",
+        "default": "#000000"
+      }, {
+        "id": "gradient_bg",
+        "type": "color_background",
+        "label": "Background Gradient"
+      }, {
+        "type": "color",
+        "id": "text",
+        "label": "Text color",
+        "default": "#ffffff"
+      },
+      {
+      "type": "color",
+      "id": "text_hover",
+      "label": "Text Hover",
+      "default": "#FF6F2E"
+      }
+    ],
+    "blocks": [
+      {
+        "type": "Item",
+        "name": "Item",
+        "settings": [
+          {
+            "type": "image_picker",
+            "id": "image",
+            "label": "Icon"
+          }, {
+            "type": "textarea",
+            "id": "code",
+            "label": "HTML and Text",
+            "default": "Use HTML to format your text so it can be easily read."
+          }, {
+            "type": "text",
+            "id": "button_text",
+            "label": "Button",
+            "default": "Shop Now"
+          }, {
+            "type": "url",
+            "id": "button_link",
+            "label": "Link to"
+          }
+        ]
+      }, {
+        "type": "item_default",
+        "name": "Item (Default)",
+        "settings": [
+          {
+            "type": "textarea",
+            "id": "code",
+            "label": "HTML and Text",
+            "default": "FREE express international delivery + EASY returns"
+          }, {
+            "id": "link_list",
+            "type": "link_list",
+            "label": "Menu",
+            "default": "footer",
+            "info": "This menu won't show dropdown items"
+          }
+        ]
+      }
+    ]
+  }
+{% endschema %}

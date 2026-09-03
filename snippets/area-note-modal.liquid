@@ -1,0 +1,592 @@
+{% comment %} {%- liquid
+  assign enable_modal = settings.enable_area_note_modal
+  if enable_modal == nil
+    assign enable_modal = true
+  endif
+
+  assign modal_title = settings.area_note_title
+  if modal_title == blank
+    assign modal_title = 'Delivery Information'
+  endif
+
+  assign text_before = settings.area_note_text_before
+  if text_before == blank
+    assign text_before = 'Note: Please enter your area name in the City field at checkout exactly as listed'
+  endif
+
+  assign link_text = settings.area_note_link_text
+  if link_text == blank
+    assign link_text = 'here'
+  endif
+
+  assign link_url = settings.area_note_link_url
+  if link_url == blank
+    assign link_url = '/pages/kuwait-delivery-area-guide'
+  endif
+
+  assign btn_text = settings.area_note_btn_text
+  if btn_text == blank
+    assign btn_text = 'Ok, add to cart'
+  endif
+-%}
+
+{%- if enable_modal -%}
+<!-- Area Name Checkout Note Modal -->
+<div id="areaNoteModal" class="area-note-modal" role="dialog" aria-modal="true" aria-labelledby="areaNoteModalTitle" aria-hidden="true">
+  <div class="area-note-modal__backdrop" data-area-note-close></div>
+  <div class="area-note-modal__container">
+    <div class="area-note-modal__dialog">
+      <!-- Close Button (Top-Right Cross) -->
+      <button type="button" class="area-note-modal__close" data-area-note-close aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 1L1 13M1 1L13 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <!-- Icon Header -->
+      <div class="area-note-modal__icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <h3 id="areaNoteModalTitle" class="area-note-modal__title">{{ modal_title }}</h3>
+
+      <!-- Message Text -->
+      <p class="area-note-modal__message">
+        {{ text_before }} <a href="{{ link_url }}" target="_blank" rel="noopener noreferrer" class="area-note-modal__link">{{ link_text }}</a>
+      </p>
+
+      <!-- Confirmation Button -->
+      <div class="area-note-modal__actions">
+        <button type="button" class="btn btn-theme area-note-modal__btn-confirm" id="areaNoteModalConfirm">
+          <span class="area-note-modal__btn-text">{{ btn_text }}</span>
+          <span class="area-note-modal__spinner spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none;"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var modal = document.getElementById('areaNoteModal');
+  if (!modal) return;
+
+  var confirmBtn = document.getElementById('areaNoteModalConfirm');
+  var btnText = confirmBtn ? confirmBtn.querySelector('.area-note-modal__btn-text') : null;
+  var spinner = confirmBtn ? confirmBtn.querySelector('.area-note-modal__spinner') : null;
+  var pendingItem = null;
+  var sourceButton = null;
+
+  function openModal(itemData, triggerBtn) {
+    pendingItem = itemData;
+    sourceButton = triggerBtn || null;
+    modal.classList.add('is-active');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('area-note-modal-open');
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+      confirmBtn.focus();
+    }
+  }
+
+  function closeModal() {
+    modal.classList.remove('is-active');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('area-note-modal-open');
+    pendingItem = null;
+    sourceButton = null;
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+    }
+  }
+
+  // Close triggers (X button, backdrop, Escape key)
+  modal.querySelectorAll('[data-area-note-close]').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.preventDefault();
+      closeModal();
+    });
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modal.classList.contains('is-active')) {
+      closeModal();
+    }
+  });
+
+  // Handle "Ok, add to cart" confirmation
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!pendingItem || !pendingItem.id) {
+        closeModal();
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      if (btnText) btnText.style.display = 'none';
+      if (spinner) spinner.style.display = 'inline-block';
+
+      if (window.jQuery) {
+        jQuery.ajax({
+          type: 'POST',
+          url: '/cart/add.js',
+          data: {
+            id: pendingItem.id,
+            quantity: pendingItem.quantity || 1
+          },
+          dataType: 'json',
+          success: function(item) {
+            closeModal();
+
+            // Hide quickview modal if open
+            if (window.jQuery('#jsQuickview').length && (window.jQuery('#jsQuickview').hasClass('show') || window.jQuery('#jsQuickview').is(':visible'))) {
+              window.jQuery('#jsQuickview').modal('hide');
+            }
+
+            // Update mini cart / cart drawer
+            if (window.theme && window.theme.miniCart) {
+              window.theme.miniCart.generateCart();
+              window.theme.miniCart.updateElements();
+            }
+
+            // Show popup alert if not drawer mode
+            var styleCart = window.jQuery('.js-mini-cart').attr('data-cartmini');
+            if (styleCart !== 'true' && window.theme && window.theme.alert) {
+              var htmlVariant = item.variant_title !== null ? '<i>(' + item.variant_title + ')</i>' : '';
+              var htmlAlert = '<div class="media mt-2 alert--cart"><a class="mr-3" href="/cart"><img class="lazyload" data-src="' + item.image + '"></a><div class="media-body align-self-center"><p class="m-0 font-weight-bold">' + item.product_title + ' x ' + item.quantity + '</p>' + htmlVariant + '<div><div>';
+              window.theme.alert.new((window.theme.strings && window.theme.strings.addToCartSuccess) ? window.theme.strings.addToCartSuccess : 'Added to cart', htmlAlert, 3000, 'notice');
+            }
+
+            if (window.theme && window.theme.cartpage) {
+              location.reload();
+              window.jQuery('html, body').animate({ scrollTop: 0 }, 'slow');
+            }
+          },
+          error: function(xhr) {
+            var data = xhr.responseJSON;
+            var msg = (data && data.description) ? data.description : 'Could not add item to cart.';
+            if (window.theme && window.theme.alert) {
+              window.theme.alert.new('', msg, 3000, 'warning');
+            } else {
+              alert(msg);
+            }
+            closeModal();
+          }
+        });
+      } else {
+        // Fallback fetch API
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            id: pendingItem.id,
+            quantity: pendingItem.quantity || 1
+          })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(item) {
+          closeModal();
+          if (window.location.pathname.indexOf('/cart') !== -1) {
+            window.location.reload();
+          } else {
+            window.location.href = '/cart';
+          }
+        })
+        .catch(function(err) {
+          alert('Could not add item to cart.');
+          closeModal();
+        });
+      }
+    });
+  }
+
+  // Intercept Add to Cart clicks using capturing listener
+  document.addEventListener('click', function(e) {
+    // 1. Check for Product Card / Buy-With / Grid Add to Cart Button (.js-grid-cart)
+    var gridCartBtn = e.target.closest('.js-grid-cart');
+    if (gridCartBtn && !gridCartBtn.classList.contains('disabled')) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      var variantId = gridCartBtn.getAttribute('data-id') || (window.jQuery ? window.jQuery(gridCartBtn).data('id') : null);
+      if (variantId) {
+        openModal({ id: variantId, quantity: 1 }, gridCartBtn);
+      }
+      return false;
+    }
+
+    // 2. Check for Quickview / Quick Shop Add to Cart Button (.qv-add-button)
+    var qvAddBtn = e.target.closest('.qv-add-button, #jsQuickview .qv-add-button');
+    if (qvAddBtn && !qvAddBtn.disabled) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      var $qv = window.jQuery ? window.jQuery('#jsQuickview') : null;
+      var productHandle = $qv ? $qv.data('handle') : '';
+      var qty = $qv ? ($qv.find('input.qv-quantity').val() || 1) : 1;
+
+      if (productHandle && window.jQuery) {
+        var selectedOptions = '';
+        window.jQuery('#jsQuickview select.option, #jsQuickview select[class*="option-"]').each(function() {
+          var val = window.jQuery(this).val();
+          if (val) {
+            selectedOptions = selectedOptions === '' ? val : selectedOptions + ' / ' + val;
+          }
+        });
+
+        window.jQuery.getJSON('/products/' + productHandle + '.js', function(product) {
+          var varId = '';
+          if (product.variants.length === 1) {
+            varId = product.variants[0].id;
+          } else {
+            window.jQuery(product.variants).each(function(i, v) {
+              if (v.title == selectedOptions) {
+                varId = v.id;
+              }
+            });
+            if (!varId && product.variants.length > 0) {
+              varId = product.variants[0].id;
+            }
+          }
+
+          if (varId) {
+            openModal({ id: varId, quantity: parseInt(qty, 10) || 1 }, qvAddBtn);
+          }
+        });
+      }
+      return false;
+    }
+  }, true);
+
+})();
+</script>
+{%- endif -%} {% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{%- liquid
+  assign enable_modal = settings.enable_area_note_modal
+  if enable_modal == nil
+    assign enable_modal = true
+  endif
+
+  assign modal_title = settings.area_note_title
+  if modal_title == blank
+    assign modal_title = 'Delivery Information'
+  endif
+
+  assign text_before = settings.area_note_text_before
+  if text_before == blank
+    assign text_before = 'Note: Please enter your area name in the City field at checkout exactly as listed'
+  endif
+
+  assign link_text = settings.area_note_link_text
+  if link_text == blank
+    assign link_text = 'here'
+  endif
+
+  assign link_url = settings.area_note_link_url
+  if link_url == blank
+    assign link_url = '/pages/kuwait-delivery-area-guide'
+  endif
+
+  assign btn_text = settings.area_note_btn_text
+  if btn_text == blank
+    assign btn_text = 'Ok, add to cart'
+  endif
+-%}
+
+{%- if enable_modal -%}
+<!-- Area Name Checkout Note Modal -->
+<div id="areaNoteModal" class="area-note-modal" role="dialog" aria-modal="true" aria-labelledby="areaNoteModalTitle" aria-hidden="true">
+  <div class="area-note-modal__backdrop" data-area-note-close></div>
+  <div class="area-note-modal__container">
+    <div class="area-note-modal__dialog">
+      <!-- Close Button (Top-Right Cross) -->
+      <button type="button" class="area-note-modal__close" data-area-note-close aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 1L1 13M1 1L13 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <!-- Icon Header -->
+      <div class="area-note-modal__icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <h3 id="areaNoteModalTitle" class="area-note-modal__title">{{ modal_title }}</h3>
+
+      <!-- Message Text -->
+      <p class="area-note-modal__message">
+        {{ text_before }} <a href="{{ link_url }}" target="_blank" rel="noopener noreferrer" class="area-note-modal__link">{{ link_text }}</a>
+      </p>
+
+      <!-- Confirmation Button -->
+      <div class="area-note-modal__actions">
+        <button type="button" class="btn btn-theme area-note-modal__btn-confirm" id="areaNoteModalConfirm">
+          <span class="area-note-modal__btn-text">{{ btn_text }}</span>
+          <span class="area-note-modal__spinner spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none;"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var modal = document.getElementById('areaNoteModal');
+  if (!modal) return;
+
+  var confirmBtn = document.getElementById('areaNoteModalConfirm');
+  var btnText = confirmBtn ? confirmBtn.querySelector('.area-note-modal__btn-text') : null;
+  var spinner = confirmBtn ? confirmBtn.querySelector('.area-note-modal__spinner') : null;
+  var pendingItem = null;
+  var sourceButton = null;
+
+  function openModal(itemData, triggerBtn) {
+    pendingItem = itemData;
+    sourceButton = triggerBtn || null;
+    modal.classList.add('is-active');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('area-note-modal-open');
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+      confirmBtn.focus();
+    }
+  }
+
+  function closeModal() {
+    modal.classList.remove('is-active');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('area-note-modal-open');
+    pendingItem = null;
+    sourceButton = null;
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      if (btnText) btnText.style.display = 'inline';
+      if (spinner) spinner.style.display = 'none';
+    }
+  }
+
+  // Close triggers (X button, backdrop, Escape key)
+  modal.querySelectorAll('[data-area-note-close]').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.preventDefault();
+      closeModal();
+    });
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modal.classList.contains('is-active')) {
+      closeModal();
+    }
+  });
+
+  // Handle "Ok, add to cart" confirmation
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!pendingItem || !pendingItem.id) {
+        closeModal();
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      if (btnText) btnText.style.display = 'none';
+      if (spinner) spinner.style.display = 'inline-block';
+
+      if (window.jQuery) {
+        jQuery.ajax({
+          type: 'POST',
+          url: '/cart/add.js',
+          data: {
+            id: pendingItem.id,
+            quantity: pendingItem.quantity || 1
+          },
+          dataType: 'json',
+          success: function(item) {
+            closeModal();
+
+            // Hide quickview modal if open
+            if (window.jQuery('#jsQuickview').length && (window.jQuery('#jsQuickview').hasClass('show') || window.jQuery('#jsQuickview').is(':visible'))) {
+              window.jQuery('#jsQuickview').modal('hide');
+            }
+
+            // Update mini cart / cart drawer
+            if (window.theme && window.theme.miniCart) {
+              window.theme.miniCart.generateCart();
+              window.theme.miniCart.updateElements();
+            }
+
+            // Show popup alert if not drawer mode
+            var styleCart = window.jQuery('.js-mini-cart').attr('data-cartmini');
+            if (styleCart !== 'true' && window.theme && window.theme.alert) {
+              var htmlVariant = item.variant_title !== null ? '<i>(' + item.variant_title + ')</i>' : '';
+              var htmlAlert = '<div class="media mt-2 alert--cart"><a class="mr-3" href="/cart"><img class="lazyload" data-src="' + item.image + '"></a><div class="media-body align-self-center"><p class="m-0 font-weight-bold">' + item.product_title + ' x ' + item.quantity + '</p>' + htmlVariant + '<div><div>';
+              window.theme.alert.new((window.theme.strings && window.theme.strings.addToCartSuccess) ? window.theme.strings.addToCartSuccess : 'Added to cart', htmlAlert, 3000, 'notice');
+            }
+
+            if (window.theme && window.theme.cartpage) {
+              location.reload();
+              window.jQuery('html, body').animate({ scrollTop: 0 }, 'slow');
+            }
+          },
+          error: function(xhr) {
+            var data = xhr.responseJSON;
+            var msg = (data && data.description) ? data.description : 'Could not add item to cart.';
+            if (window.theme && window.theme.alert) {
+              window.theme.alert.new('', msg, 3000, 'warning');
+            } else {
+              alert(msg);
+            }
+            closeModal();
+          }
+        });
+      } else {
+        // Fallback fetch API
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            id: pendingItem.id,
+            quantity: pendingItem.quantity || 1
+          })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(item) {
+          closeModal();
+          if (window.location.pathname.indexOf('/cart') !== -1) {
+            window.location.reload();
+          } else {
+            window.location.href = '/cart';
+          }
+        })
+        .catch(function(err) {
+          alert('Could not add item to cart.');
+          closeModal();
+        });
+      }
+    });
+  }
+
+  // Intercept Add to Cart clicks using capturing listener
+  document.addEventListener('click', function(e) {
+    // 1. Check for Product Card / Buy-With / Grid Add to Cart Button (.js-grid-cart)
+    var gridCartBtn = e.target.closest('.js-grid-cart');
+    if (gridCartBtn && !gridCartBtn.classList.contains('disabled')) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      var variantId = gridCartBtn.getAttribute('data-id') || (window.jQuery ? window.jQuery(gridCartBtn).data('id') : null);
+      if (variantId) {
+        openModal({ id: variantId, quantity: 1 }, gridCartBtn);
+      }
+      return false;
+    }
+
+    // 2. Check for Quickview / Quick Shop Add to Cart Button (.qv-add-button)
+    var qvAddBtn = e.target.closest('.qv-add-button, #jsQuickview .qv-add-button');
+    if (qvAddBtn && !qvAddBtn.disabled) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      var $qv = window.jQuery ? window.jQuery('#jsQuickview') : null;
+      var productHandle = $qv ? $qv.data('handle') : '';
+      var qty = $qv ? ($qv.find('input.qv-quantity').val() || 1) : 1;
+
+      if (productHandle && window.jQuery) {
+        var selectedOptions = '';
+        window.jQuery('#jsQuickview select.option, #jsQuickview select[class*="option-"]').each(function() {
+          var val = window.jQuery(this).val();
+          if (val) {
+            selectedOptions = selectedOptions === '' ? val : selectedOptions + ' / ' + val;
+          }
+        });
+
+        window.jQuery.getJSON('/products/' + productHandle + '.js', function(product) {
+          var varId = '';
+          if (product.variants.length === 1) {
+            varId = product.variants[0].id;
+          } else {
+            window.jQuery(product.variants).each(function(i, v) {
+              if (v.title == selectedOptions) {
+                varId = v.id;
+              }
+            });
+            if (!varId && product.variants.length > 0) {
+              varId = product.variants[0].id;
+            }
+          }
+
+          if (varId) {
+            // First dismiss the initial Quickview modal window
+            if ($qv && $qv.length) {
+              $qv.modal('hide');
+              $qv.removeClass('show loadqvpopup');
+              window.jQuery('.modal-backdrop').remove();
+              window.jQuery('body').removeClass('modal-open').css('padding-right', '');
+            }
+
+            // Open the Checkout Area Name Note Modal
+            openModal({ id: varId, quantity: parseInt(qty, 10) || 1 }, qvAddBtn);
+          }
+        });
+      }
+      return false;
+    }
+  }, true);
+
+})();
+</script>
+{%- endif -%}

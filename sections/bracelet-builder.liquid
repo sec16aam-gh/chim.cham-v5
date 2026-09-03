@@ -1,0 +1,1277 @@
+{% comment %}
+  ------------------------------------------------------------------------------
+  CUSTOM BRACELET & WATCH BUILDER SECTION
+  ------------------------------------------------------------------------------
+{% endcomment %}
+
+{{ 'bracelet-builder.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign section_id = section.id
+  assign charms_collection = section.settings.charms_collection
+  assign charm_products = section.settings.charm_product_list
+  assign meta_products = page.metafields.custom.charm_products.value | default: product.metafields.custom.charm_products.value
+
+  assign currency_code = cart.currency.iso_code | default: 'KWD'
+  assign currency_symbol = currency_code
+  assign brand_mark = section.settings.brand_mark | default: 'CA'
+  assign brand_name = section.settings.brand_name | default: 'Charm Atelier'
+-%}
+
+<div class="customstyle{{ section_id }} bracelet-builder-section-wrap" id="bracelet-builder-section-{{ section_id }}">
+  <style>
+    #bracelet-builder-section-{{ section_id }} {
+      --bb-link-silver: url('{{ 'bracelet-silver.png' | asset_url }}');
+      --bb-link-gold: url('{{ 'bracelet-gold.png' | asset_url }}');
+      --bb-link-rose: url('{{ 'bracelet-rose-gold.png' | asset_url }}');
+      --bb-link-black: url('{{ 'bracelet-black.png' | asset_url }}');
+      --bb-swatch-silver: {{ section.settings.swatch_silver | default: '#d9dcdb' }};
+      --bb-swatch-gold: {{ section.settings.swatch_gold | default: '#d4a748' }};
+      --bb-swatch-rose: {{ section.settings.swatch_rose | default: '#e5a494' }};
+      --bb-swatch-black: {{ section.settings.swatch_black | default: '#222224' }};
+    }
+  </style>
+  {%- render 'style-section' -%}
+  <div class="{{ section.settings.setwidth | default: 'container' }}">
+    <div class="bracelet-builder-app" 
+         id="bracelet-builder-{{ section_id }}" 
+         data-bracelet-builder-section 
+         data-section-id="{{ section_id }}">
+
+  {%- comment -%} ================= MAIN LAYOUT ================= {%- endcomment -%}
+  <div class="bb-layout">
+    
+    {%- comment -%} ----- LEFT / CENTER COLUMN ----- {%- endcomment -%}
+    <main class="bb-main-content">
+      
+      {%- comment -%} WORKBENCH & CANVAS {%- endcomment -%}
+      <section class="bb-workbench" aria-label="Bracelet canvas">
+        <div class="bb-workbench-toolbar">
+          
+          <div class="bb-toolbar-group">
+            
+            {%- comment -%} 1. Bracelet Model Dropdown {%- endcomment -%}
+            <div class="bb-select-wrap">
+              <button class="bb-pill-btn" type="button" data-model-btn aria-expanded="false">
+                <span class="bb-swatch swatch-silver"></span>
+                <span>Original Bracelet</span>
+                <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </button>
+
+              <div class="bb-dropdown-menu" data-model-menu>
+                {%- assign model_blocks = section.blocks | where: 'type', 'bracelet_model' -%}
+                {%- if model_blocks.size > 0 -%}
+                  {%- for block in model_blocks -%}
+                    {%- liquid
+                      assign linked_prod = block.settings.linked_product
+                      assign model_title = block.settings.title | default: linked_prod.title | default: 'Original Bracelet'
+                      assign model_price = linked_prod.price | default: block.settings.price | default: 2499
+                      assign slots_num = block.settings.slots_count | default: 16
+                      assign block_thumb = block.settings.model_image
+                      if block_thumb == blank
+                        if linked_prod.featured_image != blank
+                          assign block_thumb_url = linked_prod.featured_image | image_url: width: 64
+                        else
+                          case block.settings.model_id
+                            when 'como-watch-silver-blue'
+                              assign block_thumb_url = 'watch-001.png' | asset_url
+                            when 'como-watch-silver-pink'
+                              assign block_thumb_url = 'watch-002.png' | asset_url
+                            when 'como-watch-silver-white'
+                              assign block_thumb_url = 'watch-003.png' | asset_url
+                            when 'como-watch-silver-black'
+                              assign block_thumb_url = 'watch-004.png' | asset_url
+                            when 'como-watch-gold-white'
+                              assign block_thumb_url = 'watch-005.png' | asset_url
+                            when 'como-watch-gold-emerald'
+                              assign block_thumb_url = 'watch-006.png' | asset_url
+                            when 'original-bracelet'
+                              assign block_thumb_url = 'bracelet-silver.png' | asset_url
+                            else
+                              assign block_thumb_url = ''
+                          endcase
+                        endif
+                      else
+                        assign block_thumb_url = block_thumb | image_url: width: 64
+                      endif
+                    -%}
+                    <button type="button" 
+                            class="bb-dropdown-item {% if forloop.first %}is-active{% endif %}" 
+                            data-model-id="{{ block.settings.model_id | default: block.id }}">
+                      <div class="bb-item-left">
+                        {%- if block_thumb_url != blank -%}
+                          <span class="bb-pill-icon" style="background-image: url('{{ block_thumb_url }}');"></span>
+                        {%- else -%}
+                          <span class="bb-swatch swatch-{{ block.settings.default_color | default: 'silver' }}"></span>
+                        {%- endif -%}
+                        <div class="bb-item-meta">
+                          <span class="bb-item-title">{{ model_title }}</span>
+                          <span class="bb-item-sub">{{ slots_num }} charm positions</span>
+                        </div>
+                      </div>
+                      <span class="bb-item-price">{{ model_price | money }}</span>
+                    </button>
+                  {%- endfor -%}
+                {%- else -%}
+                  {%- comment -%} Default Models Presets {%- endcomment -%}
+                  <button type="button" class="bb-dropdown-item is-active" data-model-id="original-bracelet">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'bracelet-silver.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Original Bracelet</span>
+                        <span class="bb-item-sub">16 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">24.99 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-silver-blue">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-001.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Como Watch Silver – Blue Dial Edition</span>
+                        <span class="bb-item-sub">13 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">120.00 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-silver-pink">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-002.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Como Watch Silver – Pink Dial Edition</span>
+                        <span class="bb-item-sub">13 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">120.00 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-silver-white">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-003.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Como Watch Silver – White Dial Edition</span>
+                        <span class="bb-item-sub">13 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">120.00 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-silver-black">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-004.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Como Watch Silver – Black Dial Edition</span>
+                        <span class="bb-item-sub">13 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">120.00 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-gold-white">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-005.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Como Watch Gold – White Dial Edition</span>
+                        <span class="bb-item-sub">13 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">129.00 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-gold-emerald">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-006.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Como Watch Gold – Emerald Dial Edition</span>
+                        <span class="bb-item-sub">13 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">129.00 {{ currency_code }}</span>
+                  </button>
+                {%- endif -%}
+              </div>
+            </div>
+
+            {%- comment -%} 2. Color Dropdown {%- endcomment -%}
+            <div class="bb-select-wrap" data-color-select-wrap>
+              <button class="bb-pill-btn" type="button" data-color-btn aria-expanded="false">
+                <span class="bb-swatch swatch-silver"></span>
+                <span>Color: Silver</span>
+                <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </button>
+
+              <div class="bb-dropdown-menu" data-color-menu>
+                {%- comment -%} Dynamically populated by JS from selected base product variants {%- endcomment -%}
+                <button type="button" class="bb-dropdown-item is-active" data-color-id="silver">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-silver"></span>
+                    <span class="bb-item-title">Silver</span>
+                  </div>
+                  <span class="bb-item-price">24.99 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="gold">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-gold"></span>
+                    <span class="bb-item-title">Gold</span>
+                  </div>
+                  <span class="bb-item-price">29.99 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="rose-gold">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-rose"></span>
+                    <span class="bb-item-title">Rose Gold</span>
+                  </div>
+                  <span class="bb-item-price">29.99 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="black">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-black"></span>
+                    <span class="bb-item-title">Black</span>
+                  </div>
+                  <span class="bb-item-price">26.99 {{ currency_code }}</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {%- comment -%} Toolbar Actions: Search, Reset, Help {%- endcomment -%}
+          <div class="bb-workbench-actions">
+            
+            <div class="bb-search-control" data-search-control>
+              <button class="bb-search-toggle-btn" type="button" data-search-toggle-btn aria-label="Search charms" title="Search charms">
+                <svg class="bb-search-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </button>
+              <input type="text" 
+                     class="bb-search-input" 
+                     placeholder="{{ section.settings.search_placeholder | default: 'Search charms...' }}" 
+                     data-search-input 
+                     aria-label="Search charms">
+              <button class="bb-search-clear" data-search-clear type="button" aria-label="Clear search">&times;</button>
+            </div>
+
+            <button class="bb-action-btn" type="button" data-reset-btn title="Reset Design">
+              <span>{{ section.settings.reset_label | default: 'Reset' }}</span>
+              <svg class="bb-action-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+              </svg>
+            </button>
+
+            <button class="bb-circle-btn" type="button" data-help-btn aria-label="How it works" title="How it works">
+              <svg class="bb-help-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </button>
+
+          </div>
+
+        </div>
+
+        {%- comment -%} CANVAS & BRACELET LINKS {%- endcomment -%}
+        <div class="bb-canvas-container">
+          <div class="bb-bracelet-scroll-wrap">
+            <div class="bb-bracelet-row metal-silver" data-bracelet-row>
+              {%- comment -%} Slots injected dynamically by JS {%- endcomment -%}
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      {%- comment -%} CHARMS CATALOG SECTION {%- endcomment -%}
+      <section class="bb-catalog-section" aria-label="Charm catalog">
+        
+        <div class="bb-catalog-toolbar">
+          
+          <div class="bb-filter-actions">
+            
+            {%- comment -%} Theme Filter {%- endcomment -%}
+            <div class="bb-select-wrap">
+              <button class="bb-filter-btn" type="button" data-theme-filter-btn aria-expanded="false">
+                Theme
+                <svg aria-hidden="true" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              </button>
+
+              <div class="bb-filter-popover" data-theme-popover>
+                <div class="bb-filter-title">{{ section.settings.theme_filter_title | default: 'Shop by Story' }}</div>
+                <div class="bb-filter-grid-2col">
+                  {%- assign themes_list = "Friendship,Lucky,Travel,Sports,Zodiac,Family,Animals,Love,Nature,Food & Drink,Music,Birthday,Symbols,Positive,Lifestyle" | split: "," -%}
+                  {%- for theme_name in themes_list -%}
+                    <label class="bb-checkbox-label">
+                      <input type="checkbox" value="{{ theme_name }}">
+                      <span>{{ theme_name }}</span>
+                    </label>
+                  {%- endfor -%}
+                </div>
+              </div>
+            </div>
+
+            {%- comment -%} Charms Color Filter {%- endcomment -%}
+            <div class="bb-select-wrap">
+              <button class="bb-filter-btn" type="button" data-color-filter-btn aria-expanded="false">
+                Charms Color
+                <svg aria-hidden="true" fill="none" height="14" viewBox="0 0 24 24" width="14"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              </button>
+
+              <div class="bb-filter-popover" data-color-popover>
+                <div class="bb-filter-title">{{ section.settings.color_filter_title | default: 'Choose a finish' }}</div>
+                <div>
+                  <label class="bb-checkbox-label">
+                    <input type="checkbox" value="Silver">
+                    <span class="bb-swatch swatch-silver"></span>
+                    <span>Silver</span>
+                  </label>
+                  <label class="bb-checkbox-label">
+                    <input type="checkbox" value="Gold">
+                    <span class="bb-swatch swatch-gold"></span>
+                    <span>Gold</span>
+                  </label>
+                  <label class="bb-checkbox-label">
+                    <input type="checkbox" value="Rose Gold">
+                    <span class="bb-swatch swatch-rose"></span>
+                    <span>Rose Gold</span>
+                  </label>
+                  <label class="bb-checkbox-label">
+                    <input type="checkbox" value="Black">
+                    <span class="bb-swatch swatch-black"></span>
+                    <span>Black</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <button class="bb-clear-filters-btn" type="button" data-clear-filters-btn style="display: none;">
+              {{ section.settings.clear_filters_label | default: 'Clear filters' }} &times;
+            </button>
+
+          </div>
+
+          <div class="bb-catalog-toolbar-meta">
+            {%- assign initial_charms_count = charms_collection.all_products_count | default: charm_products.count | default: 74 -%}
+            <span class="bb-catalog-count" data-catalog-count>{{ initial_charms_count }} charms</span>
+            <span class="bb-catalog-meta-dot">•</span>
+            <span class="bb-catalog-drag-text">{{ section.settings.drag_instruction | default: 'Drag to place · tap to preview' }}</span>
+          </div>
+
+        </div>
+
+        {%- comment -%} CHARMS GRID {%- endcomment -%}
+        <div class="bb-charm-grid" data-catalog-grid>
+          {%- comment -%} Hydrated dynamically by JS {%- endcomment -%}
+        </div>
+
+      </section>
+
+    </main>
+
+    {%- comment -%} ----- RIGHT SIDEBAR (SUMMARY & CART) ----- {%- endcomment -%}
+    <aside class="bb-sidebar" aria-label="Order summary">
+      
+      <div class="bb-sidebar-top">
+        
+        {%- comment -%} YOUR BRACELET / WATCH CARD {%- endcomment -%}
+        <div>
+          <div class="bb-sidebar-heading" data-sidebar-heading>{{ section.settings.bracelet_heading | default: 'YOUR BRACELET' }}</div>
+          <div class="bb-bracelet-summary-card">
+            <div class="bb-summary-item-left">
+              <img class="bb-summary-thumb" data-summary-thumb src="" alt="Bracelet">
+              <div>
+                <div class="bb-summary-title" data-summary-title>Original Bracelet</div>
+                <div class="bb-summary-meta" data-summary-meta>Silver</div>
+              </div>
+            </div>
+            <div class="bb-summary-price" data-summary-price>{{ currency_symbol }}24.99</div>
+          </div>
+        </div>
+
+        {%- comment -%} YOUR CHARMS LIST {%- endcomment -%}
+        <div class="bb-charms-list-section">
+          <div class="bb-sidebar-heading">
+            <span>{{ section.settings.charms_heading | default: 'YOUR CHARMS' }}</span>
+            <span data-charms-count-badge>0/16</span>
+          </div>
+
+          <div class="bb-charms-list-container" data-charms-list>
+            <div class="bb-charms-empty">
+              <div class="bb-empty-plus-icon">+</div>
+              <div class="bb-empty-title">{{ section.settings.empty_state_title | default: 'Your story starts here.' }}</div>
+              <div class="bb-empty-sub">{{ section.settings.empty_state_sub | default: 'Drag or tap any charm to begin.' }}</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {%- comment -%} SIDEBAR BOTTOM (TOTAL & CHECKOUT) {%- endcomment -%}
+      <div class="bb-sidebar-bottom">
+        <div class="bb-total-row">
+          <span class="bb-total-label">{{ section.settings.total_label | default: 'Total' }}</span>
+          <span class="bb-total-amount" data-total-amount>{{ currency_symbol }}24.99</span>
+        </div>
+        <div class="bb-taxes-note">{{ section.settings.taxes_note | default: 'Taxes and shipping calculated at checkout.' }}</div>
+
+        <button class="bb-checkout-btn" type="button" data-checkout-btn>
+          <span>{{ section.settings.checkout_btn_label | default: 'Check out' }}</span>
+          <span>&rarr;</span>
+        </button>
+
+        <button class="bb-copy-summary-link" type="button" data-copy-summary>
+          {{ section.settings.copy_summary_label | default: 'Copy design summary' }}
+        </button>
+      </div>
+
+    </aside>
+
+  </div>
+
+  {%- comment -%} ================= SLIDE-OVER CHARM DETAILS DRAWER ================= {%- endcomment -%}
+  <div class="bb-drawer-overlay" data-drawer-overlay></div>
+  <aside class="bb-details-drawer" data-details-drawer aria-label="Charm preview">
+    <button class="bb-drawer-close-btn" type="button" data-drawer-close aria-label="Close preview">&times;</button>
+    <div class="bb-drawer-body" data-drawer-body>
+      {%- comment -%} Populated dynamically on charm click {%- endcomment -%}
+    </div>
+  </aside>
+
+  {%- comment -%} ================= INTERACTIVE HELP MODAL ================= {%- endcomment -%}
+  <div class="bb-modal-overlay" data-help-modal role="dialog" aria-modal="true">
+    <div class="bb-modal-card">
+      <button class="bb-modal-close-btn" type="button" data-help-modal-close aria-label="Close modal">&times;</button>
+      <h2 class="bb-modal-title">{{ section.settings.modal_title | default: 'How to build your custom bracelet' }}</h2>
+      <p class="bb-modal-sub">{{ section.settings.modal_subtitle | default: 'Design a one-of-a-kind piece in four simple steps.' }}</p>
+
+      <div class="bb-modal-steps">
+        <div class="bb-step-item">
+          <span class="bb-step-number">1</span>
+          <div class="bb-step-content">
+            <strong>{{ section.settings.step1_title | default: 'Choose your base & finish' }}</strong>
+            <p>{{ section.settings.step1_desc | default: 'Select between an Italian charm bracelet or a Como watch edition, then choose your metal finish (Gold, Silver, Rose Gold, or Black).' }}</p>
+          </div>
+        </div>
+
+        <div class="bb-step-item">
+          <span class="bb-step-number">2</span>
+          <div class="bb-step-content">
+            <strong>{{ section.settings.step2_title | default: 'Explore & add charms' }}</strong>
+            <p>{{ section.settings.step2_desc | default: 'Browse by Theme or Color. Click any charm to view details and tap "Add charm", or drag and drop directly onto any open bracelet link.' }}</p>
+          </div>
+        </div>
+
+        <div class="bb-step-item">
+          <span class="bb-step-number">3</span>
+          <div class="bb-step-content">
+            <strong>{{ section.settings.step3_title | default: 'Arrange & customize' }}</strong>
+            <p>{{ section.settings.step3_desc | default: 'Drag charms between slots on the bracelet to reorder them. Drag any charm back toward the catalog or click the trash icon to remove it.' }}</p>
+          </div>
+        </div>
+
+        <div class="bb-step-item">
+          <span class="bb-step-number">4</span>
+          <div class="bb-step-content">
+            <strong>{{ section.settings.step4_title | default: 'Check out & wear your story' }}</strong>
+            <p>{{ section.settings.step4_desc | default: 'Reach 10 charms to unlock a FREE bracelet! Click "Check out" to have your custom design assembled and delivered.' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {%- comment -%} ================= RESET CONFIRMATION MODAL ================= {%- endcomment -%}
+  <div class="bb-modal-overlay bb-reset-modal-overlay" data-reset-modal role="dialog" aria-modal="true">
+    <div class="bb-reset-modal-card">
+      <button class="bb-modal-close-btn" type="button" data-reset-modal-close aria-label="Close modal">&times;</button>
+      <div class="bb-reset-modal-icon">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+      </div>
+      <h3 class="bb-reset-modal-title">{{ section.settings.reset_modal_title | default: 'Reset your bracelet design?' }}</h3>
+      <p class="bb-reset-modal-desc">{{ section.settings.reset_modal_desc | default: 'This will remove all placed charms from your bracelet so you can start fresh.' }}</p>
+      
+      <div class="bb-reset-modal-actions">
+        <button class="bb-reset-modal-cancel-btn" type="button" data-reset-modal-cancel>
+          {{ section.settings.reset_modal_cancel | default: 'Keep designing' }}
+        </button>
+        <button class="bb-reset-modal-confirm-btn" type="button" data-reset-modal-confirm>
+          {{ section.settings.reset_modal_confirm | default: 'Yes, reset all' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {%- comment -%} ================= TOAST NOTIFICATION ================= {%- endcomment -%}
+  <div class="bb-toast" data-toast></div>
+
+  {%- comment -%} ================= EMBEDDED CONFIGURATION DATA ================= {%- endcomment -%}
+  <script type="application/json" id="bracelet-builder-data-{{ section_id }}" class="bb-data-json">
+    {
+      "settings": {
+        "currencyCode": {{ currency_code | json }},
+        "currencySymbol": {{ currency_code | json }},
+        "moneyFormat": {{ shop.money_format | json }},
+        "dragTipText": {{ section.settings.drag_tip | default: "Drag a placed charm back to the catalog to remove it" | json }},
+        "copiedToastText": {{ section.settings.copied_toast | default: "Design summary copied to clipboard!" | json }},
+        "emptyStateTitle": {{ section.settings.empty_state_title | default: "Your story starts here." | json }},
+        "emptyStateSub": {{ section.settings.empty_state_sub | default: "Drag or tap any charm to begin." | json }},
+        "swatches": {
+          "silver": {{ section.settings.swatch_silver | default: "#d9dcdb" | json }},
+          "gold": {{ section.settings.swatch_gold | default: "#d4a748" | json }},
+          "rose": {{ section.settings.swatch_rose | default: "#e5a494" | json }},
+          "black": {{ section.settings.swatch_black | default: "#222224" | json }}
+        }
+      },
+      "assetUrls": {
+        "braceletSilver": {{ 'bracelet-silver.png' | asset_url | json }},
+        "braceletGold": {{ 'bracelet-gold.png' | asset_url | json }},
+        "braceletRose": {{ 'bracelet-rose-gold.png' | asset_url | json }},
+        "braceletBlack": {{ 'bracelet-black.png' | asset_url | json }},
+        "watch001": {{ 'watch-001.png' | asset_url | json }},
+        "watch002": {{ 'watch-002.png' | asset_url | json }},
+        "watch003": {{ 'watch-003.png' | asset_url | json }},
+        "watch004": {{ 'watch-004.png' | asset_url | json }},
+        "watch005": {{ 'watch-005.png' | asset_url | json }},
+        "watch006": {{ 'watch-006.png' | asset_url | json }}
+      },
+      "models": [
+        {%- assign model_blocks = section.blocks | where: 'type', 'bracelet_model' -%}
+        {%- if model_blocks.size > 0 -%}
+          {%- for block in model_blocks -%}
+            {%- assign linked_prod = block.settings.linked_product -%}
+            {%- liquid
+              assign model_title = block.settings.title | default: linked_prod.title | default: "Original Bracelet"
+              assign model_img = ''
+              if block.settings.model_image != blank
+                assign model_img = block.settings.model_image | image_url: width: 400
+              elsif linked_prod.featured_image != blank
+                assign model_img = linked_prod.featured_image | image_url: width: 400
+              else
+                case block.settings.model_id
+                  when 'como-watch-silver-blue'
+                    assign model_img = 'watch-001.png' | asset_url
+                  when 'como-watch-silver-pink'
+                    assign model_img = 'watch-002.png' | asset_url
+                  when 'como-watch-silver-white'
+                    assign model_img = 'watch-003.png' | asset_url
+                  when 'como-watch-silver-black'
+                    assign model_img = 'watch-004.png' | asset_url
+                  when 'como-watch-gold-white'
+                    assign model_img = 'watch-005.png' | asset_url
+                  when 'como-watch-gold-emerald'
+                    assign model_img = 'watch-006.png' | asset_url
+                  when 'original-bracelet'
+                    assign model_img = 'bracelet-silver.png' | asset_url
+                endcase
+              endif
+              assign block_slots = block.settings.slots_count | default: 16
+              if block.settings.model_type == 'watch'
+                assign remainder = block_slots | modulo: 2
+                if remainder != 0
+                  assign block_slots = block_slots | plus: 1
+                endif
+              endif
+            -%}
+            {
+              "id": {{ block.settings.model_id | default: block.id | json }},
+              "title": {{ model_title | json }},
+              "type": {{ block.settings.model_type | default: "bracelet" | json }},
+              "slots": {{ block_slots | json }},
+              "price": {{ linked_prod.price | default: block.settings.price | default: 2499 | json }},
+              "productId": {{ linked_prod.id | json }},
+              "defaultColor": {{ block.settings.default_color | default: "silver" | json }},
+              "image": {{ model_img | json }},
+              "variants": [
+                {%- if linked_prod != blank and linked_prod.variants.size > 0 -%}
+                  {%- for v in linked_prod.variants -%}
+                    {%- liquid
+                      assign v_img = ''
+                      if v.featured_image != blank
+                        assign v_img = v.featured_image | image_url: width: 400
+                      elsif linked_prod.featured_image != blank
+                        assign v_img = linked_prod.featured_image | image_url: width: 400
+                      endif
+                    -%}
+                    {
+                      "id": {{ v.id | json }},
+                      "title": {{ v.title | json }},
+                      "price": {{ v.price | json }},
+                      "available": {{ v.available | json }},
+                      "sku": {{ v.sku | json }},
+                      "image": {{ v_img | json }}
+                    }{%- unless forloop.last -%},{%- endunless -%}
+                  {%- endfor -%}
+                {%- else -%}
+                  {%- assign base_pr = block.settings.price | default: 2499 -%}
+                  { "id": "var-silver", "title": "Silver", "price": {{ base_pr | json }}, "available": true },
+                  { "id": "var-gold", "title": "Gold", "price": {{ base_pr | plus: 500 | json }}, "available": true },
+                  { "id": "var-rose", "title": "Rose Gold", "price": {{ base_pr | plus: 500 | json }}, "available": true },
+                  { "id": "var-black", "title": "Black", "price": {{ base_pr | plus: 200 | json }}, "available": true }
+                {%- endif -%}
+              ]
+            }{%- unless forloop.last -%},{%- endunless -%}
+          {%- endfor -%}
+        {%- else -%}
+          {
+            "id": "original-bracelet",
+            "title": "Original Bracelet",
+            "type": "bracelet",
+            "slots": 16,
+            "price": 2499,
+            "defaultColor": "silver",
+            "image": {{ 'bracelet-silver.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-silver", "title": "Silver", "price": 2499, "available": true },
+              { "id": "var-gold", "title": "Gold", "price": 2999, "available": true },
+              { "id": "var-rose", "title": "Rose Gold", "price": 2999, "available": true },
+              { "id": "var-black", "title": "Black", "price": 2699, "available": true }
+            ]
+          },
+          {
+            "id": "como-watch-silver-blue",
+            "title": "Como Watch Silver – Blue Dial Edition",
+            "type": "watch",
+            "slots": 13,
+            "price": 12000,
+            "defaultColor": "silver",
+            "image": {{ 'watch-001.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-w1-silver", "title": "Silver", "price": 12000, "available": true },
+              { "id": "var-w1-gold", "title": "Gold", "price": 12900, "available": true },
+              { "id": "var-w1-rose", "title": "Rose Gold", "price": 12900, "available": true },
+              { "id": "var-w1-black", "title": "Black", "price": 12500, "available": true }
+            ]
+          },
+          {
+            "id": "como-watch-silver-pink",
+            "title": "Como Watch Silver – Pink Dial Edition",
+            "type": "watch",
+            "slots": 13,
+            "price": 12000,
+            "defaultColor": "silver",
+            "image": {{ 'watch-002.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-w2-silver", "title": "Silver", "price": 12000, "available": true },
+              { "id": "var-w2-gold", "title": "Gold", "price": 12900, "available": true },
+              { "id": "var-w2-rose", "title": "Rose Gold", "price": 12900, "available": true },
+              { "id": "var-w2-black", "title": "Black", "price": 12500, "available": true }
+            ]
+          },
+          {
+            "id": "como-watch-silver-white",
+            "title": "Como Watch Silver – White Dial Edition",
+            "type": "watch",
+            "slots": 13,
+            "price": 12000,
+            "defaultColor": "silver",
+            "image": {{ 'watch-003.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-w3-silver", "title": "Silver", "price": 12000, "available": true },
+              { "id": "var-w3-gold", "title": "Gold", "price": 12900, "available": true },
+              { "id": "var-w3-rose", "title": "Rose Gold", "price": 12900, "available": true },
+              { "id": "var-w3-black", "title": "Black", "price": 12500, "available": true }
+            ]
+          },
+          {
+            "id": "como-watch-silver-black",
+            "title": "Como Watch Silver – Black Dial Edition",
+            "type": "watch",
+            "slots": 13,
+            "price": 12000,
+            "defaultColor": "silver",
+            "image": {{ 'watch-004.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-w4-silver", "title": "Silver", "price": 12000, "available": true },
+              { "id": "var-w4-gold", "title": "Gold", "price": 12900, "available": true },
+              { "id": "var-w4-rose", "title": "Rose Gold", "price": 12900, "available": true },
+              { "id": "var-w4-black", "title": "Black", "price": 12500, "available": true }
+            ]
+          },
+          {
+            "id": "como-watch-gold-white",
+            "title": "Como Watch Gold – White Dial Edition",
+            "type": "watch",
+            "slots": 13,
+            "price": 12900,
+            "defaultColor": "gold",
+            "image": {{ 'watch-005.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-w5-silver", "title": "Silver", "price": 12000, "available": true },
+              { "id": "var-w5-gold", "title": "Gold", "price": 12900, "available": true },
+              { "id": "var-w5-rose", "title": "Rose Gold", "price": 12900, "available": true },
+              { "id": "var-w5-black", "title": "Black", "price": 12500, "available": true }
+            ]
+          },
+          {
+            "id": "como-watch-gold-emerald",
+            "title": "Como Watch Gold – Emerald Dial Edition",
+            "type": "watch",
+            "slots": 13,
+            "price": 12900,
+            "defaultColor": "gold",
+            "image": {{ 'watch-006.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-w6-silver", "title": "Silver", "price": 12000, "available": true },
+              { "id": "var-w6-gold", "title": "Gold", "price": 12900, "available": true },
+              { "id": "var-w6-rose", "title": "Rose Gold", "price": 12900, "available": true },
+              { "id": "var-w6-black", "title": "Black", "price": 12500, "available": true }
+            ]
+          }
+        {%- endif -%}
+      ],
+      "charms": [
+        {%- if charms_collection != blank and charms_collection.all_products_count > 0 -%}
+          {%- paginate charms_collection.products by 250 -%}
+            {%- for prod in charms_collection.products -%}
+              {%- liquid
+                assign charm_type = prod.metafields.custom.charm_type | default: 'simple'
+                assign charm_slots = prod.metafields.custom.slots_count | default: 1
+                assign charm_theme = prod.metafields.custom.theme | default: ''
+                assign charm_color = prod.metafields.custom.color | default: ''
+
+                for tag in prod.tags
+                  assign tag_lower = tag | downcase
+                  if tag_lower contains 'theme:'
+                    assign charm_theme = tag | split: ':' | last | strip
+                  elsif tag_lower contains 'color:'
+                    assign charm_color = tag | split: ':' | last | strip
+                  elsif tag_lower contains 'type:drop' or tag_lower == 'drop'
+                    assign charm_type = 'drop'
+                  elsif tag_lower contains 'type:2-links' or tag_lower == '2-links' or tag_lower == 'double'
+                    assign charm_type = 'double'
+                    assign charm_slots = 2
+                  endif
+                endfor
+                assign prod_img = ''
+                if prod.featured_image != blank
+                  assign prod_img = prod.featured_image | image_url: width: 300
+                endif
+                assign prod_var_id = prod.selected_or_first_available_variant.id | default: prod.variants.first.id | default: prod.id
+              -%}
+              {
+                "id": {{ prod.id | json }},
+                "title": {{ prod.title | json }},
+                "price": {{ prod.price | json }},
+                "image": {{ prod_img | json }},
+                "description": {{ prod.description | strip_html | truncate: 140 | json }},
+                "theme": {{ charm_theme | json }},
+                "color": {{ charm_color | json }},
+                "type": {{ charm_type | json }},
+                "slots": {{ charm_slots | json }},
+                "tags": {{ prod.tags | json }},
+                "variantId": {{ prod_var_id | json }}
+              }{%- unless forloop.last -%},{%- endunless -%}
+            {%- endfor -%}
+          {%- endpaginate -%}
+        {%- elsif charm_products != blank and charm_products.count > 0 -%}
+          {%- for prod in charm_products -%}
+            {%- liquid
+              assign charm_type = prod.metafields.custom.charm_type | default: 'simple'
+              assign charm_slots = prod.metafields.custom.slots_count | default: 1
+              assign charm_theme = prod.metafields.custom.theme | default: ''
+              assign charm_color = prod.metafields.custom.color | default: ''
+
+              for tag in prod.tags
+                assign tag_lower = tag | downcase
+                if tag_lower contains 'theme:'
+                  assign charm_theme = tag | split: ':' | last | strip
+                elsif tag_lower contains 'color:'
+                  assign charm_color = tag | split: ':' | last | strip
+                elsif tag_lower contains 'type:drop' or tag_lower == 'drop'
+                  assign charm_type = 'drop'
+                elsif tag_lower contains 'type:2-links' or tag_lower == '2-links' or tag_lower == 'double'
+                  assign charm_type = 'double'
+                  assign charm_slots = 2
+                endif
+              endfor
+
+              assign prod_img = ''
+              if prod.featured_image != blank
+                assign prod_img = prod.featured_image | image_url: width: 300
+              endif
+              assign prod_var_id = prod.selected_or_first_available_variant.id | default: prod.variants.first.id | default: prod.id
+            -%}
+            {
+              "id": {{ prod.id | json }},
+              "title": {{ prod.title | json }},
+              "price": {{ prod.price | json }},
+              "image": {{ prod_img | json }},
+              "description": {{ prod.description | strip_html | truncate: 140 | json }},
+              "theme": {{ charm_theme | json }},
+              "color": {{ charm_color | json }},
+              "type": {{ charm_type | json }},
+              "slots": {{ charm_slots | json }},
+              "tags": {{ prod.tags | json }},
+              "variantId": {{ prod_var_id | json }}
+            }{%- unless forloop.last -%},{%- endunless -%}
+          {%- endfor -%}
+        {%- elsif meta_products != blank -%}
+          {%- for prod in meta_products -%}
+            {%- liquid
+              assign prod_img = ''
+              if prod.featured_image != blank
+                assign prod_img = prod.featured_image | image_url: width: 300
+              endif
+              assign prod_var_id = prod.selected_or_first_available_variant.id | default: prod.variants.first.id | default: prod.id
+            -%}
+            {
+              "id": {{ prod.id | json }},
+              "title": {{ prod.title | json }},
+              "price": {{ prod.price | json }},
+              "image": {{ prod_img | json }},
+              "description": {{ prod.description | strip_html | truncate: 140 | json }},
+              "theme": {{ prod.metafields.custom.theme | default: "" | json }},
+              "color": {{ prod.metafields.custom.color | default: "" | json }},
+              "type": {{ prod.metafields.custom.charm_type | default: "simple" | json }},
+              "slots": {{ prod.metafields.custom.slots_count | default: 1 | json }},
+              "tags": {{ prod.tags | json }},
+              "variantId": {{ prod_var_id | json }}
+            }{%- unless forloop.last -%},{%- endunless -%}
+          {%- endfor -%}
+        {%- else -%}
+          {%- comment -%} Out-of-the-box catalog presets matching reference dataset {%- endcomment -%}
+          { "id": "ch-1", "title": "#BFF Multicolor Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-001.webp", "theme": "Friendship", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Friendship", "Silver"] },
+          { "id": "ch-2", "title": "00:00 on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-002.webp", "theme": "Lifestyle", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Lifestyle", "Gold"] },
+          { "id": "ch-3", "title": "3 Crystals Rose on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-003.webp", "theme": "Nature", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Nature", "Gold"] },
+          { "id": "ch-4", "title": "3 Hugging Cats on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-004.webp", "theme": "Animals", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Animals", "Gold"] },
+          { "id": "ch-5", "title": "3 Leaf Clover on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-005.webp", "theme": "Lucky", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Lucky", "Gold"] },
+          { "id": "ch-6", "title": "3 Leaf Clover on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-006.webp", "theme": "Lucky", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Lucky", "Silver"] },
+          { "id": "ch-7", "title": "4-leaf Clover and its Stem, in Gold and White Stones", "price": 499, "image": "https://saa-bs.vercel.app/catalog/charm-007.webp", "theme": "Lucky", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Lucky", "Gold"] },
+          { "id": "ch-8", "title": "4-leaf Clover and its Stem, in Silver and White Stones", "price": 499, "image": "https://saa-bs.vercel.app/catalog/charm-008.webp", "theme": "Lucky", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Lucky", "Silver"] },
+          { "id": "ch-9", "title": "7 with 2 Stones on Blue Plate on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-009.webp", "theme": "Lucky", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Lucky", "Gold"] },
+          { "id": "ch-10", "title": "777 Black on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-010.webp", "theme": "Lucky", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Lucky", "Silver"] },
+          { "id": "ch-11", "title": "777 Casino on Pink Plate on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-011.webp", "theme": "Lucky", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Lucky", "Silver"] },
+          { "id": "ch-12", "title": "777 on Black Plate on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-012.webp", "theme": "Lucky", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Lucky", "Gold"] },
+          { "id": "ch-13", "title": "90's Baby Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-013.webp", "theme": "Birthday", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Birthday", "Gold"] },
+          { "id": "ch-14", "title": "Adventure in the Mountains, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-014.webp", "theme": "Travel", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Travel", "Silver"] },
+          { "id": "ch-15", "title": "Algeria on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-015.webp", "theme": "Travel", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Travel", "Gold"] },
+          { "id": "ch-16", "title": "Algeria on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-016.webp", "theme": "Travel", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Travel", "Silver"] },
+          { "id": "ch-17", "title": "American Football Ball, Red and Orange, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-017.webp", "theme": "Sports", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Sports", "Silver"] },
+          { "id": "ch-18", "title": "Anti Social on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-018.webp", "theme": "Symbols", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Symbols", "Gold"] },
+          { "id": "ch-19", "title": "Anti Social Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-019.webp", "theme": "Symbols", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Symbols", "Silver"] },
+          { "id": "ch-20", "title": "Apple Juice Box on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-020.webp", "theme": "Food & Drink", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Food & Drink", "Gold"] },
+          { "id": "ch-21", "title": "April on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-021.webp", "theme": "Birthday", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Birthday", "Gold"] },
+          { "id": "ch-22", "title": "April on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-022.webp", "theme": "Birthday", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Birthday", "Silver"] },
+          { "id": "ch-23", "title": "Aquarius, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-023.webp", "theme": "Zodiac", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Zodiac", "Silver"] },
+          { "id": "ch-24", "title": "Argentina on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-024.webp", "theme": "Travel", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Travel", "Gold"] },
+          { "id": "ch-25", "title": "Argentina on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-025.webp", "theme": "Travel", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Travel", "Silver"] },
+          { "id": "ch-26", "title": "Aries Blue, on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-026.webp", "theme": "Zodiac", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Zodiac", "Gold"] },
+          { "id": "ch-27", "title": "Aries Blue, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-027.webp", "theme": "Zodiac", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Zodiac", "Silver"] },
+          { "id": "ch-28", "title": "Aries, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-028.webp", "theme": "Zodiac", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Zodiac", "Silver"] },
+          { "id": "ch-29", "title": "August on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-029.webp", "theme": "Birthday", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Birthday", "Gold"] },
+          { "id": "ch-30", "title": "August on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-030.webp", "theme": "Birthday", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Birthday", "Silver"] },
+          { "id": "ch-31", "title": "AUNT, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-031.webp", "theme": "Family", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Family", "Silver"] },
+          { "id": "ch-32", "title": "Australia Flag, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-032.webp", "theme": "Travel", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Travel", "Silver"] },
+          { "id": "ch-33", "title": "Australia on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-033.webp", "theme": "Travel", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Travel", "Gold"] },
+          { "id": "ch-34", "title": "Austria on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-034.webp", "theme": "Travel", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Travel", "Gold"] },
+          { "id": "ch-35", "title": "Austria on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-035.webp", "theme": "Travel", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Travel", "Silver"] },
+          { "id": "ch-36", "title": "BAD BUNNY", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-036.webp", "theme": "Music", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Music", "Silver"] },
+          { "id": "ch-37", "title": "Bad Bunny Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-037.webp", "theme": "Music", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Music", "Gold"] },
+          { "id": "ch-38", "title": "Bag of Dollars, Green and Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-038.webp", "theme": "Lifestyle", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Lifestyle", "Gold"] },
+          { "id": "ch-39", "title": "Baseball Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-039.webp", "theme": "Sports", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Sports", "Silver"] },
+          { "id": "ch-40", "title": "Basketball", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-040.webp", "theme": "Sports", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Sports", "Silver"] },
+          { "id": "ch-41", "title": "Be Mine on White Plate on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-041.webp", "theme": "Love", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Love", "Gold"] },
+          { "id": "ch-42", "title": "Be True To You", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-042.webp", "theme": "Positive", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Positive", "Gold"] },
+          { "id": "ch-43", "title": "Bears, Green and Purple", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-043.webp", "theme": "Animals", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Animals", "Silver"] },
+          { "id": "ch-44", "title": "Bears, Turquoise and Pink", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-044.webp", "theme": "Animals", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Animals", "Silver"] },
+          { "id": "ch-45", "title": "Bee with Stones on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-045.webp", "theme": "Animals", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Animals", "Gold"] },
+          { "id": "ch-46", "title": "Bee, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-046.webp", "theme": "Animals", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Animals", "Silver"] },
+          { "id": "ch-47", "title": "Belgium Flag, on Silver", "price": 899, "image": "https://saa-bs.vercel.app/catalog/charm-047.webp", "theme": "Travel", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Travel", "Silver"] },
+          { "id": "ch-48", "title": "Belgium on Gold", "price": 899, "image": "https://saa-bs.vercel.app/catalog/charm-048.webp", "theme": "Travel", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Travel", "Gold"] },
+          { "id": "ch-49", "title": "Believe in Black with Butterflies", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-049.webp", "theme": "Positive", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Positive", "Silver"] },
+          { "id": "ch-50", "title": "Believe Unicorn Silver", "price": 499, "image": "https://saa-bs.vercel.app/catalog/charm-050.webp", "theme": "Positive", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Positive", "Silver"] },
+          { "id": "ch-51", "title": "Berlin", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-051.webp", "theme": "Travel", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Travel", "Silver"] },
+          { "id": "ch-52", "title": "Best", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-052.webp", "theme": "Friendship", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Friendship", "Silver"] },
+          { "id": "ch-53", "title": "Best Friend, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-053.webp", "theme": "Friendship", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Friendship", "Silver"] },
+          { "id": "ch-54", "title": "Best Friends, In Black with a Pink Paw", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-054.webp", "theme": "Friendship", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Friendship", "Silver"] },
+          { "id": "ch-55", "title": "BFF, on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-055.webp", "theme": "Friendship", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Friendship", "Silver"] },
+          { "id": "ch-56", "title": "Big Sis with Pink Hearts on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-056.webp", "theme": "Family", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Family", "Gold"] },
+          { "id": "ch-57", "title": "Bird with Stones on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-057.webp", "theme": "Animals", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Animals", "Silver"] },
+          { "id": "ch-58", "title": "Black & White Cat Laying Down on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-058.webp", "theme": "Animals", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Animals", "Gold"] },
+          { "id": "ch-59", "title": "Black & White Checkers with Pink Flowers on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-059.webp", "theme": "Lifestyle", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Lifestyle", "Silver"] },
+          { "id": "ch-60", "title": "Black Acoustic Guitar on Gold", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-060.webp", "theme": "Music", "color": "Gold", "type": "simple", "slots": 1, "tags": ["Music", "Gold"] },
+          { "id": "ch-61", "title": "3 Leaf Clover with Stones Hanging on Gold", "price": 599, "image": "https://saa-bs.vercel.app/catalog/charm-061.webp", "theme": "Lucky", "color": "Gold", "type": "drop", "slots": 1, "tags": ["Lucky", "Gold", "type:drop"] },
+          { "id": "ch-62", "title": "5 Leaves on Silver", "price": 499, "image": "https://saa-bs.vercel.app/catalog/charm-062.webp", "theme": "Nature", "color": "Silver", "type": "drop", "slots": 1, "tags": ["Nature", "Silver", "type:drop"] },
+          { "id": "ch-63", "title": "Aquarius Sign Hanging on Gold", "price": 1399, "image": "https://saa-bs.vercel.app/catalog/charm-063.webp", "theme": "Zodiac", "color": "Gold", "type": "drop", "slots": 1, "tags": ["Zodiac", "Gold", "type:drop"] },
+          { "id": "ch-64", "title": "Aquarius Sign, on Silver", "price": 1399, "image": "https://saa-bs.vercel.app/catalog/charm-064.webp", "theme": "Zodiac", "color": "Silver", "type": "drop", "slots": 1, "tags": ["Zodiac", "Silver", "type:drop"] },
+          { "id": "ch-65", "title": "Pink Heart, Double Linked Charms, on Silver", "price": 599, "image": "https://saa-bs.vercel.app/catalog/charm-065.webp", "theme": "Love", "color": "Silver", "type": "double", "slots": 2, "tags": ["Love", "Silver", "type:2-links"] },
+          { "id": "ch-66", "title": "Full Heart on Double Charms Hanging on Silver", "price": 399, "image": "https://saa-bs.vercel.app/catalog/charm-066.webp", "theme": "Love", "color": "Silver", "type": "double", "slots": 2, "tags": ["Love", "Silver", "type:2-links"] },
+          { "id": "ch-67", "title": "Grey Heart, Double Linked Charms on Silver", "price": 599, "image": "https://saa-bs.vercel.app/catalog/charm-067.webp", "theme": "Love", "color": "Silver", "type": "double", "slots": 2, "tags": ["Love", "Silver", "type:2-links"] },
+          { "id": "ch-68", "title": "Multicolor Heart, Double Linked Charms, on Silver", "price": 599, "image": "https://saa-bs.vercel.app/catalog/charm-068.webp", "theme": "Love", "color": "Silver", "type": "double", "slots": 2, "tags": ["Love", "Silver", "type:2-links"] },
+          { "id": "ch-69", "title": "Baby, on Silver", "price": 1399, "image": "https://saa-bs.vercel.app/catalog/charm-069.webp", "theme": "Family", "color": "Silver", "type": "double", "slots": 2, "tags": ["Family", "Silver", "type:2-links"] },
+          { "id": "ch-70", "title": "Best Friends, Double, on Gold", "price": 1399, "image": "https://saa-bs.vercel.app/catalog/charm-070.webp", "theme": "Friendship", "color": "Gold", "type": "double", "slots": 2, "tags": ["Friendship", "Gold", "type:2-links"] },
+          { "id": "ch-71", "title": "Family, on Silver", "price": 1399, "image": "https://saa-bs.vercel.app/catalog/charm-071.webp", "theme": "Family", "color": "Silver", "type": "double", "slots": 2, "tags": ["Family", "Silver", "type:2-links"] },
+          { "id": "ch-72", "title": "Double Heart with Stones on Gold", "price": 799, "image": "https://saa-bs.vercel.app/catalog/charm-072.webp", "theme": "Love", "color": "Gold", "type": "double", "slots": 2, "tags": ["Love", "Gold", "type:2-links"] },
+          { "id": "ch-73", "title": "Pink Butterfly Hanging on Gold", "price": 599, "image": "https://saa-bs.vercel.app/catalog/charm-073.webp", "theme": "Nature", "color": "Gold", "type": "drop", "slots": 1, "tags": ["Nature", "Gold", "type:drop"] },
+          { "id": "ch-74", "title": "Glitter Star on Silver", "price": 499, "image": "https://saa-bs.vercel.app/catalog/charm-074.webp", "theme": "Symbols", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Symbols", "Silver"] }
+        {%- endif -%}
+      ]
+    }
+  </script>
+
+  <script src="{{ 'bracelet-builder.js' | asset_url }}" defer="defer"></script>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Bracelet & Watch Builder",
+  "tag": "section",
+  "class": "section-bracelet-builder",
+  "settings": [
+    {
+      "type": "select",
+      "id": "setwidth",
+      "label": "Full Width",
+      "default": "container",
+      "options": [
+        {
+          "value": "container",
+          "label": "Box"
+        },
+        {
+          "value": "container-fluid",
+          "label": "Container Fluid"
+        },
+        {
+          "value": "full",
+          "label": "Full"
+        }
+      ]
+    },
+    {
+      "type": "color",
+      "id": "bgsection",
+      "label": "Background Section",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Section Padding"
+    },
+    {
+      "type": "text",
+      "id": "paddingsection",
+      "label": "Padding Section",
+      "default": "0px 0px 0px 0px",
+      "info": "Padding: Top Right Bottom Left"
+    },
+    {
+      "type": "text",
+      "id": "paddingmobile",
+      "label": "Padding Section Mobile",
+      "default": "0px 0px 0px 0px",
+      "info": "Padding: Top Right Bottom Left"
+    },
+    {
+      "type": "text",
+      "id": "marginsection",
+      "label": "Margin Section",
+      "default": "0px 0px 0px 0px",
+      "info": "Margin: Top Right Bottom Left"
+    },
+    {
+      "type": "text",
+      "id": "marginmobile",
+      "label": "Margin Section Mobile",
+      "default": "0px 0px 0px 0px",
+      "info": "Margin: Top Right Bottom Left"
+    },
+    {
+      "type": "header",
+      "content": "Charms Catalog Source"
+    },
+    {
+      "type": "collection",
+      "id": "charms_collection",
+      "label": "Charms Collection",
+      "info": "Select a collection of active charms. Tags like 'theme:Love', 'color:Gold', 'type:drop', 'type:2-links' will be automatically filtered."
+    },
+    {
+      "type": "product_list",
+      "id": "charm_product_list",
+      "label": "Manual Charms Product List (optional fallback)"
+    },
+    {
+      "type": "header",
+      "content": "Color Swatches Customization"
+    },
+    {
+      "type": "color",
+      "id": "swatch_silver",
+      "label": "Silver Swatch Color",
+      "default": "#d9dcdb"
+    },
+    {
+      "type": "color",
+      "id": "swatch_gold",
+      "label": "Gold Swatch Color",
+      "default": "#d4a748"
+    },
+    {
+      "type": "color",
+      "id": "swatch_rose",
+      "label": "Rose Gold Swatch Color",
+      "default": "#e5a494"
+    },
+    {
+      "type": "color",
+      "id": "swatch_black",
+      "label": "Black Swatch Color",
+      "default": "#222224"
+    },
+    {
+      "type": "header",
+      "content": "Labels & Text Customization"
+    },
+    {
+      "type": "text",
+      "id": "search_placeholder",
+      "label": "Search Placeholder",
+      "default": "Search charms..."
+    },
+    {
+      "type": "text",
+      "id": "reset_label",
+      "label": "Reset Button Label",
+      "default": "Reset"
+    },
+    {
+      "type": "text",
+      "id": "help_link_label",
+      "label": "Help Link Label",
+      "default": "Help / How it works"
+    },
+    {
+      "type": "text",
+      "id": "drag_instruction",
+      "label": "Drag Instruction Text",
+      "default": "Drag to place · tap to preview"
+    },
+    {
+      "type": "text",
+      "id": "drag_tip",
+      "label": "Canvas Drag Tip",
+      "default": "Drag a placed charm back to the catalog to remove it"
+    },
+    {
+      "type": "text",
+      "id": "bracelet_heading",
+      "label": "Sidebar Bracelet Heading",
+      "default": "YOUR BRACELET"
+    },
+    {
+      "type": "text",
+      "id": "charms_heading",
+      "label": "Sidebar Charms Heading",
+      "default": "YOUR CHARMS"
+    },
+    {
+      "type": "text",
+      "id": "empty_state_title",
+      "label": "Empty State Title",
+      "default": "Your story starts here."
+    },
+    {
+      "type": "text",
+      "id": "empty_state_sub",
+      "label": "Empty State Subtitle",
+      "default": "Drag or tap any charm to begin."
+    },
+    {
+      "type": "text",
+      "id": "total_label",
+      "label": "Total Label",
+      "default": "Total"
+    },
+    {
+      "type": "text",
+      "id": "checkout_btn_label",
+      "label": "Checkout Button Label",
+      "default": "Check out"
+    },
+    {
+      "type": "text",
+      "id": "copy_summary_label",
+      "label": "Copy Summary Link Label",
+      "default": "Copy design summary"
+    },
+    {
+      "type": "text",
+      "id": "copied_toast",
+      "label": "Copied Toast Text",
+      "default": "Design summary copied to clipboard!"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "bracelet_model",
+      "name": "Bracelet / Watch Model",
+      "settings": [
+        {
+          "type": "product",
+          "id": "linked_product",
+          "label": "Base Product (Shopify Product with Color Variants)",
+          "info": "Select the base bracelet or watch product. Its variants will populate the color dropdown automatically."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Custom Model Title (optional override)"
+        },
+        {
+          "type": "select",
+          "id": "model_type",
+          "label": "Model Type",
+          "options": [
+            { "value": "bracelet", "label": "Bracelet (Continuous Links)" },
+            { "value": "watch", "label": "Watch (Centerpiece Dial)" }
+          ],
+          "default": "bracelet"
+        },
+        {
+          "type": "number",
+          "id": "slots_count",
+          "label": "Total Charm Slots (Positions)",
+          "default": 16,
+          "info": "16 for standard bracelet, 14 for Como watch (7 on left, 7 on right)"
+        },
+        {
+          "type": "image_picker",
+          "id": "model_image",
+          "label": "Custom Thumbnail / Centerpiece Image (optional override)"
+        },
+        {
+          "type": "select",
+          "id": "dial_color",
+          "label": "Watch Dial Preset (if watch & no custom image)",
+          "options": [
+            { "value": "blue", "label": "Blue Dial" },
+            { "value": "pink", "label": "Pink Dial" },
+            { "value": "white", "label": "White Dial" },
+            { "value": "black", "label": "Black Dial" },
+            { "value": "emerald", "label": "Emerald Dial" }
+          ],
+          "default": "blue"
+        },
+        {
+          "type": "select",
+          "id": "default_color",
+          "label": "Default Metal Color",
+          "options": [
+            { "value": "silver", "label": "Silver" },
+            { "value": "gold", "label": "Gold" },
+            { "value": "rose", "label": "Rose Gold" },
+            { "value": "black", "label": "Black" }
+          ],
+          "default": "silver"
+        },
+        {
+          "type": "text",
+          "id": "model_id",
+          "label": "Model ID / Key (optional)",
+          "info": "e.g. original-bracelet, como-watch-silver-blue"
+        },
+        {
+          "type": "number",
+          "id": "price",
+          "label": "Fallback Base Price (cents, used if product not linked)",
+          "default": 2499
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bracelet & Watch Builder",
+      "blocks": [
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "original-bracelet",
+            "title": "Original Bracelet",
+            "model_type": "bracelet",
+            "slots_count": 16,
+            "price": 2499,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "como-watch-silver-blue",
+            "title": "Como Watch Silver – Blue Dial Edition",
+            "model_type": "watch",
+            "dial_color": "blue",
+            "slots_count": 14,
+            "price": 12000,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "como-watch-silver-pink",
+            "title": "Como Watch Silver – Pink Dial Edition",
+            "model_type": "watch",
+            "dial_color": "pink",
+            "slots_count": 14,
+            "price": 12000,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "como-watch-silver-white",
+            "title": "Como Watch Silver – White Dial Edition",
+            "model_type": "watch",
+            "dial_color": "white",
+            "slots_count": 14,
+            "price": 12000,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "como-watch-silver-black",
+            "title": "Como Watch Silver – Black Dial Edition",
+            "model_type": "watch",
+            "dial_color": "black",
+            "slots_count": 14,
+            "price": 12000,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "como-watch-gold-white",
+            "title": "Como Watch Gold – White Dial Edition",
+            "model_type": "watch",
+            "dial_color": "white",
+            "slots_count": 14,
+            "price": 12900,
+            "default_color": "gold"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "como-watch-gold-emerald",
+            "title": "Como Watch Gold – Emerald Dial Edition",
+            "model_type": "watch",
+            "dial_color": "emerald",
+            "slots_count": 14,
+            "price": 12900,
+            "default_color": "gold"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

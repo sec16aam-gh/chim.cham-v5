@@ -1,0 +1,66 @@
+<!-- section-heading.liquid - Apply for all section title -->
+
+{%- if settings.sectionheading == 'heading-1' -%}
+  {%- if section.settings.title_top != blank -%}
+    <div class="subtop text-{{ section.settings.align-heading }} text-top {% if section.settings.title != blank %} mb-2 {% else %} mb-4 {% endif %}" data-aos="{{ section.settings.animation }}" data-aos-duration="300">{{ section.settings.title_top }}</div>
+  {%- endif -%}
+  {%- if section.settings.title != blank -%}
+  {%- if styleNewletter == "style-2" -%}
+    <h4 class="section-title-1 text-{{ section.settings.align-heading }}" data-aos="{{ section.settings.animation }}" data-aos-duration="500">
+      <span>{{ section.settings.title }}</span>
+    </h4>
+  {%- else -%}
+  <h3 class="section-title-2 text-{{ section.settings.align-heading }}  {% if section.settings.des != blank %} mb-2 {% else %} mb-5 {% endif %}" data-aos="{{ section.settings.animation }}" data-aos-duration="500">
+    <span>{{ section.settings.title }}</span>
+  </h3>
+  {%- endif-%}
+ 
+  {%- endif -%}
+  {%- if section.settings.des != blank -%}
+  <div class="font-family-2 mb-5 txt-body-70 text-{{ section.settings.align-heading }}" data-aos="{{ section.settings.animation }}" data-aos-duration="800">{{ section.settings.des }}</div>
+  {%- endif -%}
+{%- elsif settings.sectionheading == 'heading-2' -%}
+  {%- if section.settings.title_top != blank -%}
+    <div class="subtop text-center text-top" data-aos="{{ section.settings.animation }}" data-aos-duration="300">{{ section.settings.title_top }}</div>
+  {%- endif -%}
+  {%- if section.settings.title != blank -%}
+  <h3 class="section-title-2 {% if section.settings.des != blank %} mb-2 {% else %} mb-5 {% endif %}">
+    <span>{{ section.settings.title }}</span>
+  </h3>
+  {%- endif -%}
+  {%- if section.settings.des != blank -%}
+  <p class="font-family-2 mb-5 txt-body-70">{{ section.settings.des }}</p>
+  {%- endif -%}
+  {%- elsif settings.sectionheading == 'heading-3' -%}
+    {%- if section.settings.title_top != blank -%}
+  <div class="subtop text-{{ section.settings.align-heading }} text-top {% if section.settings.title != blank %} mb-2 {% else %} mb-4 {% endif %}" data-aos="{{ section.settings.animation }}" data-aos-duration="300">{{ section.settings.title_top }}</div>
+{%- endif -%}
+{%- if section.settings.title != blank -%}
+{%- if styleNewletter == "style-2" -%}
+  <h4 class="section-title-1 text-{{ section.settings.align-heading }}" data-aos="{{ section.settings.animation }}" data-aos-duration="500">
+    <span>{{ section.settings.title }}</span>
+  </h4>
+{%- else -%}
+<h3 class="section-title-2 text-{{ section.settings.align-heading }}  {% if section.settings.des != blank %} mb-2 {% elsif settings.enable_image_heading %} mb-3 {% else %} mb-5 {% endif %}" data-aos="{{ section.settings.animation }}" data-aos-duration="500">
+  <span>{{ section.settings.title }}</span>
+</h3>
+{%- if settings.enable_image_heading  -%}
+  <div class="d-flex justify-content-center justify-content-{% if section.settings.align-heading == 'right' %}end{%  else %}{{section.settings.align-heading}}{% endif %} mb-5">
+    {%- if settings.image_heading != blank -%}
+      <img
+      src="{{ settings.image_heading | image_url: width: 101 }}"
+      alt="{{ settings.image_heading.alt | escape }}"
+      loading="lazy"
+      width="{{ settings.image_heading.width }}"
+      height="{{ settings.image_heading.height }}">
+  {%- endif -%}
+  </div>
+{%- endif-%}
+
+{%- endif -%}
+
+{%- endif -%}
+{%- if section.settings.des != blank -%}
+<div class="section-des-2 font-family-2 mb-4 txt-body-70 text-{{ section.settings.align-heading }}" data-aos="{{ section.settings.animation }}" data-aos-duration="800">{{ section.settings.des }}</div>
+{%- endif -%}
+{%- endif -%}

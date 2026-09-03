@@ -1,0 +1,1365 @@
+{% comment %} <style>
+/* ============================================================
+   CHIM CHAM — Intro Splash Screen
+   ============================================================ */
+#chimcham-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FF85C2;
+  overflow: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+/* Hide once dismissed */
+#chimcham-splash.splash-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Animated background gradient */
+#chimcham-splash::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(circle at 30% 40%, #FFAAD8 0%, #FF85C2 35%, #FF5FAB 70%, #E83A96 100%);
+  animation: splashBgRotate 6s linear infinite;
+}
+
+@keyframes splashBgRotate {
+  0%   { transform: rotate(0deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1.2); }
+}
+
+/* Floating background hearts */
+.splash-heart {
+  position: absolute;
+  opacity: 0;
+  animation: floatHeart linear infinite;
+  pointer-events: none;
+}
+
+@keyframes floatHeart {
+  0%   { transform: translateY(110vh) scale(0.5) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.35; }
+  90%  { opacity: 0.2; }
+  100% { transform: translateY(-20vh) scale(1.1) rotate(20deg); opacity: 0; }
+}
+
+/* -------- Logo wrapper -------- */
+.splash-logo-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  animation: logoEntrance 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+}
+
+@keyframes logoEntrance {
+  0%   { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+  60%  { transform: scale(1.08) rotate(2deg); opacity: 1; }
+  80%  { transform: scale(0.96) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* SVG logo itself */
+.splash-logo-svg {
+  width: min(320px, 75vw);
+  height: auto;
+  filter: drop-shadow(0 8px 24px rgba(176, 30, 100, 0.45));
+  animation: logoPulse 2.2s ease-in-out 1.2s infinite alternate;
+}
+
+@keyframes logoPulse {
+  0%   { filter: drop-shadow(0 8px 24px rgba(176, 30, 100, 0.45)); }
+  100% { filter: drop-shadow(0 12px 36px rgba(176, 30, 100, 0.7)) brightness(1.05); }
+}
+
+/* -------- Sparkle particles -------- */
+.splash-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.sparkle {
+  position: absolute;
+  opacity: 0;
+  animation: sparkleAnim ease-in-out infinite;
+}
+
+/* 4-point star shape via SVG polygon */
+.sparkle svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes sparkleAnim {
+  0%   { opacity: 0; transform: scale(0) rotate(0deg); }
+  20%  { opacity: 1; transform: scale(1) rotate(45deg); }
+  50%  { opacity: 0.8; transform: scale(1.2) rotate(90deg); }
+  80%  { opacity: 0.4; transform: scale(0.8) rotate(135deg); }
+  100% { opacity: 0; transform: scale(0) rotate(180deg); }
+}
+
+/* -------- Shine sweep across logo -------- */
+.splash-shine {
+  position: absolute;
+  top: -20%;
+  left: -60%;
+  width: 40%;
+  height: 140%;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-15deg);
+  animation: shineSweep 2.4s ease-in-out 1s infinite;
+  z-index: 4;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+@keyframes shineSweep {
+  0%   { left: -60%; opacity: 0; }
+  10%  { opacity: 1; }
+  60%  { left: 120%; opacity: 1; }
+  61%  { opacity: 0; }
+  100% { left: 120%; opacity: 0; }
+}
+
+/* -------- Progress dots -------- */
+.splash-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 28px;
+  animation: dotsAppear 0.5s ease 1.2s both;
+}
+
+@keyframes dotsAppear {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.splash-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  animation: dotBounce 1.4s ease-in-out infinite;
+}
+.splash-dot:nth-child(1) { animation-delay: 0s;    background: #fff; }
+.splash-dot:nth-child(2) { animation-delay: 0.2s; }
+.splash-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(1); }
+  40% { transform: scale(1.5); background: #fff; }
+}
+
+/* -------- Tagline text -------- */
+.splash-tagline {
+  margin-top: 14px;
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  font-size: clamp(13px, 2.5vw, 17px);
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(176, 30, 100, 0.4);
+  animation: taglineAppear 0.7s ease 1.5s both;
+}
+
+@keyframes taglineAppear {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* -------- Responsive -------- */
+@media (max-width: 480px) {
+  .splash-logo-svg { width: min(260px, 80vw); }
+}
+</style>
+
+<!-- ============================================================
+     Splash screen HTML
+     ============================================================ -->
+<div id="chimcham-splash" role="dialog" aria-label="Loading Chim Cham" aria-live="polite">
+
+  <!-- Floating hearts (background) -->
+  <div class="splash-heart" style="left:8%;  width:22px; height:22px; animation-duration:7s;  animation-delay:0s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.4)"><path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/></svg>
+  </div>
+  <div class="splash-heart" style="left:25%; width:14px; height:14px; animation-duration:9s;  animation-delay:1.2s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.3)"><path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/></svg>
+  </div>
+  <div class="splash-heart" style="left:50%; width:18px; height:18px; animation-duration:8s;  animation-delay:0.5s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.35)"><path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/></svg>
+  </div>
+  <div class="splash-heart" style="left:70%; width:26px; height:26px; animation-duration:6.5s; animation-delay:2s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.3)"><path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/></svg>
+  </div>
+  <div class="splash-heart" style="left:88%; width:16px; height:16px; animation-duration:10s; animation-delay:0.8s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.4)"><path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/></svg>
+  </div>
+  <div class="splash-heart" style="left:40%; width:12px; height:12px; animation-duration:11s; animation-delay:3s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.25)"><path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/></svg>
+  </div>
+
+  <!-- Logo container -->
+  <div class="splash-logo-wrap">
+
+    <!-- Sparkle particles around the logo -->
+    <div class="splash-sparkles" aria-hidden="true">
+      <!-- Sparkle 1: top-left -->
+      <div class="sparkle" style="width:20px;height:20px; top:10%; left:12%; animation-duration:1.8s; animation-delay:1.0s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/></svg>
+      </div>
+      <!-- Sparkle 2: top-right -->
+      <div class="sparkle" style="width:14px;height:14px; top:5%;  right:10%; animation-duration:2.1s; animation-delay:1.4s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/></svg>
+      </div>
+      <!-- Sparkle 3: right -->
+      <div class="sparkle" style="width:22px;height:22px; top:42%; right:5%;  animation-duration:1.6s; animation-delay:0.8s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/></svg>
+      </div>
+      <!-- Sparkle 4: bottom-right -->
+      <div class="sparkle" style="width:16px;height:16px; bottom:8%; right:15%; animation-duration:2.3s; animation-delay:1.8s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/></svg>
+      </div>
+      <!-- Sparkle 5: bottom-left -->
+      <div class="sparkle" style="width:18px;height:18px; bottom:12%; left:8%;  animation-duration:1.9s; animation-delay:0.5s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/></svg>
+      </div>
+      <!-- Sparkle 6: left -->
+      <div class="sparkle" style="width:12px;height:12px; top:30%; left:5%;  animation-duration:2.5s; animation-delay:2.2s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/></svg>
+      </div>
+      <!-- Sparkle 7: top-centre -->
+      <div class="sparkle" style="width:24px;height:24px; top:2%;  left:46%; animation-duration:1.5s; animation-delay:1.1s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/></svg>
+      </div>
+      <!-- Sparkle 8: bottom-centre -->
+      <div class="sparkle" style="width:10px;height:10px; bottom:20%; left:48%; animation-duration:2.0s; animation-delay:0.3s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/></svg>
+      </div>
+      <!-- Sparkle 9: inner top-left of logo -->
+      <div class="sparkle" style="width:16px;height:16px; top:20%; left:20%; animation-duration:1.7s; animation-delay:1.6s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/></svg>
+      </div>
+      <!-- Sparkle 10: inner bottom-right of logo -->
+      <div class="sparkle" style="width:20px;height:20px; bottom:25%; right:18%; animation-duration:2.2s; animation-delay:0.9s;">
+        <svg viewBox="0 0 20 20"><polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/></svg>
+      </div>
+    </div>
+
+    <!-- The SVG logo + shine sweep -->
+    <div style="position:relative; display:inline-block; overflow:hidden; border-radius:20px;">
+      <img
+        src="{{ 'chimcham-logo.svg' | asset_url }}"
+        alt="Chim Cham Logo"
+        class="splash-logo-svg"
+        width="320"
+        height="275"
+        loading="eager"
+      >
+      <!-- Shine sweep overlay -->
+      <div class="splash-shine" aria-hidden="true"></div>
+    </div>
+
+    <!-- Tagline -->
+    <p class="splash-tagline">Sweet &amp; Sparkly ✦</p>
+
+    <!-- Loading dots -->
+    <div class="splash-dots" aria-hidden="true">
+      <span class="splash-dot"></span>
+      <span class="splash-dot"></span>
+      <span class="splash-dot"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SPLASH_DURATION = 5000; // ms before auto-dismiss
+  var splash = document.getElementById('chimcham-splash');
+
+  function dismissSplash() {
+    if (!splash) return;
+    splash.classList.add('splash-hidden');
+    // Remove from DOM after transition ends to free memory
+    splash.addEventListener('transitionend', function () {
+      if (splash && splash.parentNode) {
+        splash.parentNode.removeChild(splash);
+      }
+    }, { once: true });
+    // Re-enable page scrolling
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+
+  // Prevent scroll while splash is showing
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
+
+  // Auto-dismiss after duration
+  var timer = setTimeout(dismissSplash, SPLASH_DURATION);
+
+  // Also allow click/tap to dismiss early
+  splash.addEventListener('click', function () {
+    clearTimeout(timer);
+    dismissSplash();
+  });
+  splash.addEventListener('touchend', function () {
+    clearTimeout(timer);
+    dismissSplash();
+  });
+
+  // Dismiss as soon as the page is fully interactive (DOMContentLoaded or load)
+  // but wait at least SPLASH_DURATION for the animation to shine
+  var pageReady = false;
+  function onPageReady() {
+    if (pageReady) return;
+    pageReady = true;
+    // If page loaded quickly, keep showing until SPLASH_DURATION at minimum
+    // (timer already set above — no action needed)
+  }
+  document.addEventListener('DOMContentLoaded', onPageReady);
+  window.addEventListener('load', onPageReady);
+})();
+</script> {% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %} 
+<style>
+  /* ============================================================
+   CHIM CHAM — Intro Splash Screen
+   ============================================================ */
+  #chimcham-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ff85c2;
+    overflow: hidden;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+
+  /* Hide once dismissed */
+  #chimcham-splash.splash-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* Animated background gradient */
+  #chimcham-splash::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: radial-gradient(circle at 30% 40%, #ffaad8 0%, #ff85c2 35%, #ff5fab 70%, #e83a96 100%);
+    animation: splashBgRotate 6s linear infinite;
+  }
+
+  @keyframes splashBgRotate {
+    0% {
+      transform: rotate(0deg) scale(1.2);
+    }
+    100% {
+      transform: rotate(360deg) scale(1.2);
+    }
+  }
+
+  /* Floating background hearts */
+  .splash-heart {
+    position: absolute;
+    opacity: 0;
+    animation: floatHeart linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes floatHeart {
+    0% {
+      transform: translateY(110vh) scale(0.5) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.35;
+    }
+    90% {
+      opacity: 0.2;
+    }
+    100% {
+      transform: translateY(-20vh) scale(1.1) rotate(20deg);
+      opacity: 0;
+    }
+  }
+
+  /* -------- Logo wrapper -------- */
+  .splash-logo-wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    animation: logoEntrance 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+  }
+
+  @keyframes logoEntrance {
+    0% {
+      transform: scale(0.3) rotate(-8deg);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.08) rotate(2deg);
+      opacity: 1;
+    }
+    80% {
+      transform: scale(0.96) rotate(-1deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  /* SVG logo itself */
+  .splash-logo-svg {
+    width: min(320px, 75vw);
+    height: auto;
+    filter: drop-shadow(0 8px 24px rgba(176, 30, 100, 0.45));
+    animation: logoPulse 2.2s ease-in-out 1.2s infinite alternate;
+  }
+
+  @keyframes logoPulse {
+    0% {
+      filter: drop-shadow(0 8px 24px rgba(176, 30, 100, 0.45));
+    }
+    100% {
+      filter: drop-shadow(0 12px 36px rgba(176, 30, 100, 0.7)) brightness(1.05);
+    }
+  }
+
+  /* -------- Sparkle particles -------- */
+  .splash-sparkles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .sparkle {
+    position: absolute;
+    opacity: 0;
+    animation: sparkleAnim ease-in-out infinite;
+  }
+
+  /* 4-point star shape via SVG polygon */
+  .sparkle svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  @keyframes sparkleAnim {
+    0% {
+      opacity: 0;
+      transform: scale(0) rotate(0deg);
+    }
+    20% {
+      opacity: 1;
+      transform: scale(1) rotate(45deg);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.2) rotate(90deg);
+    }
+    80% {
+      opacity: 0.4;
+      transform: scale(0.8) rotate(135deg);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0) rotate(180deg);
+    }
+  }
+
+  /* -------- Shine sweep across whole screen -------- */
+  .splash-shine {
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 150%;
+    height: 200%;
+    background: linear-gradient(
+      105deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.05) 35%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.05) 65%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-25deg);
+    animation: shineSweep 6s ease-in-out infinite;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  @keyframes shineSweep {
+    0% {
+      left: -150%;
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      left: 100%;
+      opacity: 0;
+    }
+  }
+
+  /* -------- Progress dots -------- */
+  .splash-dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 28px;
+    animation: dotsAppear 0.5s ease 1.2s both;
+  }
+
+  @keyframes dotsAppear {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .splash-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    animation: dotBounce 1.4s ease-in-out infinite;
+  }
+  .splash-dot:nth-child(1) {
+    animation-delay: 0s;
+    background: #fff;
+  }
+  .splash-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .splash-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes dotBounce {
+    0%,
+    80%,
+    100% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.5);
+      background: #fff;
+    }
+  }
+
+  /* -------- Tagline text -------- */
+  .splash-tagline {
+    margin-top: 14px;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-size: clamp(13px, 2.5vw, 17px);
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 2px;
+    text-shadow: 0 2px 8px rgba(176, 30, 100, 0.4);
+    animation: taglineAppear 0.7s ease 1.5s both;
+  }
+
+  @keyframes taglineAppear {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* -------- Responsive -------- */
+  @media (max-width: 480px) {
+    .splash-logo-svg {
+      width: min(260px, 80vw);
+    }
+  }
+</style>
+
+<!--
+  ============================================================
+  Splash screen HTML
+  ============================================================
+-->
+<div id="chimcham-splash" role="dialog" aria-label="Loading Chim Cham" aria-live="polite">
+  
+  <!-- Full-screen sparkling shine sweep -->
+  <div class="splash-shine" aria-hidden="true"></div>
+
+  <!-- Floating hearts (background) -->
+  <div class="splash-heart" style="left:8%;  width:22px; height:22px; animation-duration:7s;  animation-delay:0s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.4)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:25%; width:14px; height:14px; animation-duration:9s;  animation-delay:1.2s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.3)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:50%; width:18px; height:18px; animation-duration:8s;  animation-delay:0.5s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.35)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:70%; width:26px; height:26px; animation-duration:6.5s; animation-delay:2s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.3)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:88%; width:16px; height:16px; animation-duration:10s; animation-delay:0.8s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.4)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:40%; width:12px; height:12px; animation-duration:11s; animation-delay:3s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.25)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+
+  <!-- Logo container -->
+  <div class="splash-logo-wrap">
+    <!-- Sparkle particles around the logo -->
+    <div class="splash-sparkles" aria-hidden="true">
+      <!-- Sparkle 1: top-left -->
+      <div
+        class="sparkle"
+        style="width:20px;height:20px; top:10%; left:12%; animation-duration:1.8s; animation-delay:1.0s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 2: top-right -->
+      <div
+        class="sparkle"
+        style="width:14px;height:14px; top:5%;  right:10%; animation-duration:2.1s; animation-delay:1.4s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 3: right -->
+      <div
+        class="sparkle"
+        style="width:22px;height:22px; top:42%; right:5%;  animation-duration:1.6s; animation-delay:0.8s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/>
+        </svg>
+      </div>
+      <!-- Sparkle 4: bottom-right -->
+      <div
+        class="sparkle"
+        style="width:16px;height:16px; bottom:8%; right:15%; animation-duration:2.3s; animation-delay:1.8s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 5: bottom-left -->
+      <div
+        class="sparkle"
+        style="width:18px;height:18px; bottom:12%; left:8%;  animation-duration:1.9s; animation-delay:0.5s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/>
+        </svg>
+      </div>
+      <!-- Sparkle 6: left -->
+      <div
+        class="sparkle"
+        style="width:12px;height:12px; top:30%; left:5%;  animation-duration:2.5s; animation-delay:2.2s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 7: top-centre -->
+      <div
+        class="sparkle"
+        style="width:24px;height:24px; top:2%;  left:46%; animation-duration:1.5s; animation-delay:1.1s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 8: bottom-centre -->
+      <div
+        class="sparkle"
+        style="width:10px;height:10px; bottom:20%; left:48%; animation-duration:2.0s; animation-delay:0.3s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/>
+        </svg>
+      </div>
+      <!-- Sparkle 9: inner top-left of logo -->
+      <div
+        class="sparkle"
+        style="width:16px;height:16px; top:20%; left:20%; animation-duration:1.7s; animation-delay:1.6s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 10: inner bottom-right of logo -->
+      <div
+        class="sparkle"
+        style="width:20px;height:20px; bottom:25%; right:18%; animation-duration:2.2s; animation-delay:0.9s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- The SVG logo -->
+    <div style="position:relative; display:inline-block; border-radius:20px;">
+      <img
+        src="{{ 'transparent-logo.png' | asset_url }}"
+        alt="Chim Cham Logo"
+        class="splash-logo-svg"
+        width="320"
+        height="275"
+        loading="eager"
+      >
+    </div>
+
+    <!-- Tagline -->
+    <p class="splash-tagline">Sweet &amp; Sparkly ✦</p>
+
+    <!-- Loading dots -->
+    <div class="splash-dots" aria-hidden="true">
+      <span class="splash-dot"></span>
+      <span class="splash-dot"></span>
+      <span class="splash-dot"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    'use strict';
+
+    var SPLASH_DURATION = 5000; // ms before auto-dismiss
+    var splash = document.getElementById('chimcham-splash');
+
+    function dismissSplash() {
+      if (!splash) return;
+      splash.classList.add('splash-hidden');
+      // Remove from DOM after transition ends to free memory
+      splash.addEventListener(
+        'transitionend',
+        function () {
+          if (splash && splash.parentNode) {
+            splash.parentNode.removeChild(splash);
+          }
+        },
+        { once: true }
+      );
+      // Re-enable page scrolling
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    }
+
+    // Prevent scroll while splash is showing
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    // Auto-dismiss after duration
+    var timer = setTimeout(dismissSplash, SPLASH_DURATION);
+
+    // Also allow click/tap to dismiss early
+    splash.addEventListener('click', function () {
+      clearTimeout(timer);
+      dismissSplash();
+    });
+    splash.addEventListener('touchend', function () {
+      clearTimeout(timer);
+      dismissSplash();
+    });
+
+    // Dismiss as soon as the page is fully interactive (DOMContentLoaded or load)
+    // but wait at least SPLASH_DURATION for the animation to shine
+    var pageReady = false;
+    function onPageReady() {
+      if (pageReady) return;
+      pageReady = true;
+      // If page loaded quickly, keep showing until SPLASH_DURATION at minimum
+      // (timer already set above — no action needed)
+    }
+    document.addEventListener('DOMContentLoaded', onPageReady);
+    window.addEventListener('load', onPageReady);
+  })();
+</script> {% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+  /* ============================================================
+   CHIM CHAM — Intro Splash Screen
+   ============================================================ */
+  #chimcham-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ff85c2;
+    overflow: hidden;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+
+  /* Hide once dismissed */
+  #chimcham-splash.splash-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* Animated background gradient */
+  #chimcham-splash::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: radial-gradient(circle at 30% 40%, #ffaad8 0%, #ff85c2 35%, #ff5fab 70%, #e83a96 100%);
+    animation: splashBgRotate 6s linear infinite;
+  }
+
+  @keyframes splashBgRotate {
+    0% {
+      transform: rotate(0deg) scale(1.2);
+    }
+    100% {
+      transform: rotate(360deg) scale(1.2);
+    }
+  }
+
+  /* Floating background hearts */
+  .splash-heart {
+    position: absolute;
+    opacity: 0;
+    animation: floatHeart linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes floatHeart {
+    0% {
+      transform: translateY(110vh) scale(0.5) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.35;
+    }
+    90% {
+      opacity: 0.2;
+    }
+    100% {
+      transform: translateY(-20vh) scale(1.1) rotate(20deg);
+      opacity: 0;
+    }
+  }
+
+  /* -------- Logo wrapper -------- */
+  .splash-logo-wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    animation: logoEntrance 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+  }
+
+  @keyframes logoEntrance {
+    0% {
+      transform: scale(0.3) rotate(-8deg);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.08) rotate(2deg);
+      opacity: 1;
+    }
+    80% {
+      transform: scale(0.96) rotate(-1deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  /* SVG logo itself */
+  .splash-logo-svg {
+    width: min(320px, 75vw);
+    height: auto;
+    filter: drop-shadow(0 8px 24px rgba(176, 30, 100, 0.45));
+    animation: logoPulse 2.2s ease-in-out 1.2s infinite alternate;
+  }
+
+  @keyframes logoPulse {
+    0% {
+      filter: drop-shadow(0 8px 24px rgba(176, 30, 100, 0.45));
+    }
+    100% {
+      filter: drop-shadow(0 12px 36px rgba(176, 30, 100, 0.7)) brightness(1.05);
+    }
+  }
+
+  /* -------- Sparkle particles -------- */
+  .splash-sparkles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .sparkle {
+    position: absolute;
+    opacity: 0;
+    animation: sparkleAnim ease-in-out infinite;
+  }
+
+  /* 4-point star shape via SVG polygon */
+  .sparkle svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  @keyframes sparkleAnim {
+    0% {
+      opacity: 0;
+      transform: scale(0) rotate(0deg);
+    }
+    20% {
+      opacity: 1;
+      transform: scale(1) rotate(45deg);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.2) rotate(90deg);
+    }
+    80% {
+      opacity: 0.4;
+      transform: scale(0.8) rotate(135deg);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0) rotate(180deg);
+    }
+  }
+
+  /* -------- Shine sweep across whole screen -------- */
+  .splash-shine {
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 150%;
+    height: 200%;
+    background: linear-gradient(
+      105deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.05) 35%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.05) 65%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-25deg);
+    animation: shineSweep 6s ease-in-out infinite;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  @keyframes shineSweep {
+    0% {
+      left: -150%;
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      left: 100%;
+      opacity: 0;
+    }
+  }
+
+  /* -------- Progress dots -------- */
+  .splash-dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 28px;
+    animation: dotsAppear 0.5s ease 1.2s both;
+  }
+
+  @keyframes dotsAppear {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .splash-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    animation: dotBounce 1.4s ease-in-out infinite;
+  }
+  .splash-dot:nth-child(1) {
+    animation-delay: 0s;
+    background: #fff;
+  }
+  .splash-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .splash-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes dotBounce {
+    0%,
+    80%,
+    100% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.5);
+      background: #fff;
+    }
+  }
+
+  /* -------- Tagline text -------- */
+  .splash-tagline {
+    margin-top: 14px;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-size: clamp(13px, 2.5vw, 17px);
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 2px;
+    text-shadow: 0 2px 8px rgba(176, 30, 100, 0.4);
+    animation: taglineAppear 0.7s ease 1.5s both;
+  }
+
+  @keyframes taglineAppear {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* -------- Responsive -------- */
+  @media (max-width: 480px) {
+    .splash-logo-svg {
+      width: min(260px, 80vw);
+    }
+  }
+</style>
+
+<!--
+  ============================================================
+  Splash screen HTML
+  ============================================================
+-->
+<div id="chimcham-splash" role="dialog" aria-label="Loading Chim Cham" aria-live="polite">
+  
+  <!-- Full-screen sparkling shine sweep -->
+  <div class="splash-shine" aria-hidden="true"></div>
+
+  <!-- Floating hearts (background) -->
+  <div class="splash-heart" style="left:8%;  width:22px; height:22px; animation-duration:7s;  animation-delay:0s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.4)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:25%; width:14px; height:14px; animation-duration:9s;  animation-delay:1.2s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.3)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:50%; width:18px; height:18px; animation-duration:8s;  animation-delay:0.5s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.35)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:70%; width:26px; height:26px; animation-duration:6.5s; animation-delay:2s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.3)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:88%; width:16px; height:16px; animation-duration:10s; animation-delay:0.8s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.4)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+  <div class="splash-heart" style="left:40%; width:12px; height:12px; animation-duration:11s; animation-delay:3s;">
+    <svg viewBox="0 0 30 28" fill="rgba(255,255,255,0.25)">
+      <path d="M15,26 C15,26 2,17 2,9 C2,5 5,2 9,2 C11.5,2 13.5,3.3 15,5 C16.5,3.3 18.5,2 21,2 C25,2 28,5 28,9 C28,17 15,26 15,26Z"/>
+    </svg>
+  </div>
+
+  <!-- Logo container -->
+  <div class="splash-logo-wrap">
+    <!-- Sparkle particles around the logo -->
+    <div class="splash-sparkles" aria-hidden="true">
+      <!-- Sparkle 1: top-left -->
+      <div
+        class="sparkle"
+        style="width:20px;height:20px; top:10%; left:12%; animation-duration:1.8s; animation-delay:1.0s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 2: top-right -->
+      <div
+        class="sparkle"
+        style="width:14px;height:14px; top:5%;  right:10%; animation-duration:2.1s; animation-delay:1.4s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 3: right -->
+      <div
+        class="sparkle"
+        style="width:22px;height:22px; top:42%; right:5%;  animation-duration:1.6s; animation-delay:0.8s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/>
+        </svg>
+      </div>
+      <!-- Sparkle 4: bottom-right -->
+      <div
+        class="sparkle"
+        style="width:16px;height:16px; bottom:8%; right:15%; animation-duration:2.3s; animation-delay:1.8s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 5: bottom-left -->
+      <div
+        class="sparkle"
+        style="width:18px;height:18px; bottom:12%; left:8%;  animation-duration:1.9s; animation-delay:0.5s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/>
+        </svg>
+      </div>
+      <!-- Sparkle 6: left -->
+      <div
+        class="sparkle"
+        style="width:12px;height:12px; top:30%; left:5%;  animation-duration:2.5s; animation-delay:2.2s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 7: top-centre -->
+      <div
+        class="sparkle"
+        style="width:24px;height:24px; top:2%;  left:46%; animation-duration:1.5s; animation-delay:1.1s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 8: bottom-centre -->
+      <div
+        class="sparkle"
+        style="width:10px;height:10px; bottom:20%; left:48%; animation-duration:2.0s; animation-delay:0.3s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/>
+        </svg>
+      </div>
+      <!-- Sparkle 9: inner top-left of logo -->
+      <div
+        class="sparkle"
+        style="width:16px;height:16px; top:20%; left:20%; animation-duration:1.7s; animation-delay:1.6s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="white"/>
+        </svg>
+      </div>
+      <!-- Sparkle 10: inner bottom-right of logo -->
+      <div
+        class="sparkle"
+        style="width:20px;height:20px; bottom:25%; right:18%; animation-duration:2.2s; animation-delay:0.9s;"
+      >
+        <svg viewBox="0 0 20 20">
+          <polygon points="10,0 11.8,8.2 20,10 11.8,11.8 10,20 8.2,11.8 0,10 8.2,8.2" fill="#FFD6EC"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- The SVG logo -->
+    <div style="position:relative; display:inline-block; border-radius:20px;">
+      <img
+        src="{{ 'transparent-logo.png' | asset_url }}"
+        alt="Chim Cham Logo"
+        class="splash-logo-svg"
+        width="320"
+        height="275"
+        loading="eager"
+      >
+    </div>
+
+
+    <!-- Loading dots -->
+    <div class="splash-dots" aria-hidden="true">
+      <span class="splash-dot"></span>
+      <span class="splash-dot"></span>
+      <span class="splash-dot"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    'use strict';
+
+    var SPLASH_DURATION = 5000; // ms before auto-dismiss
+    var splash = document.getElementById('chimcham-splash');
+
+    function dismissSplash() {
+      if (!splash) return;
+      splash.classList.add('splash-hidden');
+      // Remove from DOM after transition ends to free memory
+      splash.addEventListener(
+        'transitionend',
+        function () {
+          if (splash && splash.parentNode) {
+            splash.parentNode.removeChild(splash);
+          }
+        },
+        { once: true }
+      );
+      // Re-enable page scrolling
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    }
+
+    // Prevent scroll while splash is showing
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    // Auto-dismiss after duration
+    var timer = setTimeout(dismissSplash, SPLASH_DURATION);
+
+    // Also allow click/tap to dismiss early
+    splash.addEventListener('click', function () {
+      clearTimeout(timer);
+      dismissSplash();
+    });
+    splash.addEventListener('touchend', function () {
+      clearTimeout(timer);
+      dismissSplash();
+    });
+
+    // Dismiss as soon as the page is fully interactive (DOMContentLoaded or load)
+    // but wait at least SPLASH_DURATION for the animation to shine
+    var pageReady = false;
+    function onPageReady() {
+      if (pageReady) return;
+      pageReady = true;
+      // If page loaded quickly, keep showing until SPLASH_DURATION at minimum
+      // (timer already set above — no action needed)
+    }
+    document.addEventListener('DOMContentLoaded', onPageReady);
+    window.addEventListener('load', onPageReady);
+  })();
+</script>
