@@ -14,8 +14,8 @@
 
   assign currency_code = cart.currency.iso_code | default: 'KWD'
   assign currency_symbol = currency_code
-  assign brand_mark = section.settings.brand_mark | default: 'CA'
-  assign brand_name = section.settings.brand_name | default: 'Charm Atelier'
+  assign brand_mark = section.settings.brand_mark | default: 'CC'
+  assign brand_name = section.settings.brand_name | default: 'CHIM.CHAM'
 -%}
 
 <div class="customstyle{{ section_id }} bracelet-builder-section-wrap" id="bracelet-builder-section-{{ section_id }}">
@@ -48,7 +48,23 @@
       <section class="bb-workbench" aria-label="Bracelet canvas">
         <div class="bb-workbench-toolbar">
           
-          <div class="bb-toolbar-group">
+          <!-- Mobile Expandable Model & Color Header Bar -->
+          <div class="bb-mobile-model-bar">
+            <button class="bb-mobile-summary-btn" type="button" data-mobile-expand-btn aria-expanded="false" aria-label="Toggle bracelet model and color options">
+              <div class="bb-mobile-summary-left">
+                <span class="bb-mobile-summary-icon">
+                  <span class="bb-swatch swatch-silver"></span>
+                </span>
+                <span class="bb-mobile-summary-title">Original Bracelet · Silver</span>
+              </div>
+              <div class="bb-mobile-summary-right">
+                <span class="bb-mobile-summary-badge">Change</span>
+                <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+            </button>
+          </div>
+
+          <div class="bb-toolbar-group" data-model-color-group>
             
             {%- comment -%} 1. Bracelet Model Dropdown {%- endcomment -%}
             <div class="bb-select-wrap">

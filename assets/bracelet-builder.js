@@ -119,6 +119,10 @@
     cacheDOMElements() {
       const c = this.container;
       this.dom = {
+        mobileExpandBtn: c.querySelector('[data-mobile-expand-btn]'),
+        modelColorGroup: c.querySelector('[data-model-color-group]'),
+        mobileSummaryIcon: c.querySelector('.bb-mobile-summary-icon'),
+        mobileSummaryTitle: c.querySelector('.bb-mobile-summary-title'),
         modelBtn: c.querySelector('[data-model-btn]'),
         modelMenu: c.querySelector('[data-model-menu]'),
         colorBtn: c.querySelector('[data-color-btn]'),
@@ -320,6 +324,44 @@
           <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         `;
       }
+
+      // Update Mobile Summary Bar
+      this.updateMobileSummaryUI();
+    }
+
+    updateMobileSummaryUI() {
+      const model = this.selectedModel;
+      const color = this.selectedColor;
+      if (!model || !this.dom.mobileSummaryTitle) return;
+
+      const colorTitle = color ? color.title : 'Silver';
+      this.dom.mobileSummaryTitle.textContent = `${model.title} · ${colorTitle}`;
+
+      if (this.dom.mobileSummaryIcon) {
+        const modelThumb = model.image || (model.type === 'watch' ? this.getWatchImageSrc(model) : this.getMetalLinkImageSrc(color?.handle || 'silver'));
+        this.dom.mobileSummaryIcon.innerHTML = modelThumb 
+          ? `<span class="bb-pill-icon" style="background-image: url('${modelThumb}');"></span>`
+          : `<span class="bb-swatch swatch-${color?.handle || 'silver'}"></span>`;
+      }
+    }
+
+    expandMobileToolbar() {
+      if (this.dom.modelColorGroup) {
+        this.dom.modelColorGroup.classList.add('is-expanded');
+      }
+      if (this.dom.mobileExpandBtn) {
+        this.dom.mobileExpandBtn.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    collapseMobileToolbar() {
+      if (this.dom.modelColorGroup) {
+        this.dom.modelColorGroup.classList.remove('is-expanded');
+      }
+      if (this.dom.mobileExpandBtn) {
+        this.dom.mobileExpandBtn.setAttribute('aria-expanded', 'false');
+      }
+      this.closeAllDropdowns();
     }
 
     setupCanvasScrollOverflow() {
@@ -370,6 +412,17 @@
     }
 
     bindEvents() {
+      // Mobile Expandable Model & Color Toolbar Toggle
+      this.dom.mobileExpandBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isExpanded = this.dom.modelColorGroup?.classList.contains('is-expanded');
+        if (isExpanded) {
+          this.collapseMobileToolbar();
+        } else {
+          this.expandMobileToolbar();
+        }
+      });
+
       // Dropdown Toggles
       this.dom.modelBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -410,7 +463,7 @@
         e.stopPropagation();
       });
 
-      // Close popovers and search on outside click
+      // Close popovers, search, and mobile accordion on outside click
       document.addEventListener('click', (e) => {
         this.closeAllDropdowns();
         if (this.dom.searchControl?.classList.contains('is-open')) {
@@ -418,12 +471,16 @@
             this.closeSearch();
           }
         }
+        if (window.innerWidth < 992 && !e.target.closest('[data-model-color-group], [data-mobile-expand-btn]')) {
+          this.collapseMobileToolbar();
+        }
       });
 
       // Escape key closes search, modals & menus
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           this.closeAllDropdowns();
+          this.collapseMobileToolbar();
           this.closeSearch();
           this.closeResetModal();
           this.dom.helpModal?.classList.remove('is-open');
@@ -437,6 +494,9 @@
         const modelId = item.dataset.modelId;
         this.selectModel(modelId);
         this.closeAllDropdowns();
+        if (window.innerWidth < 992) {
+          this.collapseMobileToolbar();
+        }
       });
 
       // Color Select Items
@@ -446,6 +506,9 @@
         const colorId = item.dataset.colorId;
         this.selectColor(colorId);
         this.closeAllDropdowns();
+        if (window.innerWidth < 992) {
+          this.collapseMobileToolbar();
+        }
       });
 
       // Search
@@ -777,6 +840,9 @@
             <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
           `;
         }
+
+        // Update Mobile Summary Bar
+        this.updateMobileSummaryUI();
       } catch (err) {
         console.warn('BraceletBuilder: Error rendering color dropdown', err);
       }
@@ -863,6 +929,9 @@
           <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         `;
       }
+
+      // Update Mobile Summary Bar
+      this.updateMobileSummaryUI();
 
       // Re-render
       this.renderCanvas();
@@ -1114,6 +1183,8 @@
                 destPendantX, 64, destPendantW, destPendantH
               );
 
+              if (!this.calibratedCanvases) this.calibratedCanvases = {};
+              this.calibratedCanvases[imageUrl] = compCanvas;
               finalUrl = compCanvas.toDataURL('image/png');
             } else {
               // Standard / Flat charm or Double charm: trim whitespace and scale flush
@@ -1122,6 +1193,8 @@
               trimmedCanvas.height = contentH;
               const tCtx = trimmedCanvas.getContext('2d');
               tCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, contentW, contentH);
+              if (!this.calibratedCanvases) this.calibratedCanvases = {};
+              this.calibratedCanvases[imageUrl] = trimmedCanvas;
               finalUrl = trimmedCanvas.toDataURL('image/png');
             }
           }
@@ -1318,7 +1391,7 @@
         `;
       }).join('');
 
-      // Background-warm transparency cache for visible catalog items so first-time drag is immediately available
+      // Background-warm transparency cache in memory so drag-and-drop and slot placement are instant
       const warmup = () => {
         const count = Math.min(filtered.length, 60);
         for (let i = 0; i < count; i++) {
@@ -1550,8 +1623,10 @@
       const imgW = (existingImg && existingImg.naturalWidth) ? existingImg.naturalWidth : slotWidth;
       const imgH = (existingImg && existingImg.naturalHeight) ? existingImg.naturalHeight : slotHeight;
 
-      const canvasWidth = isHanging ? Math.max(slotWidth, imgW) : slotWidth;
-      const canvasHeight = isHanging ? Math.max(104, imgH) : slotHeight;
+      // Always enforce exact 64px slot width (or 128px for double) so the drag avatar
+      // matches the bracelet slot 1:1 on the screen (never enlarged)
+      const canvasWidth = slotWidth;
+      const canvasHeight = isHanging ? 106 : slotHeight;
 
       // 2. High-DPI Canvas for crisp, synchronously-rendered drag feedback
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1569,31 +1644,51 @@
       const ctx = canvas.getContext('2d');
       ctx.scale(dpr, dpr);
 
-      const linkOffsetX = Math.round((canvasWidth - slotWidth) / 2);
-
       // Draw base metal link (top 64px)
       const linkObj = this.preloadedLinks && this.preloadedLinks[finishHandle];
       if (linkObj && linkObj.complete && linkObj.naturalWidth > 0) {
-        ctx.drawImage(linkObj, linkOffsetX, 0, slotWidth, slotHeight);
+        ctx.drawImage(linkObj, 0, 0, slotWidth, slotHeight);
       } else {
         ctx.fillStyle = finishHandle === 'gold' ? '#dfbe75' : finishHandle === 'rose' ? '#e2a799' : finishHandle === 'black' ? '#2b2b2b' : '#e6e8e7';
-        ctx.fillRect(linkOffsetX, 0, slotWidth, slotHeight);
+        ctx.fillRect(0, 0, slotWidth, slotHeight);
         ctx.strokeStyle = finishHandle === 'gold' ? '#bfa058' : finishHandle === 'rose' ? '#c88c80' : finishHandle === 'black' ? '#1a1a1a' : '#c0c4c2';
         ctx.lineWidth = 1;
-        ctx.strokeRect(linkOffsetX, 0, slotWidth, slotHeight);
+        ctx.strokeRect(0, 0, slotWidth, slotHeight);
       }
 
-      // Draw charm image directly from existing rendered image
+      // 3. Draw charm image:
+      // Priority A: If an offscreen calibrated canvas already exists, draw it directly!
       let charmDrawn = false;
-      if (existingImg && existingImg.complete && existingImg.naturalWidth > 0) {
+      const cachedCanvas = this.calibratedCanvases && this.calibratedCanvases[charm.image];
+      if (cachedCanvas) {
+        try {
+          ctx.drawImage(cachedCanvas, 0, 0, slotWidth, canvasHeight);
+          charmDrawn = true;
+        } catch (err) {
+          charmDrawn = false;
+        }
+      }
+
+      // Priority B: Draw directly from existing rendered <img> element
+      if (!charmDrawn && existingImg && existingImg.complete && existingImg.naturalWidth > 0) {
         try {
           if (isHanging) {
-            // Center the calibrated hanging charm image over the 64px link
-            const dx = Math.round((canvasWidth - imgW) / 2);
-            ctx.drawImage(existingImg, dx, 0, imgW, imgH);
+            // Check if existingImg is already a calibrated 64x106 image
+            if (existingImg.naturalHeight <= 140) {
+              ctx.drawImage(existingImg, 0, 0, slotWidth, canvasHeight);
+            } else {
+              // Raw product photo: top ~36% is link, remainder is pendant
+              const nw = existingImg.naturalWidth;
+              const nh = existingImg.naturalHeight;
+              const linkH = Math.round(nh * 0.36);
+              // Draw top link (64x64)
+              ctx.drawImage(existingImg, 0, 0, nw, linkH, 0, 0, 64, 64);
+              // Draw pendant (42px dangle below)
+              ctx.drawImage(existingImg, 0, linkH, nw, nh - linkH, 0, 64, 64, 42);
+            }
           } else {
-            // Edge-to-edge flush on block face (from 1-2 and 3-4)
-            ctx.drawImage(existingImg, linkOffsetX, 0, slotWidth, slotHeight);
+            // Edge-to-edge flush on block face (64x64 or 128x64)
+            ctx.drawImage(existingImg, 0, 0, slotWidth, slotHeight);
           }
           charmDrawn = true;
         } catch (err) {
@@ -1604,7 +1699,7 @@
       if (charmDrawn) {
         document.body.appendChild(canvas);
         try {
-          e.dataTransfer.setDragImage(canvas, canvasWidth / 2, slotHeight / 2);
+          e.dataTransfer.setDragImage(canvas, slotWidth / 2, slotHeight / 2);
           requestAnimationFrame(() => {
             if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
           });
@@ -1642,7 +1737,8 @@
           cloned.style.height = 'auto';
           cloned.style.position = 'absolute';
           cloned.style.top = '0';
-          cloned.style.left = '0';
+          cloned.style.left = '50%';
+          cloned.style.transform = 'translateX(-50%)';
           cloned.style.objectFit = 'contain';
         } else {
           cloned.style.width = '100%';
@@ -1975,7 +2071,7 @@
 
     copyDesignSummary() {
       const placedCount = this.getPlacedCharmsCount();
-      let summaryText = `Charm Atelier Custom Bracelet Build\n`;
+      let summaryText = `CHIM.CHAM Custom Bracelet Build\n`;
       summaryText += `Model: ${this.selectedModel.title} (${this.selectedColor.title})\n`;
       summaryText += `Total Charms: ${placedCount}/${this.slotsCount}\n\n`;
       summaryText += `Layout:\n`;
