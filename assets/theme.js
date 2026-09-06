@@ -7292,6 +7292,8 @@ window.AjaxCart = (function() {
       }else{
         theme.crosssell.showPopup(item);
       }
+    } else {
+      $('.js-mini-cart').addClass('active');
     }
   };
 
@@ -10234,8 +10236,10 @@ theme.quickview = (function() {
         var styleCart = $('.js-mini-cart').attr("data-cartmini");
         
         if(styleCart != 'true'){
-        var htmlAlert = '<div class="media mt-2 alert--cart"><a class="mr-3" href="/cart"><img class="lazyload" data-src="'+item.image+'"></a><div class="media-body align-self-center"><p class="m-0 font-weight-bold">'+item.product_title+' x '+ item.quantity +'</p>'+htmlVariant+'<div><div>';
-        theme.alert.new(theme.strings.addToCartSuccess,htmlAlert,3000,'notice');
+          var htmlAlert = '<div class="media mt-2 alert--cart"><a class="mr-3" href="/cart"><img class="lazyload" data-src="'+item.image+'"></a><div class="media-body align-self-center"><p class="m-0 font-weight-bold">'+item.product_title+' x '+ item.quantity +'</p>'+htmlVariant+'<div><div>';
+          theme.alert.new(theme.strings.addToCartSuccess,htmlAlert,3000,'notice');
+        } else {
+          $('.js-mini-cart').addClass('active');
         }
         
         theme.miniCart.updateElements();
@@ -10336,6 +10340,8 @@ theme.addCartButton = (function(){
       var styleCart = $('.js-mini-cart').attr("data-cartmini");
         if(styleCart != 'true'){
           var htmlAlert = '<div class="media mt-2 alert--cart"><a class="mr-3" href="/cart"><img class="lazyload" data-src="'+item.image+'"></a><div class="media-body align-self-center"><p class="m-0 font-weight-bold">'+item.product_title+' x '+ item.quantity +'</p>'+htmlVariant+'<div><div>';
+        } else {
+          $('.js-mini-cart').addClass('active');
         }
         theme.miniCart.generateCart();
         theme.miniCart.updateElements();
@@ -10453,13 +10459,13 @@ theme.miniCart = (function(){
         $(cartContent).html(emptyCartHTML);
         $btnCheckout.addClass('disabled');
         $(`${$cartBottom}, ${$crosellcart}`).hide(100);
-        styleCart === 'true' ? $(miniCart).removeClass('active') : null;
-        
       }else{
         //$(cartContent).html(emptyCartHTML).fadeOut(1000);
         $btnCheckout.removeClass('disabled');
         $(`${$cartBottom}, ${$crosellcart}`).show(100);
-        styleCart === 'true' ? $(miniCart).addClass('active') : null;
+        if ($(cartContent).find('.mini-cart-item').length === 0) {
+          generateCart();
+        }
       }
       $(cartCount).text(cart.item_count);
       $(cartTotal).html(theme.Currency.formatMoney(cart.total_price, theme.moneyFormat));
@@ -10511,7 +10517,7 @@ theme.miniCart = (function(){
           }
           htmlCart += `</ul>`;
         }
-        htmlCart += `		<span>${productPrice}</span> x ${product.quantity}<div class="d-flex align-items-center mt-2 justify-content-between"><div class="js-qty mt-1"><input data-line="`+ line + `" type="text" min="0" class="change-minicart js-qty__input" pattern="[0-9]*" value="${product.quantity}"><button type="button" class="js-qty__adjust js-qty__minus" aria-label="Reduce item quantity by one"><svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-minus" viewBox="0 0 22 3"><path fill="#000" d="M21.5.5v2H.5v-2z" fill-rule="evenodd"></path></svg><span class="icon__fallback-text">−</span></button><button type="button" class="js-qty__adjust js-qty__plus" aria-label="Increase item quantity by one"><svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-plus" viewBox="0 0 22 21"><path d="M12 11.5h9.5v-2H12V0h-2v9.5H.5v2H10V21h2v-9.5z" fill="#000" fill-rule="evenodd"></path></svg><span class="icon__fallback-text">+</span></button></div><button class="btn js-remove-mini-cart link pr-0" data-id="${product.id}">Remove</button></div>`;
+        htmlCart += `		<span>${productPrice}</span> x ${product.quantity}<div class="d-flex align-items-center mt-2 justify-content-between"><div class="js-qty mt-1"><input data-line="${line}" data-key="${product.key}" data-id="${product.id}" type="text" min="0" class="change-minicart js-qty__input" pattern="[0-9]*" value="${product.quantity}"><button type="button" class="js-qty__adjust js-qty__minus" aria-label="Reduce item quantity by one"><svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-minus" viewBox="0 0 22 3"><path fill="#000" d="M21.5.5v2H.5v-2z" fill-rule="evenodd"></path></svg><span class="icon__fallback-text">−</span></button><button type="button" class="js-qty__adjust js-qty__plus" aria-label="Increase item quantity by one"><svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-plus" viewBox="0 0 22 21"><path d="M12 11.5h9.5v-2H12V0h-2v9.5H.5v2H10V21h2v-9.5z" fill="#000" fill-rule="evenodd"></path></svg><span class="icon__fallback-text">+</span></button></div><button class="btn js-remove-mini-cart link pr-0" data-key="${product.key}" data-id="${product.id}" data-line="${line}">Remove</button></div>`;
         htmlCart += `	</div>`;
         htmlCart += `</div>`;
       }
@@ -10520,37 +10526,62 @@ theme.miniCart = (function(){
       }
       // add total price and cart button / checkout button
       $(cartContent).html(htmlCart);
-      $(".js-qty__plus").unbind('click');
-      $(".js-qty__minus").click(function(){
-        if ($(this).parent().find('input').val() < 1) {
-          $(this).parent().find('input').val(0);
-        }else{
-          $(this).parent().find('input').val(parseInt($(this).parent().find('input').val()) - 1);
-        }
-        var qty = $(this).parent().find('input').val();
-        var line = $(this).parent().find('input').data('line');
-      	jQuery.post('/cart/change.js', {
-          quantity: qty,
-          line: line
-        },null,"json").done(function(item) {
+      $(".js-qty__minus").off('click').on('click', function(){
+        var $input = $(this).parent().find('input');
+        var val = parseInt($input.val(), 10) || 0;
+        var qty = val <= 1 ? 0 : val - 1;
+        $input.val(qty);
+        var itemKey = $input.data('key');
+        var line = $input.data('line');
+        var postData = itemKey ? { id: itemKey, quantity: qty } : { line: line, quantity: qty };
+        jQuery.post('/cart/change.js', postData, null, "json").done(function(item) {
           theme.miniCart.updateElements();
           theme.miniCart.generateCart();
-        })
+          if (theme.cartpage) {
+            location.reload();
+          }
+        }).fail(function() {
+          theme.miniCart.updateElements();
+          theme.miniCart.generateCart();
+        });
       });
-      $(".js-qty__plus").unbind('click');
-      $(".js-qty__plus").click(function(){
-        $(this).parent().find('input').val(parseInt($(this).parent().find('input').val()) + 1);
-        
-        var qty = $(this).parent().find('input').val();
-        var line = $(this).parent().find('input').data('line');
-        jQuery.post('/cart/change.js', {
-          quantity: qty,
-          line: line
-        },null,"json").done(function(item) {
+      $(".js-qty__plus").off('click').on('click', function(){
+        var $input = $(this).parent().find('input');
+        var val = parseInt($input.val(), 10) || 0;
+        var qty = val + 1;
+        $input.val(qty);
+        var itemKey = $input.data('key');
+        var line = $input.data('line');
+        var postData = itemKey ? { id: itemKey, quantity: qty } : { line: line, quantity: qty };
+        jQuery.post('/cart/change.js', postData, null, "json").done(function(item) {
           theme.miniCart.updateElements();
           theme.miniCart.generateCart();
-        })
-        
+          if (theme.cartpage) {
+            location.reload();
+          }
+        }).fail(function() {
+          theme.miniCart.updateElements();
+          theme.miniCart.generateCart();
+        });
+      });
+      $(".change-minicart").off('change').on('change', function(){
+        var $input = $(this);
+        var qty = parseInt($input.val(), 10);
+        if (isNaN(qty) || qty < 0) qty = 0;
+        $input.val(qty);
+        var itemKey = $input.data('key');
+        var line = $input.data('line');
+        var postData = itemKey ? { id: itemKey, quantity: qty } : { line: line, quantity: qty };
+        jQuery.post('/cart/change.js', postData, null, "json").done(function(item) {
+          theme.miniCart.updateElements();
+          theme.miniCart.generateCart();
+          if (theme.cartpage) {
+            location.reload();
+          }
+        }).fail(function() {
+          theme.miniCart.updateElements();
+          theme.miniCart.generateCart();
+        });
       });
       
       $(cartTotal).html(theme.Currency.formatMoney(cart.total_price, theme.moneyFormat));
@@ -10558,25 +10589,141 @@ theme.miniCart = (function(){
     })
   }
   // 2. Button remove items
-  $(document).on('click','.js-remove-mini-cart',function(){
-    var itemId = $(this).data('id');
-    var isOuterMiniCart = $(this).closest(miniCart).length === 0? true : false;  // check element from mini cart or not
-    
-    // hide items
-    $(this).parents('.mini-cart-item').fadeOut();
-    theme.GiftWrap.checkGift(itemId);
-    //remove from cart
-    Shopify.changeItem(itemId,0,updateElements);
-    Shopify.getCart(function(cart){
-      if (cart.items.length > numberDisplayed || isOuterMiniCart) {
-        generateCart();
+  $(document).on('click','.js-remove-mini-cart',function(e){
+    e.preventDefault();
+    var $btn = $(this);
+    if ($btn.hasClass('is-loading') || $btn.prop('disabled')) {
+      return;
+    }
+    $btn.prop('disabled', true).addClass('is-loading');
+
+    var itemKey = $btn.data('key');
+    var itemId = $btn.data('id');
+    var line = $btn.data('line');
+    var target = itemKey ? { id: itemKey, quantity: 0 } : (itemId ? { id: itemId, quantity: 0 } : { line: line, quantity: 0 });
+
+    var $itemRow = $btn.closest('.mini-cart-item');
+    $itemRow.css('opacity', '0.4');
+
+    if (itemId) {
+      theme.GiftWrap.checkGift(itemId);
+    }
+
+    jQuery.post('/cart/change.js', target, null, "json")
+      .done(function(cart){
+        theme.miniCart.updateElements();
+        theme.miniCart.generateCart();
+        if (theme.cartpage) {
+          location.reload();
+        }
+      })
+      .fail(function(xhr){
+        theme.miniCart.updateElements();
+        theme.miniCart.generateCart();
+      });
+  });
+
+  // Helper to open the crisp, stunning Clear Cart confirmation modal
+  function openClearCartModal(onConfirm) {
+    var $modal = $('#ClearCartConfirmModal');
+    if (!$modal.length) {
+      var modalHtml = `
+        <div id="ClearCartConfirmModal" class="clear-cart-modal-overlay" role="dialog" aria-modal="true">
+          <div class="clear-cart-modal-card">
+            <button type="button" class="clear-cart-modal-close" data-action="cancel" aria-label="Close modal">&times;</button>
+            <div class="clear-cart-modal-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </div>
+            <h3 class="clear-cart-modal-title">Clear entire cart?</h3>
+            <p class="clear-cart-modal-desc">Are you sure you want to remove all items from your cart? This action cannot be undone.</p>
+            <div class="clear-cart-modal-actions">
+              <button type="button" class="clear-cart-btn-cancel" data-action="cancel">Cancel</button>
+              <button type="button" class="clear-cart-btn-confirm" data-action="confirm">Clear cart</button>
+            </div>
+          </div>
+        </div>
+      `;
+      $('body').append(modalHtml);
+      $modal = $('#ClearCartConfirmModal');
+    }
+
+    // Reset button states
+    $modal.find('.clear-cart-btn-confirm').removeClass('is-loading').text('Clear cart');
+
+    // Show modal
+    setTimeout(function() {
+      $modal.addClass('is-open');
+    }, 10);
+
+    // Bind action callbacks
+    $modal.off('click').on('click', function(e) {
+      if ($(e.target).closest('.clear-cart-modal-card').length === 0 || $(e.target).closest('[data-action="cancel"]').length > 0) {
+        $modal.removeClass('is-open');
+      } else if ($(e.target).closest('[data-action="confirm"]').length > 0) {
+        var $confirmBtn = $modal.find('.clear-cart-btn-confirm');
+        $confirmBtn.addClass('is-loading').text('Clearing...');
+        if (typeof onConfirm === 'function') {
+          onConfirm(function() {
+            $confirmBtn.removeClass('is-loading').text('Clear cart');
+            $modal.removeClass('is-open');
+          });
+        }
       }
+    });
+
+    // Close on Escape key
+    $(document).off('keydown.clearcartmodal').on('keydown.clearcartmodal', function(e) {
+      if (e.key === 'Escape' && $modal.hasClass('is-open')) {
+        $modal.removeClass('is-open');
+      }
+    });
+  }
+
+  // 3. Button clear entire cart
+  $(document).on('click', '.js-btn-clear-cart', function(e){
+    e.preventDefault();
+    var $trigger = $(this);
+    if ($trigger.hasClass('is-loading') || $trigger.prop('disabled')) {
+      return;
+    }
+
+    openClearCartModal(function(done) {
+      jQuery.post('/cart/clear.js', {}, null, "json")
+        .done(function(){
+          $(miniCart).removeClass('active');
+          theme.miniCart.updateElements();
+          theme.miniCart.generateCart();
+          theme.alert.new('Cart', 'Your cart is now empty.', 2500, 'notice');
+          if (typeof done === 'function') done();
+          if (theme.cartpage) {
+            location.reload();
+          }
+        })
+        .fail(function(){
+          $(miniCart).removeClass('active');
+          theme.miniCart.updateElements();
+          theme.miniCart.generateCart();
+          if (typeof done === 'function') done();
+          if (theme.cartpage) {
+            location.reload();
+          }
+        });
     });
   });
 
   //Keep popup when click cart / UX
-  $(document).on('click',cartToggle,function(){
-    $(this).parent(miniCart).toggleClass('active');
+  $(document).on('click', cartToggle, function(){
+    var $parent = $(this).parent(miniCart);
+    $parent.toggleClass('active');
+    if ($parent.hasClass('active')) {
+      generateCart();
+      updateElements();
+    }
   });
   $(document).on('click','.overlaycart, .close',function(){
     $(this).parents(miniCart).removeClass('active');
@@ -10586,7 +10733,9 @@ theme.miniCart = (function(){
   generateCart();
   return{
     updateElements:updateElements,
-    generateCart: generateCart
+    generateCart: generateCart,
+    openCart: function(){ $(miniCart).addClass('active'); },
+    closeCart: function(){ $(miniCart).removeClass('active'); }
   }
 })()
 
@@ -11519,9 +11668,20 @@ theme.CouponCode = (function(){
 
 // Overwrite Shopify.onError in Shopify API
 Shopify.onError = function(t, r) {
-    var e = eval("(" + t.responseText + ")");
-    var mess = e.message ? e.message + "(" + e.status + "): " + e.description : "Error : " + Shopify.fullMessagesFromErrors(e).join("; ") + "."
-    theme.alert.new('Alert',mess,3000,'warning');
+    try {
+      var e = typeof t.responseText === 'string' ? JSON.parse(t.responseText) : t;
+      if (e && (e.message === 'no valid id or line parameter' || e.description === 'no valid id or line parameter')) {
+        if (window.theme && theme.miniCart && typeof theme.miniCart.generateCart === 'function') {
+          theme.miniCart.updateElements();
+          theme.miniCart.generateCart();
+        }
+        return;
+      }
+      var mess = e.message ? e.message + "(" + e.status + "): " + e.description : "Error : " + Shopify.fullMessagesFromErrors(e).join("; ") + ".";
+      theme.alert.new('Alert', mess, 3000, 'warning');
+    } catch(err) {
+      // Fallback if response text is not valid JSON
+    }
 }
 
 
@@ -11761,14 +11921,33 @@ theme.stickyCart = (function(){
   
 })()
 
-//Fix reload safari
+// Sync cart and fix reload on back button / bfcache
 window.addEventListener("pageshow", function(evt){
-  if(evt.persisted){
-  setTimeout(function(){
+  if (window.theme && theme.miniCart) {
+    if (typeof theme.miniCart.generateCart === 'function') {
+      theme.miniCart.generateCart();
+    }
+    if (typeof theme.miniCart.updateElements === 'function') {
+      theme.miniCart.updateElements();
+    }
+  }
+  if (evt && evt.persisted && window.theme && theme.cartpage) {
+    setTimeout(function(){
       window.location.reload();
-  },10);
-}
+    }, 10);
+  }
 }, false);
+
+document.addEventListener("visibilitychange", function(){
+  if (document.visibilityState === 'visible' && window.theme && theme.miniCart) {
+    if (typeof theme.miniCart.generateCart === 'function') {
+      theme.miniCart.generateCart();
+    }
+    if (typeof theme.miniCart.updateElements === 'function') {
+      theme.miniCart.updateElements();
+    }
+  }
+});
 
 // Back to top
 theme.backToTop = (function(){

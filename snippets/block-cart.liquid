@@ -34,8 +34,13 @@
             <span>{{ 'layout.cart.title' | t }}</span>
             <span class="js-cart-count site-header__cart-indicator ml-2">{{ cart.item_count }}</span>
             </div>
-            <div class="modal-header">
-                <button type="button" class="close" aria-label="close"></button>
+            <div class="d-flex align-items-center">
+              <button type="button" class="btn btn-link js-btn-clear-cart js-cart-bottom p-0 mr-3 small font-weight-bold" style="color: #FFA2D2 !important; text-decoration: none; font-size: 13px; background: none; border: none; cursor: pointer; transition: opacity 0.2s ease;" title="Clear entire cart">
+                Clear entire cart
+              </button>
+              <div class="modal-header p-0">
+                  <button type="button" class="close" aria-label="close"></button>
+              </div>
             </div>
         </div>
         

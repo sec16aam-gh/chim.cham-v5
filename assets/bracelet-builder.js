@@ -168,7 +168,13 @@
         resetModalClose: c.querySelector('[data-reset-modal-close]'),
         resetModalCancel: c.querySelector('[data-reset-modal-cancel]'),
         resetModalConfirm: c.querySelector('[data-reset-modal-confirm]'),
-        toast: c.querySelector('[data-toast]')
+        toast: c.querySelector('[data-toast]'),
+        sidebar: c.querySelector('.bb-sidebar'),
+        sidebarOverlay: c.querySelector('[data-sidebar-overlay]'),
+        sidebarClose: c.querySelector('[data-sidebar-close]'),
+        floatingTrigger: c.querySelector('[data-mobile-summary-trigger]'),
+        floatingCount: c.querySelector('[data-floating-count]'),
+        floatingPrice: c.querySelector('[data-floating-price]')
       };
     }
 
@@ -481,6 +487,8 @@
         if (e.key === 'Escape') {
           this.closeAllDropdowns();
           this.collapseMobileToolbar();
+          this.closeSidebarDrawer();
+          this.closeDrawer();
           this.closeSearch();
           this.closeResetModal();
           this.dom.helpModal?.classList.remove('is-open');
@@ -570,6 +578,17 @@
       this.dom.drawerClose?.addEventListener('click', () => this.closeDrawer());
       this.dom.drawerOverlay?.addEventListener('click', () => this.closeDrawer());
 
+      // Mobile Sidebar Right Drawer
+      this.dom.floatingTrigger?.addEventListener('click', () => {
+        this.openSidebarDrawer();
+      });
+      this.dom.sidebarClose?.addEventListener('click', () => {
+        this.closeSidebarDrawer();
+      });
+      this.dom.sidebarOverlay?.addEventListener('click', () => {
+        this.closeSidebarDrawer();
+      });
+
       // Filter Checkboxes
       this.dom.themePopover?.addEventListener('change', (e) => {
         if (e.target.type === 'checkbox') {
@@ -610,6 +629,18 @@
       // Checkout Button
       this.dom.checkoutBtn?.addEventListener('click', () => {
         this.handleCheckout();
+      });
+
+      // Reset checkout button & refresh cart on back navigation from bfcache
+      window.addEventListener('pageshow', () => {
+        if (this.dom.checkoutBtn) {
+          this.dom.checkoutBtn.disabled = false;
+          this.dom.checkoutBtn.innerHTML = `Check out &rarr;`;
+        }
+        if (window.theme && theme.miniCart) {
+          if (typeof theme.miniCart.generateCart === 'function') theme.miniCart.generateCart();
+          if (typeof theme.miniCart.updateElements === 'function') theme.miniCart.updateElements();
+        }
       });
 
       // Drag & Drop Listeners on Canvas & Catalog
@@ -1612,8 +1643,11 @@
       const meta = this.charmMetaCache && this.charmMetaCache[charm.image];
       const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
       const isHanging = (charm.type === 'drop' || charm.type === 'hanging' || (meta && meta.isHanging));
-      const slotWidth = isDouble ? 128 : 64;
-      const slotHeight = 64;
+      const isMobile = window.innerWidth < 768;
+      const mobileScale = isMobile ? 0.82 : 1;
+      const baseSlotW = isDouble ? 128 : 64;
+      const slotWidth = Math.round(baseSlotW * mobileScale);
+      const slotHeight = Math.round(64 * mobileScale);
       const finishHandle = this.selectedColor.handle || 'silver';
       const finishClass = `metal-${finishHandle}`;
       const linkImg = this.getMetalLinkImageSrc(finishHandle);
@@ -1623,10 +1657,10 @@
       const imgW = (existingImg && existingImg.naturalWidth) ? existingImg.naturalWidth : slotWidth;
       const imgH = (existingImg && existingImg.naturalHeight) ? existingImg.naturalHeight : slotHeight;
 
-      // Always enforce exact 64px slot width (or 128px for double) so the drag avatar
+      // Always enforce exact slot width (or double) so the drag avatar
       // matches the bracelet slot 1:1 on the screen (never enlarged)
       const canvasWidth = slotWidth;
-      const canvasHeight = isHanging ? 106 : slotHeight;
+      const canvasHeight = isHanging ? Math.round(106 * mobileScale) : slotHeight;
 
       // 2. High-DPI Canvas for crisp, synchronously-rendered drag feedback
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1681,10 +1715,10 @@
               const nw = existingImg.naturalWidth;
               const nh = existingImg.naturalHeight;
               const linkH = Math.round(nh * 0.36);
-              // Draw top link (64x64)
-              ctx.drawImage(existingImg, 0, 0, nw, linkH, 0, 0, 64, 64);
-              // Draw pendant (42px dangle below)
-              ctx.drawImage(existingImg, 0, linkH, nw, nh - linkH, 0, 64, 64, 42);
+              // Draw top link
+              ctx.drawImage(existingImg, 0, 0, nw, linkH, 0, 0, slotWidth, slotHeight);
+              // Draw pendant (dangle below)
+              ctx.drawImage(existingImg, 0, linkH, nw, nh - linkH, 0, slotHeight, slotWidth, canvasHeight - slotHeight);
             }
           } else {
             // Edge-to-edge flush on block face (64x64 or 128x64)
@@ -2006,6 +2040,12 @@
       if (this.dom.headerPrice) {
         this.dom.headerPrice.textContent = totalFormatted;
       }
+      if (this.dom.floatingPrice) {
+        this.dom.floatingPrice.textContent = totalFormatted;
+      }
+      if (this.dom.floatingCount) {
+        this.dom.floatingCount.textContent = `${placedCount}`;
+      }
     }
 
     updateHeaderMeta() {
@@ -2013,6 +2053,23 @@
       if (this.dom.headerCount) {
         this.dom.headerCount.textContent = `${placedCount} charms`;
       }
+      if (this.dom.floatingCount) {
+        this.dom.floatingCount.textContent = `${placedCount}`;
+      }
+    }
+
+    openSidebarDrawer() {
+      if (!this.dom.sidebar) return;
+      this.dom.sidebar.classList.add('is-open');
+      this.dom.sidebarOverlay?.classList.add('is-open');
+      document.body.classList.add('bb-drawer-locked');
+    }
+
+    closeSidebarDrawer() {
+      if (!this.dom.sidebar) return;
+      this.dom.sidebar.classList.remove('is-open');
+      this.dom.sidebarOverlay?.classList.remove('is-open');
+      document.body.classList.remove('bb-drawer-locked');
     }
 
     openDrawer(charm) {
@@ -2196,6 +2253,15 @@
       }
 
       try {
+        // Clear previous cart items so only this custom bracelet design goes to checkout
+        await fetch('/cart/clear.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+
         const res = await fetch('/cart/add.js', {
           method: 'POST',
           headers: {
@@ -2206,6 +2272,10 @@
         });
 
         if (res.ok) {
+          if (window.theme && theme.miniCart) {
+            if (typeof theme.miniCart.generateCart === 'function') theme.miniCart.generateCart();
+            if (typeof theme.miniCart.updateElements === 'function') theme.miniCart.updateElements();
+          }
           window.location.href = '/checkout';
         } else {
           const errData = await res.json();

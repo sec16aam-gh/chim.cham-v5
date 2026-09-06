@@ -385,6 +385,14 @@
     {%- comment -%} ----- RIGHT SIDEBAR (SUMMARY & CART) ----- {%- endcomment -%}
     <aside class="bb-sidebar" aria-label="Order summary">
       
+      <!-- Mobile Drawer Header -->
+      <div class="bb-sidebar-drawer-header">
+        <span class="bb-sidebar-drawer-title">{{ section.settings.order_summary_heading | default: 'Your Custom Build' }}</span>
+        <button class="bb-sidebar-close-btn" type="button" data-sidebar-close aria-label="Close summary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
       <div class="bb-sidebar-top">
         
         {%- comment -%} YOUR BRACELET / WATCH CARD {%- endcomment -%}
@@ -440,6 +448,26 @@
 
     </aside>
 
+  </div>
+
+  <!-- Mobile Right-Side Summary Drawer Overlay -->
+  <div class="bb-sidebar-overlay" data-sidebar-overlay></div>
+
+  <!-- Mobile Floating Thumb-Zone Summary Bar -->
+  <div class="bb-mobile-floating-bar" data-mobile-floating-bar>
+    <button class="bb-mobile-floating-btn" type="button" data-mobile-summary-trigger aria-label="Open your build summary">
+      <div class="bb-mobile-floating-left">
+        <span class="bb-mobile-floating-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <span class="bb-mobile-floating-count" data-floating-count>0</span>
+        </span>
+        <span class="bb-mobile-floating-price" data-floating-price>{{ currency_symbol }}24.990</span>
+      </div>
+      <span class="bb-mobile-floating-divider" aria-hidden="true"></span>
+      <div class="bb-mobile-floating-right">
+        <span class="bb-mobile-floating-cta">Review & Pay &rarr;</span>
+      </div>
+    </button>
   </div>
 
   {%- comment -%} ================= SLIDE-OVER CHARM DETAILS DRAWER ================= {%- endcomment -%}

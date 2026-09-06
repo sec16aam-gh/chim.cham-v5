@@ -46,7 +46,13 @@
   <div class="container">
     {% if cart.item_count > 0 %}
 
-      <h2 class="text-left h3 mb-lg-5 mb-3 mt-3">{{ 'cart.general.title' | t }}</h2>
+      <div class="d-flex justify-content-between align-items-center mb-lg-5 mb-3 mt-3">
+        <h2 class="text-left h3 m-0">{{ 'cart.general.title' | t }}</h2>
+        <button type="button" class="btn btn-sm js-btn-clear-cart" style="color: #FFA2D2 !important; border: 1.5px solid #FFA2D2 !important; background: transparent; font-weight: 600; cursor: pointer; border-radius: 20px; padding: 6px 16px; font-size: 13px; transition: all 0.2s ease;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFA2D2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1" style="vertical-align: -2px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          Clear entire cart
+        </button>
+      </div>
       <form action="/cart" method="post" novalidate class="cart pb-5 mb-4">
         <div class="row">
           <div class="col-lg-8 pr-lg-5">
@@ -107,7 +113,7 @@
                             <input type="number" name="updates[]" id="Updates_{{ item.key }}" class="cart__quantity" value="{{ item.quantity }}" min="0" data-line="{{ forloop.index }}" aria-label="{{ 'cart.label.quantity' | t }}">
                           </div>
                           <p>
-                            <a class="small" href="/cart/change?line={{ forloop.index }}&amp;quantity=0">{{ 'cart.general.remove' | t }}</a>
+                            <a class="small" href="/cart/change?id={{ item.key }}&amp;quantity=0">{{ 'cart.general.remove' | t }}</a>
                           </p>
                         </div>
                       </div>
@@ -139,7 +145,7 @@
                       {% endif %}
     
                       <p>
-                        <a class="small" href="/cart/change?line={{ forloop.index }}&amp;quantity=0">{{ 'cart.general.remove' | t }}</a>
+                        <a class="small" href="/cart/change?id={{ item.key }}&amp;quantity=0">{{ 'cart.general.remove' | t }}</a>
                       </p>
                     </td>
                     <td class="cart__cell--quantity d-none d-lg-table-cell">
