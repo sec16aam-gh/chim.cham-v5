@@ -54,10 +54,16 @@
       this.assetUrls = (this.config && this.config.assetUrls) || {};
 
       this.swatches = {
-        silver: (this.settings.swatches && this.settings.swatches.silver) || '#d9dcdb',
         gold: (this.settings.swatches && this.settings.swatches.gold) || '#d4a748',
-        rose: (this.settings.swatches && this.settings.swatches.rose) || '#e5a494',
-        black: (this.settings.swatches && this.settings.swatches.black) || '#222224'
+        silver: (this.settings.swatches && this.settings.swatches.silver) || '#d9dcdb',
+        mixed: (this.settings.swatches && this.settings.swatches.mixed) || 'linear-gradient(135deg, #d4a748 50%, #d9dcdb 50%)',
+        purple: (this.settings.swatches && this.settings.swatches.purple) || '#8a4fff',
+        black: (this.settings.swatches && this.settings.swatches.black) || '#222224',
+        red: (this.settings.swatches && this.settings.swatches.red) || '#d92534',
+        blue: (this.settings.swatches && this.settings.swatches.blue) || '#2563eb',
+        champagne: (this.settings.swatches && this.settings.swatches.champagne) || '#e8d8b0',
+        neon: (this.settings.swatches && this.settings.swatches.neon) || '#39ff14',
+        rose: (this.settings.swatches && this.settings.swatches.rose) || '#e5a494'
       };
 
       this.selectedModel = this.models[0] || {
@@ -65,26 +71,33 @@
         title: 'Original Bracelet',
         type: 'bracelet',
         slots: 16,
-        price: 2499,
+        price: 4000,
         image: ''
       };
 
       const defaultVariants = (this.selectedModel.variants && this.selectedModel.variants.length > 0)
         ? this.selectedModel.variants
         : [
-            { id: 'var-silver', title: 'Silver', price: this.selectedModel.price || 2499, available: true },
-            { id: 'var-gold', title: 'Gold', price: (this.selectedModel.price || 2499) + 500, available: true },
-            { id: 'var-rose', title: 'Rose Gold', price: (this.selectedModel.price || 2499) + 500, available: true },
-            { id: 'var-black', title: 'Black', price: (this.selectedModel.price || 2499) + 200, available: true }
+            { id: 'var-gold', title: 'Gold', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-silver', title: 'Silver', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-mixed', title: 'Mixed Gold x Silver', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-purple', title: 'Purple', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-black', title: 'Black', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-red', title: 'Red', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-blue', title: 'Blue', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-champagne', title: 'Champagne', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-neon', title: 'Neon', price: this.selectedModel.price || 4000, available: true }
           ];
 
-      this.selectedVariant = defaultVariants[0] || { id: 'var-silver', title: 'Silver', price: 2499 };
-      const initialHandle = this.getMetalHandle(this.selectedVariant.title || 'Silver');
+      const initialModelDefault = this.getMetalHandle(this.selectedModel.defaultColor || this.selectedModel.default_color || 'silver');
+      const initialVariant = defaultVariants.find(v => this.getMetalHandle(v.title) === initialModelDefault) || defaultVariants[0] || { id: 'var-silver', title: 'Silver', price: 4000 };
+      this.selectedVariant = initialVariant;
+      const initialHandle = this.getMetalHandle(this.selectedVariant.title || initialModelDefault);
       this.selectedColor = {
         id: this.selectedVariant.id,
         title: this.selectedVariant.title || 'Silver',
         handle: initialHandle,
-        price: this.selectedVariant.price || 2499,
+        price: this.selectedVariant.price || 4000,
         swatch: this.swatches[initialHandle] || '#d9dcdb',
         image: this.selectedVariant.image || null
       };
@@ -179,10 +192,16 @@
     }
 
     getMetalHandle(title) {
-      const t = (title || '').toLowerCase();
+      const t = (title || '').toLowerCase().trim();
+      if (t.includes('mixed') || t.includes('mix') || (t.includes('gold') && t.includes('silver'))) return 'mixed';
+      if (t.includes('champagne')) return 'champagne';
+      if (t.includes('neon')) return 'neon';
+      if (t.includes('purple') || t.includes('violet') || t.includes('lilac')) return 'purple';
+      if (t.includes('red') || t.includes('ruby') || t.includes('fuchsia')) return 'red';
+      if (t.includes('blue') || t.includes('cyan') || t.includes('sky')) return 'blue';
+      if (t.includes('black')) return 'black';
       if (t.includes('rose')) return 'rose';
       if (t.includes('gold')) return 'gold';
-      if (t.includes('black')) return 'black';
       return 'silver';
     }
 
@@ -809,46 +828,73 @@
       }
     }
 
-    renderColorDropdown() {
+    renderColorDropdown(useModelDefault = false) {
       try {
         if (!this.dom || !this.dom.colorMenu) return;
 
+        const basePrice = this.selectedModel?.price || 4000;
         const variants = (this.selectedModel && Array.isArray(this.selectedModel.variants) && this.selectedModel.variants.length > 0)
           ? this.selectedModel.variants
           : [
-              { id: 'var-silver', title: 'Silver', price: this.selectedModel?.price || 2499, available: true },
-              { id: 'var-gold', title: 'Gold', price: (this.selectedModel?.price || 2499) + 500, available: true },
-              { id: 'var-rose', title: 'Rose Gold', price: (this.selectedModel?.price || 2499) + 500, available: true },
-              { id: 'var-black', title: 'Black', price: (this.selectedModel?.price || 2499) + 200, available: true }
+              { id: 'var-gold', title: 'Gold', price: basePrice, available: true },
+              { id: 'var-silver', title: 'Silver', price: basePrice, available: true },
+              { id: 'var-mixed', title: 'Mixed Gold x Silver', price: basePrice, available: true },
+              { id: 'var-purple', title: 'Purple', price: basePrice, available: true },
+              { id: 'var-black', title: 'Black', price: basePrice, available: true },
+              { id: 'var-red', title: 'Red', price: basePrice, available: true },
+              { id: 'var-blue', title: 'Blue', price: basePrice, available: true },
+              { id: 'var-champagne', title: 'Champagne', price: basePrice, available: true },
+              { id: 'var-neon', title: 'Neon', price: basePrice, available: true }
             ];
 
-        // Try to preserve current color finish handle (e.g. 'gold', 'silver', 'rose', 'black')
-        const currentHandle = this.selectedColor ? this.selectedColor.handle : (this.selectedModel?.defaultColor || 'silver');
-        let matchedVariant = (this.selectedVariant && variants.find(v => String(v.id) === String(this.selectedVariant.id))) ||
-                             variants.find(v => this.getMetalHandle(v?.title) === currentHandle);
+        // Resolve model's default finish handle
+        const modelDefaultHandle = this.getMetalHandle(this.selectedModel?.defaultColor || this.selectedModel?.default_color || 'gold');
+
+        // When useModelDefault is true (e.g. user selected a model), strictly use that model's Default Metal Color!
+        const targetHandle = useModelDefault
+          ? modelDefaultHandle
+          : (this.selectedColor ? this.selectedColor.handle : modelDefaultHandle);
+
+        let matchedVariant = variants.find(v => this.getMetalHandle(v?.title) === targetHandle);
+        if (!matchedVariant && !useModelDefault && this.selectedVariant) {
+          matchedVariant = variants.find(v => String(v.id) === String(this.selectedVariant.id));
+        }
         if (!matchedVariant) {
-          matchedVariant = variants[0] || { id: 'var-silver', title: 'Silver', price: 2499, available: true };
+          matchedVariant = variants.find(v => this.getMetalHandle(v?.title) === modelDefaultHandle) ||
+                           variants[0] ||
+                           { id: 'var-gold', title: 'Gold', price: basePrice, available: true };
         }
 
         this.selectedVariant = matchedVariant;
-        const finishHandle = this.getMetalHandle(matchedVariant?.title || 'Silver');
-        const swatchHex = this.swatches[finishHandle] || '#d9dcdb';
+        const finishHandle = this.getMetalHandle(matchedVariant?.title || targetHandle);
+        const swatchHex = this.swatches[finishHandle] || '#d4a748';
 
         this.selectedColor = {
           id: matchedVariant.id,
-          title: matchedVariant.title || 'Silver',
+          title: matchedVariant.title || 'Gold',
           handle: finishHandle,
-          price: matchedVariant.price || 2499,
+          price: matchedVariant.price || basePrice,
           swatch: swatchHex,
           image: matchedVariant.image || null
         };
 
+        // Deduplicate variants by normalized color finish handle so each finish appears exactly once
+        const uniqueVariants = [];
+        const seenColors = new Set();
+        for (const v of variants) {
+          const vHandle = this.getMetalHandle(v?.title || 'Gold');
+          if (!seenColors.has(vHandle)) {
+            seenColors.add(vHandle);
+            uniqueVariants.push(v);
+          }
+        }
+
         // Build HTML for color dropdown options
-        this.dom.colorMenu.innerHTML = variants.map(v => {
+        this.dom.colorMenu.innerHTML = uniqueVariants.map(v => {
           const vHandle = this.getMetalHandle(v?.title || 'Silver');
           const vSwatch = this.swatches[vHandle] || '#d9dcdb';
-          const isActive = (String(v.id) === String(this.selectedVariant.id));
-          const vPriceFormatted = this.formatMoney(v.price || 2499);
+          const isActive = (String(v.id) === String(this.selectedVariant.id)) || (vHandle === finishHandle);
+          const vPriceFormatted = this.formatMoney(v.price || basePrice);
 
           return `
             <button type="button" 
@@ -889,8 +935,8 @@
         this.slotsCount = 14;
       }
 
-      // Re-populate color dropdown dynamically from new model's variants
-      this.renderColorDropdown();
+      // Re-populate color dropdown dynamically using this model's Default Metal Color!
+      this.renderColorDropdown(true);
 
       // Resize slots array gracefully preserving placed charms
       const newSlots = new Array(this.slotsCount).fill(null);
@@ -915,13 +961,19 @@
     }
 
     selectColor(variantId) {
+      const basePrice = this.selectedModel?.price || 4000;
       const variants = (this.selectedModel && this.selectedModel.variants && this.selectedModel.variants.length > 0)
         ? this.selectedModel.variants
         : [
-            { id: 'var-silver', title: 'Silver', price: this.selectedModel.price || 2499, available: true },
-            { id: 'var-gold', title: 'Gold', price: (this.selectedModel.price || 2499) + 500, available: true },
-            { id: 'var-rose', title: 'Rose Gold', price: (this.selectedModel.price || 2499) + 500, available: true },
-            { id: 'var-black', title: 'Black', price: (this.selectedModel.price || 2499) + 200, available: true }
+            { id: 'var-gold', title: 'Gold', price: basePrice, available: true },
+            { id: 'var-silver', title: 'Silver', price: basePrice, available: true },
+            { id: 'var-mixed', title: 'Mixed Gold x Silver', price: basePrice, available: true },
+            { id: 'var-purple', title: 'Purple', price: basePrice, available: true },
+            { id: 'var-black', title: 'Black', price: basePrice, available: true },
+            { id: 'var-red', title: 'Red', price: basePrice, available: true },
+            { id: 'var-blue', title: 'Blue', price: basePrice, available: true },
+            { id: 'var-champagne', title: 'Champagne', price: basePrice, available: true },
+            { id: 'var-neon', title: 'Neon', price: basePrice, available: true }
           ];
 
       const found = variants.find(v => String(v.id) === String(variantId)) ||
@@ -973,28 +1025,57 @@
 
     getWatchImageSrc(model) {
       const modelId = ((model && model.id) || (this.selectedModel && this.selectedModel.id) || '').toLowerCase();
-      const dialColor = ((model && model.dial_color) || (model && model.dialColor) || '').toLowerCase();
+      const modelTitle = ((model && model.title) || (this.selectedModel && this.selectedModel.title) || '').toLowerCase();
       const assetUrls = this.assetUrls || {};
 
-      // 1. Prioritize transparent watch dial graphics for canvas centerpiece
-      if (modelId.includes('blue') || dialColor === 'blue') return assetUrls.watch001 || 'watch-001.png';
-      if (modelId.includes('pink') || dialColor === 'pink') return assetUrls.watch002 || 'watch-002.png';
-      if (modelId.includes('silver-white') || (modelId.includes('white') && !modelId.includes('gold')) || dialColor === 'white') return assetUrls.watch003 || 'watch-003.png';
-      if (modelId.includes('black') || dialColor === 'black') return assetUrls.watch004 || 'watch-004.png';
-      if (modelId.includes('gold-white') || (modelId.includes('gold') && modelId.includes('white'))) return assetUrls.watch005 || 'watch-005.png';
-      if (modelId.includes('emerald') || dialColor === 'emerald') return assetUrls.watch006 || 'watch-006.png';
+      if (modelId.includes('blush-gold') || (modelTitle.includes('blush') && modelTitle.includes('gold'))) {
+        return assetUrls.watchBlushGold || 'watch-blush-gold.png';
+      }
+      if (modelId.includes('blush-silver') || (modelTitle.includes('blush') && modelTitle.includes('silver'))) {
+        return assetUrls.watchBlushSilver || 'watch-blush-silver.png';
+      }
+      if (modelId.includes('flower') || modelTitle.includes('flower')) {
+        return assetUrls.watchFlower || 'watch-flower.png';
+      }
+      if (modelId.includes('fuchsia') || modelTitle.includes('fuchsia')) {
+        return assetUrls.watchFuchsia || 'watch-fuchsia.png';
+      }
+      if (modelId.includes('glittery') || modelTitle.includes('glitter')) {
+        return assetUrls.watchGlittery || 'watch-glittery.png';
+      }
+      if (modelId.includes('lilac-gold') || (modelTitle.includes('lilac') && modelTitle.includes('gold'))) {
+        return assetUrls.watchLilacGold || 'watch-lilac-gold.png';
+      }
+      if (modelId.includes('lilac-silver') || (modelTitle.includes('lilac') && modelTitle.includes('silver'))) {
+        return assetUrls.watchLilacSilver || 'watch-lilac-silver.png';
+      }
+      if (modelId.includes('pearly-gold') || (modelTitle.includes('pearly') && modelTitle.includes('gold'))) {
+        return assetUrls.watchPearlyGold || 'watch-pearly-gold.png';
+      }
+      if (modelId.includes('pearly-silver') || (modelTitle.includes('pearly') && modelTitle.includes('silver'))) {
+        return assetUrls.watchPearlySilver || 'watch-pearly-silver.png';
+      }
+      if (modelId.includes('sky-blue') || (modelTitle.includes('sky') && modelTitle.includes('blue'))) {
+        return assetUrls.watchSkyBlue || 'watch-sky-blue.png';
+      }
 
-      // 2. Fallbacks
+      // Legacy fallback mappings
+      if (modelId.includes('blue')) return assetUrls.watchSkyBlue || 'watch-sky-blue.png';
+      if (modelId.includes('pink')) return assetUrls.watchBlushGold || 'watch-blush-gold.png';
+      if (modelId.includes('gold')) return assetUrls.watchBlushGold || 'watch-blush-gold.png';
+
+      // If model has direct image assigned
       if (model && model.image && !model.image.includes('bracelet-')) return model.image;
+      if (this.selectedModel && this.selectedModel.image && !this.selectedModel.image.includes('bracelet-')) return this.selectedModel.image;
       if (this.selectedVariant && this.selectedVariant.image) return this.selectedVariant.image;
-      if (this.selectedColor && this.selectedColor.image) return this.selectedColor.image;
 
-      return assetUrls.watch001 || 'watch-001.png';
+      return assetUrls.watchFlower || 'watch-flower.png';
     }
 
     getMetalLinkImageSrc(handle) {
       const assetUrls = this.assetUrls || {};
       const h = (handle || '').toLowerCase();
+      if (h === 'mixed') return assetUrls.braceletGold || 'bracelet-gold.png';
       if (h.includes('gold') && !h.includes('rose')) return assetUrls.braceletGold || 'bracelet-gold.png';
       if (h.includes('rose')) return assetUrls.braceletRose || 'bracelet-rose-gold.png';
       if (h.includes('black')) return assetUrls.braceletBlack || 'bracelet-black.png';
@@ -1260,8 +1341,11 @@
         }
       }
 
-      const finishHandle = this.selectedColor.handle || 'silver';
-      const linkImg = this.getMetalLinkImageSrc(finishHandle);
+      const finishHandle = this.selectedColor.handle || 'gold';
+      const linkImg = (finishHandle === 'mixed')
+        ? (index % 2 === 0 ? this.getMetalLinkImageSrc('gold') : this.getMetalLinkImageSrc('silver'))
+        : this.getMetalLinkImageSrc(finishHandle);
+      slot.style.setProperty('--bracelet-link', `url('${linkImg}')`);
       const placed = this.slots[index];
 
       if (!placed) {
@@ -2018,7 +2102,7 @@
                 </div>
               </div>
             `;
-          }).join('');
+          }).join('') + '<div class="bb-charms-list-spacer" aria-hidden="true"></div>';
         }
       }
 

@@ -21,14 +21,44 @@
 <div class="customstyle{{ section_id }} bracelet-builder-section-wrap" id="bracelet-builder-section-{{ section_id }}">
   <style>
     #bracelet-builder-section-{{ section_id }} {
+      --bb-text-primary: #FE80BC;
+      --bb-text-secondary: #FFA2D2;
+      --bb-text-muted: #FFB8DE;
+      --bb-accent-purple: #BC90D5;
+      --bb-accent-purple-hover: #AA7AC5;
+      --bb-btn-bg: #FE80BC;
+      --bb-btn-text: #ffffff;
+      --bb-btn-hover: #E76FA7;
       --bb-link-silver: url('{{ 'bracelet-silver.png' | asset_url }}');
       --bb-link-gold: url('{{ 'bracelet-gold.png' | asset_url }}');
       --bb-link-rose: url('{{ 'bracelet-rose-gold.png' | asset_url }}');
       --bb-link-black: url('{{ 'bracelet-black.png' | asset_url }}');
-      --bb-swatch-silver: {{ section.settings.swatch_silver | default: '#d9dcdb' }};
       --bb-swatch-gold: {{ section.settings.swatch_gold | default: '#d4a748' }};
-      --bb-swatch-rose: {{ section.settings.swatch_rose | default: '#e5a494' }};
+      --bb-swatch-silver: {{ section.settings.swatch_silver | default: '#d9dcdb' }};
+      --bb-swatch-mixed: {{ section.settings.swatch_mixed | default: 'linear-gradient(135deg, #d4a748 50%, #d9dcdb 50%)' }};
+      --bb-swatch-purple: {{ section.settings.swatch_purple | default: '#8a4fff' }};
       --bb-swatch-black: {{ section.settings.swatch_black | default: '#222224' }};
+      --bb-swatch-red: {{ section.settings.swatch_red | default: '#d92534' }};
+      --bb-swatch-blue: {{ section.settings.swatch_blue | default: '#2563eb' }};
+      --bb-swatch-champagne: {{ section.settings.swatch_champagne | default: '#e8d8b0' }};
+      --bb-swatch-neon: {{ section.settings.swatch_neon | default: '#39ff14' }};
+    }
+    @media (max-width: 991px) {
+      #bracelet-builder-section-{{ section_id }} .bb-sidebar-scroll-spacer,
+      #bracelet-builder-section-{{ section_id }} .bb-charms-list-spacer {
+        display: block !important;
+        width: 100% !important;
+        height: 5px !important;
+        min-height: 5px !important;
+        flex-shrink: 0 !important;
+        pointer-events: none !important;
+      }
+      #bracelet-builder-section-{{ section_id }} .bb-charms-list-container {
+        padding-bottom: 5px !important;
+      }
+      #bracelet-builder-section-{{ section_id }} .bb-charms-row:last-child {
+        margin-bottom: 4px !important;
+      }
     }
   </style>
   {%- render 'style-section' -%}
@@ -89,18 +119,26 @@
                           assign block_thumb_url = linked_prod.featured_image | image_url: width: 64
                         else
                           case block.settings.model_id
-                            when 'como-watch-silver-blue'
-                              assign block_thumb_url = 'watch-001.png' | asset_url
-                            when 'como-watch-silver-pink'
-                              assign block_thumb_url = 'watch-002.png' | asset_url
-                            when 'como-watch-silver-white'
-                              assign block_thumb_url = 'watch-003.png' | asset_url
-                            when 'como-watch-silver-black'
-                              assign block_thumb_url = 'watch-004.png' | asset_url
-                            when 'como-watch-gold-white'
-                              assign block_thumb_url = 'watch-005.png' | asset_url
-                            when 'como-watch-gold-emerald'
-                              assign block_thumb_url = 'watch-006.png' | asset_url
+                            when 'watch-blush-gold'
+                              assign block_thumb_url = 'watch-blush-gold.png' | asset_url
+                            when 'watch-blush-silver'
+                              assign block_thumb_url = 'watch-blush-silver.png' | asset_url
+                            when 'watch-flower'
+                              assign block_thumb_url = 'watch-flower.png' | asset_url
+                            when 'watch-fuchsia'
+                              assign block_thumb_url = 'watch-fuchsia.png' | asset_url
+                            when 'watch-glittery'
+                              assign block_thumb_url = 'watch-glittery.png' | asset_url
+                            when 'watch-lilac-gold'
+                              assign block_thumb_url = 'watch-lilac-gold.png' | asset_url
+                            when 'watch-lilac-silver'
+                              assign block_thumb_url = 'watch-lilac-silver.png' | asset_url
+                            when 'watch-pearly-gold'
+                              assign block_thumb_url = 'watch-pearly-gold.png' | asset_url
+                            when 'watch-pearly-silver'
+                              assign block_thumb_url = 'watch-pearly-silver.png' | asset_url
+                            when 'watch-sky-blue'
+                              assign block_thumb_url = 'watch-sky-blue.png' | asset_url
                             when 'original-bracelet'
                               assign block_thumb_url = 'bracelet-silver.png' | asset_url
                             else
@@ -138,67 +176,107 @@
                         <span class="bb-item-sub">16 charm positions</span>
                       </div>
                     </div>
-                    <span class="bb-item-price">24.99 {{ currency_code }}</span>
+                    <span class="bb-item-price">4.000 {{ currency_code }}</span>
                   </button>
-                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-silver-blue">
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-blush-gold">
                     <div class="bb-item-left">
-                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-001.png' | asset_url }}');"></span>
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-blush-gold.png' | asset_url }}');"></span>
                       <div class="bb-item-meta">
-                        <span class="bb-item-title">Como Watch Silver – Blue Dial Edition</span>
-                        <span class="bb-item-sub">13 charm positions</span>
+                        <span class="bb-item-title">Blush Gold</span>
+                        <span class="bb-item-sub">14 charm positions</span>
                       </div>
                     </div>
-                    <span class="bb-item-price">120.00 {{ currency_code }}</span>
+                    <span class="bb-item-price">9.500 {{ currency_code }}</span>
                   </button>
-                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-silver-pink">
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-blush-silver">
                     <div class="bb-item-left">
-                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-002.png' | asset_url }}');"></span>
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-blush-silver.png' | asset_url }}');"></span>
                       <div class="bb-item-meta">
-                        <span class="bb-item-title">Como Watch Silver – Pink Dial Edition</span>
-                        <span class="bb-item-sub">13 charm positions</span>
+                        <span class="bb-item-title">Blush Silver</span>
+                        <span class="bb-item-sub">14 charm positions</span>
                       </div>
                     </div>
-                    <span class="bb-item-price">120.00 {{ currency_code }}</span>
+                    <span class="bb-item-price">8.500 {{ currency_code }}</span>
                   </button>
-                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-silver-white">
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-flower">
                     <div class="bb-item-left">
-                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-003.png' | asset_url }}');"></span>
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-flower.png' | asset_url }}');"></span>
                       <div class="bb-item-meta">
-                        <span class="bb-item-title">Como Watch Silver – White Dial Edition</span>
-                        <span class="bb-item-sub">13 charm positions</span>
+                        <span class="bb-item-title">Flower</span>
+                        <span class="bb-item-sub">14 charm positions</span>
                       </div>
                     </div>
-                    <span class="bb-item-price">120.00 {{ currency_code }}</span>
+                    <span class="bb-item-price">8.500 {{ currency_code }}</span>
                   </button>
-                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-silver-black">
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-fuchsia">
                     <div class="bb-item-left">
-                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-004.png' | asset_url }}');"></span>
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-fuchsia.png' | asset_url }}');"></span>
                       <div class="bb-item-meta">
-                        <span class="bb-item-title">Como Watch Silver – Black Dial Edition</span>
-                        <span class="bb-item-sub">13 charm positions</span>
+                        <span class="bb-item-title">Fuchsia</span>
+                        <span class="bb-item-sub">14 charm positions</span>
                       </div>
                     </div>
-                    <span class="bb-item-price">120.00 {{ currency_code }}</span>
+                    <span class="bb-item-price">8.500 {{ currency_code }}</span>
                   </button>
-                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-gold-white">
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-glittery">
                     <div class="bb-item-left">
-                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-005.png' | asset_url }}');"></span>
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-glittery.png' | asset_url }}');"></span>
                       <div class="bb-item-meta">
-                        <span class="bb-item-title">Como Watch Gold – White Dial Edition</span>
-                        <span class="bb-item-sub">13 charm positions</span>
+                        <span class="bb-item-title">Glittery</span>
+                        <span class="bb-item-sub">14 charm positions</span>
                       </div>
                     </div>
-                    <span class="bb-item-price">129.00 {{ currency_code }}</span>
+                    <span class="bb-item-price">9.500 {{ currency_code }}</span>
                   </button>
-                  <button type="button" class="bb-dropdown-item" data-model-id="como-watch-gold-emerald">
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-lilac-gold">
                     <div class="bb-item-left">
-                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-006.png' | asset_url }}');"></span>
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-lilac-gold.png' | asset_url }}');"></span>
                       <div class="bb-item-meta">
-                        <span class="bb-item-title">Como Watch Gold – Emerald Dial Edition</span>
-                        <span class="bb-item-sub">13 charm positions</span>
+                        <span class="bb-item-title">Lilac Gold</span>
+                        <span class="bb-item-sub">14 charm positions</span>
                       </div>
                     </div>
-                    <span class="bb-item-price">129.00 {{ currency_code }}</span>
+                    <span class="bb-item-price">9.500 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-lilac-silver">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-lilac-silver.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Lilac Silver</span>
+                        <span class="bb-item-sub">14 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">8.500 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-pearly-gold">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-pearly-gold.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Pearly Gold</span>
+                        <span class="bb-item-sub">14 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">9.500 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-pearly-silver">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-pearly-silver.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Pearly Silver</span>
+                        <span class="bb-item-sub">14 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">8.500 {{ currency_code }}</span>
+                  </button>
+                  <button type="button" class="bb-dropdown-item" data-model-id="watch-sky-blue">
+                    <div class="bb-item-left">
+                      <span class="bb-pill-icon" style="background-image: url('{{ 'watch-sky-blue.png' | asset_url }}');"></span>
+                      <div class="bb-item-meta">
+                        <span class="bb-item-title">Sky Blue</span>
+                        <span class="bb-item-sub">14 charm positions</span>
+                      </div>
+                    </div>
+                    <span class="bb-item-price">8.500 {{ currency_code }}</span>
                   </button>
                 {%- endif -%}
               </div>
@@ -214,33 +292,68 @@
 
               <div class="bb-dropdown-menu" data-color-menu>
                 {%- comment -%} Dynamically populated by JS from selected base product variants {%- endcomment -%}
-                <button type="button" class="bb-dropdown-item is-active" data-color-id="silver">
-                  <div class="bb-item-left">
-                    <span class="bb-swatch swatch-silver"></span>
-                    <span class="bb-item-title">Silver</span>
-                  </div>
-                  <span class="bb-item-price">24.99 {{ currency_code }}</span>
-                </button>
                 <button type="button" class="bb-dropdown-item" data-color-id="gold">
                   <div class="bb-item-left">
                     <span class="bb-swatch swatch-gold"></span>
                     <span class="bb-item-title">Gold</span>
                   </div>
-                  <span class="bb-item-price">29.99 {{ currency_code }}</span>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
                 </button>
-                <button type="button" class="bb-dropdown-item" data-color-id="rose-gold">
+                <button type="button" class="bb-dropdown-item is-active" data-color-id="silver">
                   <div class="bb-item-left">
-                    <span class="bb-swatch swatch-rose"></span>
-                    <span class="bb-item-title">Rose Gold</span>
+                    <span class="bb-swatch swatch-silver"></span>
+                    <span class="bb-item-title">Silver</span>
                   </div>
-                  <span class="bb-item-price">29.99 {{ currency_code }}</span>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="mixed">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-mixed"></span>
+                    <span class="bb-item-title">Mixed Gold x Silver</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="purple">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-purple"></span>
+                    <span class="bb-item-title">Purple</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
                 </button>
                 <button type="button" class="bb-dropdown-item" data-color-id="black">
                   <div class="bb-item-left">
                     <span class="bb-swatch swatch-black"></span>
                     <span class="bb-item-title">Black</span>
                   </div>
-                  <span class="bb-item-price">26.99 {{ currency_code }}</span>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="red">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-red"></span>
+                    <span class="bb-item-title">Red</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="blue">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-blue"></span>
+                    <span class="bb-item-title">Blue</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="champagne">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-champagne"></span>
+                    <span class="bb-item-title">Champagne</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-color-id="neon">
+                  <div class="bb-item-left">
+                    <span class="bb-swatch swatch-neon"></span>
+                    <span class="bb-item-title">Neon</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
                 </button>
               </div>
             </div>
@@ -426,6 +539,7 @@
           </div>
         </div>
 
+        <div class="bb-sidebar-scroll-spacer" aria-hidden="true"></div>
       </div>
 
       {%- comment -%} SIDEBAR BOTTOM (TOTAL & CHECKOUT) {%- endcomment -%}
@@ -561,10 +675,15 @@
         "emptyStateTitle": {{ section.settings.empty_state_title | default: "Your story starts here." | json }},
         "emptyStateSub": {{ section.settings.empty_state_sub | default: "Drag or tap any charm to begin." | json }},
         "swatches": {
-          "silver": {{ section.settings.swatch_silver | default: "#d9dcdb" | json }},
           "gold": {{ section.settings.swatch_gold | default: "#d4a748" | json }},
-          "rose": {{ section.settings.swatch_rose | default: "#e5a494" | json }},
-          "black": {{ section.settings.swatch_black | default: "#222224" | json }}
+          "silver": {{ section.settings.swatch_silver | default: "#d9dcdb" | json }},
+          "mixed": {{ section.settings.swatch_mixed | default: "linear-gradient(135deg, #d4a748 50%, #d9dcdb 50%)" | json }},
+          "purple": {{ section.settings.swatch_purple | default: "#8a4fff" | json }},
+          "black": {{ section.settings.swatch_black | default: "#222224" | json }},
+          "red": {{ section.settings.swatch_red | default: "#d92534" | json }},
+          "blue": {{ section.settings.swatch_blue | default: "#2563eb" | json }},
+          "champagne": {{ section.settings.swatch_champagne | default: "#e8d8b0" | json }},
+          "neon": {{ section.settings.swatch_neon | default: "#39ff14" | json }}
         }
       },
       "assetUrls": {
@@ -572,12 +691,16 @@
         "braceletGold": {{ 'bracelet-gold.png' | asset_url | json }},
         "braceletRose": {{ 'bracelet-rose-gold.png' | asset_url | json }},
         "braceletBlack": {{ 'bracelet-black.png' | asset_url | json }},
-        "watch001": {{ 'watch-001.png' | asset_url | json }},
-        "watch002": {{ 'watch-002.png' | asset_url | json }},
-        "watch003": {{ 'watch-003.png' | asset_url | json }},
-        "watch004": {{ 'watch-004.png' | asset_url | json }},
-        "watch005": {{ 'watch-005.png' | asset_url | json }},
-        "watch006": {{ 'watch-006.png' | asset_url | json }}
+        "watchBlushGold": {{ 'watch-blush-gold.png' | asset_url | json }},
+        "watchBlushSilver": {{ 'watch-blush-silver.png' | asset_url | json }},
+        "watchFlower": {{ 'watch-flower.png' | asset_url | json }},
+        "watchFuchsia": {{ 'watch-fuchsia.png' | asset_url | json }},
+        "watchGlittery": {{ 'watch-glittery.png' | asset_url | json }},
+        "watchLilacGold": {{ 'watch-lilac-gold.png' | asset_url | json }},
+        "watchLilacSilver": {{ 'watch-lilac-silver.png' | asset_url | json }},
+        "watchPearlyGold": {{ 'watch-pearly-gold.png' | asset_url | json }},
+        "watchPearlySilver": {{ 'watch-pearly-silver.png' | asset_url | json }},
+        "watchSkyBlue": {{ 'watch-sky-blue.png' | asset_url | json }}
       },
       "models": [
         {%- assign model_blocks = section.blocks | where: 'type', 'bracelet_model' -%}
@@ -593,18 +716,26 @@
                 assign model_img = linked_prod.featured_image | image_url: width: 400
               else
                 case block.settings.model_id
-                  when 'como-watch-silver-blue'
-                    assign model_img = 'watch-001.png' | asset_url
-                  when 'como-watch-silver-pink'
-                    assign model_img = 'watch-002.png' | asset_url
-                  when 'como-watch-silver-white'
-                    assign model_img = 'watch-003.png' | asset_url
-                  when 'como-watch-silver-black'
-                    assign model_img = 'watch-004.png' | asset_url
-                  when 'como-watch-gold-white'
-                    assign model_img = 'watch-005.png' | asset_url
-                  when 'como-watch-gold-emerald'
-                    assign model_img = 'watch-006.png' | asset_url
+                  when 'watch-blush-gold'
+                    assign model_img = 'watch-blush-gold.png' | asset_url
+                  when 'watch-blush-silver'
+                    assign model_img = 'watch-blush-silver.png' | asset_url
+                  when 'watch-flower'
+                    assign model_img = 'watch-flower.png' | asset_url
+                  when 'watch-fuchsia'
+                    assign model_img = 'watch-fuchsia.png' | asset_url
+                  when 'watch-glittery'
+                    assign model_img = 'watch-glittery.png' | asset_url
+                  when 'watch-lilac-gold'
+                    assign model_img = 'watch-lilac-gold.png' | asset_url
+                  when 'watch-lilac-silver'
+                    assign model_img = 'watch-lilac-silver.png' | asset_url
+                  when 'watch-pearly-gold'
+                    assign model_img = 'watch-pearly-gold.png' | asset_url
+                  when 'watch-pearly-silver'
+                    assign model_img = 'watch-pearly-silver.png' | asset_url
+                  when 'watch-sky-blue'
+                    assign model_img = 'watch-sky-blue.png' | asset_url
                   when 'original-bracelet'
                     assign model_img = 'bracelet-silver.png' | asset_url
                 endcase
@@ -622,14 +753,23 @@
               "title": {{ model_title | json }},
               "type": {{ block.settings.model_type | default: "bracelet" | json }},
               "slots": {{ block_slots | json }},
-              "price": {{ linked_prod.price | default: block.settings.price | default: 2499 | json }},
+              "price": {{ linked_prod.price | default: block.settings.price | default: 4000 | json }},
               "productId": {{ linked_prod.id | json }},
-              "defaultColor": {{ block.settings.default_color | default: "silver" | json }},
+              "defaultColor": {{ block.settings.default_color | default: "gold" | json }},
               "image": {{ model_img | json }},
               "variants": [
                 {%- if linked_prod != blank and linked_prod.variants.size > 0 -%}
+                  {%- assign seen_colors = '' -%}
+                  {%- assign first_printed = false -%}
                   {%- for v in linked_prod.variants -%}
                     {%- liquid
+                      assign opt_color = v.option1 | default: v.title | strip
+                      assign color_key = opt_color | downcase | append: ':::'
+                      if seen_colors contains color_key
+                        continue
+                      endif
+                      assign seen_colors = seen_colors | append: color_key
+
                       assign v_img = ''
                       if v.featured_image != blank
                         assign v_img = v.featured_image | image_url: width: 400
@@ -637,21 +777,28 @@
                         assign v_img = linked_prod.featured_image | image_url: width: 400
                       endif
                     -%}
+                    {%- if first_printed -%},{%- endif -%}
                     {
                       "id": {{ v.id | json }},
-                      "title": {{ v.title | json }},
+                      "title": {{ opt_color | json }},
                       "price": {{ v.price | json }},
                       "available": {{ v.available | json }},
                       "sku": {{ v.sku | json }},
                       "image": {{ v_img | json }}
-                    }{%- unless forloop.last -%},{%- endunless -%}
+                    }
+                    {%- assign first_printed = true -%}
                   {%- endfor -%}
                 {%- else -%}
-                  {%- assign base_pr = block.settings.price | default: 2499 -%}
+                  {%- assign base_pr = block.settings.price | default: 4000 -%}
+                  { "id": "var-gold", "title": "Gold", "price": {{ base_pr | json }}, "available": true },
                   { "id": "var-silver", "title": "Silver", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-gold", "title": "Gold", "price": {{ base_pr | plus: 500 | json }}, "available": true },
-                  { "id": "var-rose", "title": "Rose Gold", "price": {{ base_pr | plus: 500 | json }}, "available": true },
-                  { "id": "var-black", "title": "Black", "price": {{ base_pr | plus: 200 | json }}, "available": true }
+                  { "id": "var-mixed", "title": "Mixed Gold x Silver", "price": {{ base_pr | json }}, "available": true },
+                  { "id": "var-purple", "title": "Purple", "price": {{ base_pr | json }}, "available": true },
+                  { "id": "var-black", "title": "Black", "price": {{ base_pr | json }}, "available": true },
+                  { "id": "var-red", "title": "Red", "price": {{ base_pr | json }}, "available": true },
+                  { "id": "var-blue", "title": "Blue", "price": {{ base_pr | json }}, "available": true },
+                  { "id": "var-champagne", "title": "Champagne", "price": {{ base_pr | json }}, "available": true },
+                  { "id": "var-neon", "title": "Neon", "price": {{ base_pr | json }}, "available": true }
                 {%- endif -%}
               ]
             }{%- unless forloop.last -%},{%- endunless -%}
@@ -662,104 +809,219 @@
             "title": "Original Bracelet",
             "type": "bracelet",
             "slots": 16,
-            "price": 2499,
+            "price": 4000,
             "defaultColor": "silver",
             "image": {{ 'bracelet-silver.png' | asset_url | json }},
             "variants": [
-              { "id": "var-silver", "title": "Silver", "price": 2499, "available": true },
-              { "id": "var-gold", "title": "Gold", "price": 2999, "available": true },
-              { "id": "var-rose", "title": "Rose Gold", "price": 2999, "available": true },
-              { "id": "var-black", "title": "Black", "price": 2699, "available": true }
+              { "id": "var-b-gold", "title": "Gold", "price": 4000, "available": true },
+              { "id": "var-b-silver", "title": "Silver", "price": 4000, "available": true },
+              { "id": "var-b-mixed", "title": "Mixed Gold x Silver", "price": 4000, "available": true },
+              { "id": "var-b-purple", "title": "Purple", "price": 4000, "available": true },
+              { "id": "var-b-black", "title": "Black", "price": 4000, "available": true },
+              { "id": "var-b-red", "title": "Red", "price": 4000, "available": true },
+              { "id": "var-b-blue", "title": "Blue", "price": 4000, "available": true },
+              { "id": "var-b-champagne", "title": "Champagne", "price": 4000, "available": true },
+              { "id": "var-b-neon", "title": "Neon", "price": 4000, "available": true }
             ]
           },
           {
-            "id": "como-watch-silver-blue",
-            "title": "Como Watch Silver – Blue Dial Edition",
+            "id": "watch-blush-gold",
+            "title": "Blush Gold",
             "type": "watch",
-            "slots": 13,
-            "price": 12000,
-            "defaultColor": "silver",
-            "image": {{ 'watch-001.png' | asset_url | json }},
-            "variants": [
-              { "id": "var-w1-silver", "title": "Silver", "price": 12000, "available": true },
-              { "id": "var-w1-gold", "title": "Gold", "price": 12900, "available": true },
-              { "id": "var-w1-rose", "title": "Rose Gold", "price": 12900, "available": true },
-              { "id": "var-w1-black", "title": "Black", "price": 12500, "available": true }
-            ]
-          },
-          {
-            "id": "como-watch-silver-pink",
-            "title": "Como Watch Silver – Pink Dial Edition",
-            "type": "watch",
-            "slots": 13,
-            "price": 12000,
-            "defaultColor": "silver",
-            "image": {{ 'watch-002.png' | asset_url | json }},
-            "variants": [
-              { "id": "var-w2-silver", "title": "Silver", "price": 12000, "available": true },
-              { "id": "var-w2-gold", "title": "Gold", "price": 12900, "available": true },
-              { "id": "var-w2-rose", "title": "Rose Gold", "price": 12900, "available": true },
-              { "id": "var-w2-black", "title": "Black", "price": 12500, "available": true }
-            ]
-          },
-          {
-            "id": "como-watch-silver-white",
-            "title": "Como Watch Silver – White Dial Edition",
-            "type": "watch",
-            "slots": 13,
-            "price": 12000,
-            "defaultColor": "silver",
-            "image": {{ 'watch-003.png' | asset_url | json }},
-            "variants": [
-              { "id": "var-w3-silver", "title": "Silver", "price": 12000, "available": true },
-              { "id": "var-w3-gold", "title": "Gold", "price": 12900, "available": true },
-              { "id": "var-w3-rose", "title": "Rose Gold", "price": 12900, "available": true },
-              { "id": "var-w3-black", "title": "Black", "price": 12500, "available": true }
-            ]
-          },
-          {
-            "id": "como-watch-silver-black",
-            "title": "Como Watch Silver – Black Dial Edition",
-            "type": "watch",
-            "slots": 13,
-            "price": 12000,
-            "defaultColor": "silver",
-            "image": {{ 'watch-004.png' | asset_url | json }},
-            "variants": [
-              { "id": "var-w4-silver", "title": "Silver", "price": 12000, "available": true },
-              { "id": "var-w4-gold", "title": "Gold", "price": 12900, "available": true },
-              { "id": "var-w4-rose", "title": "Rose Gold", "price": 12900, "available": true },
-              { "id": "var-w4-black", "title": "Black", "price": 12500, "available": true }
-            ]
-          },
-          {
-            "id": "como-watch-gold-white",
-            "title": "Como Watch Gold – White Dial Edition",
-            "type": "watch",
-            "slots": 13,
-            "price": 12900,
+            "slots": 14,
+            "price": 9500,
             "defaultColor": "gold",
-            "image": {{ 'watch-005.png' | asset_url | json }},
+            "image": {{ 'watch-blush-gold.png' | asset_url | json }},
             "variants": [
-              { "id": "var-w5-silver", "title": "Silver", "price": 12000, "available": true },
-              { "id": "var-w5-gold", "title": "Gold", "price": 12900, "available": true },
-              { "id": "var-w5-rose", "title": "Rose Gold", "price": 12900, "available": true },
-              { "id": "var-w5-black", "title": "Black", "price": 12500, "available": true }
+              { "id": "var-wbg-gold", "title": "Gold", "price": 9500, "available": true },
+              { "id": "var-wbg-silver", "title": "Silver", "price": 9500, "available": true },
+              { "id": "var-wbg-mixed", "title": "Mixed Gold x Silver", "price": 9500, "available": true },
+              { "id": "var-wbg-purple", "title": "Purple", "price": 9500, "available": true },
+              { "id": "var-wbg-black", "title": "Black", "price": 9500, "available": true },
+              { "id": "var-wbg-red", "title": "Red", "price": 9500, "available": true },
+              { "id": "var-wbg-blue", "title": "Blue", "price": 9500, "available": true },
+              { "id": "var-wbg-champagne", "title": "Champagne", "price": 9500, "available": true },
+              { "id": "var-wbg-neon", "title": "Neon", "price": 9500, "available": true }
             ]
           },
           {
-            "id": "como-watch-gold-emerald",
-            "title": "Como Watch Gold – Emerald Dial Edition",
+            "id": "watch-blush-silver",
+            "title": "Blush Silver",
             "type": "watch",
-            "slots": 13,
-            "price": 12900,
-            "defaultColor": "gold",
-            "image": {{ 'watch-006.png' | asset_url | json }},
+            "slots": 14,
+            "price": 8500,
+            "defaultColor": "silver",
+            "image": {{ 'watch-blush-silver.png' | asset_url | json }},
             "variants": [
-              { "id": "var-w6-silver", "title": "Silver", "price": 12000, "available": true },
-              { "id": "var-w6-gold", "title": "Gold", "price": 12900, "available": true },
-              { "id": "var-w6-rose", "title": "Rose Gold", "price": 12900, "available": true },
-              { "id": "var-w6-black", "title": "Black", "price": 12500, "available": true }
+              { "id": "var-wbs-gold", "title": "Gold", "price": 8500, "available": true },
+              { "id": "var-wbs-silver", "title": "Silver", "price": 8500, "available": true },
+              { "id": "var-wbs-mixed", "title": "Mixed Gold x Silver", "price": 8500, "available": true },
+              { "id": "var-wbs-purple", "title": "Purple", "price": 8500, "available": true },
+              { "id": "var-wbs-black", "title": "Black", "price": 8500, "available": true },
+              { "id": "var-wbs-red", "title": "Red", "price": 8500, "available": true },
+              { "id": "var-wbs-blue", "title": "Blue", "price": 8500, "available": true },
+              { "id": "var-wbs-champagne", "title": "Champagne", "price": 8500, "available": true },
+              { "id": "var-wbs-neon", "title": "Neon", "price": 8500, "available": true }
+            ]
+          },
+          {
+            "id": "watch-flower",
+            "title": "Flower",
+            "type": "watch",
+            "slots": 14,
+            "price": 8500,
+            "defaultColor": "silver",
+            "image": {{ 'watch-flower.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-wf-gold", "title": "Gold", "price": 8500, "available": true },
+              { "id": "var-wf-silver", "title": "Silver", "price": 8500, "available": true },
+              { "id": "var-wf-mixed", "title": "Mixed Gold x Silver", "price": 8500, "available": true },
+              { "id": "var-wf-purple", "title": "Purple", "price": 8500, "available": true },
+              { "id": "var-wf-black", "title": "Black", "price": 8500, "available": true },
+              { "id": "var-wf-red", "title": "Red", "price": 8500, "available": true },
+              { "id": "var-wf-blue", "title": "Blue", "price": 8500, "available": true },
+              { "id": "var-wf-champagne", "title": "Champagne", "price": 8500, "available": true },
+              { "id": "var-wf-neon", "title": "Neon", "price": 8500, "available": true }
+            ]
+          },
+          {
+            "id": "watch-fuchsia",
+            "title": "Fuchsia",
+            "type": "watch",
+            "slots": 14,
+            "price": 8500,
+            "defaultColor": "silver",
+            "image": {{ 'watch-fuchsia.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-wfu-gold", "title": "Gold", "price": 8500, "available": true },
+              { "id": "var-wfu-silver", "title": "Silver", "price": 8500, "available": true },
+              { "id": "var-wfu-mixed", "title": "Mixed Gold x Silver", "price": 8500, "available": true },
+              { "id": "var-wfu-purple", "title": "Purple", "price": 8500, "available": true },
+              { "id": "var-wfu-black", "title": "Black", "price": 8500, "available": true },
+              { "id": "var-wfu-red", "title": "Red", "price": 8500, "available": true },
+              { "id": "var-wfu-blue", "title": "Blue", "price": 8500, "available": true },
+              { "id": "var-wfu-champagne", "title": "Champagne", "price": 8500, "available": true },
+              { "id": "var-wfu-neon", "title": "Neon", "price": 8500, "available": true }
+            ]
+          },
+          {
+            "id": "watch-glittery",
+            "title": "Glittery",
+            "type": "watch",
+            "slots": 14,
+            "price": 9500,
+            "defaultColor": "gold",
+            "image": {{ 'watch-glittery.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-wg-gold", "title": "Gold", "price": 9500, "available": true },
+              { "id": "var-wg-silver", "title": "Silver", "price": 9500, "available": true },
+              { "id": "var-wg-mixed", "title": "Mixed Gold x Silver", "price": 9500, "available": true },
+              { "id": "var-wg-purple", "title": "Purple", "price": 9500, "available": true },
+              { "id": "var-wg-black", "title": "Black", "price": 9500, "available": true },
+              { "id": "var-wg-red", "title": "Red", "price": 9500, "available": true },
+              { "id": "var-wg-blue", "title": "Blue", "price": 9500, "available": true },
+              { "id": "var-wg-champagne", "title": "Champagne", "price": 9500, "available": true },
+              { "id": "var-wg-neon", "title": "Neon", "price": 9500, "available": true }
+            ]
+          },
+          {
+            "id": "watch-lilac-gold",
+            "title": "Lilac Gold",
+            "type": "watch",
+            "slots": 14,
+            "price": 9500,
+            "defaultColor": "gold",
+            "image": {{ 'watch-lilac-gold.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-wlg-gold", "title": "Gold", "price": 9500, "available": true },
+              { "id": "var-wlg-silver", "title": "Silver", "price": 9500, "available": true },
+              { "id": "var-wlg-mixed", "title": "Mixed Gold x Silver", "price": 9500, "available": true },
+              { "id": "var-wlg-purple", "title": "Purple", "price": 9500, "available": true },
+              { "id": "var-wlg-black", "title": "Black", "price": 9500, "available": true },
+              { "id": "var-wlg-red", "title": "Red", "price": 9500, "available": true },
+              { "id": "var-wlg-blue", "title": "Blue", "price": 9500, "available": true },
+              { "id": "var-wlg-champagne", "title": "Champagne", "price": 9500, "available": true },
+              { "id": "var-wlg-neon", "title": "Neon", "price": 9500, "available": true }
+            ]
+          },
+          {
+            "id": "watch-lilac-silver",
+            "title": "Lilac Silver",
+            "type": "watch",
+            "slots": 14,
+            "price": 8500,
+            "defaultColor": "silver",
+            "image": {{ 'watch-lilac-silver.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-wls-gold", "title": "Gold", "price": 8500, "available": true },
+              { "id": "var-wls-silver", "title": "Silver", "price": 8500, "available": true },
+              { "id": "var-wls-mixed", "title": "Mixed Gold x Silver", "price": 8500, "available": true },
+              { "id": "var-wls-purple", "title": "Purple", "price": 8500, "available": true },
+              { "id": "var-wls-black", "title": "Black", "price": 8500, "available": true },
+              { "id": "var-wls-red", "title": "Red", "price": 8500, "available": true },
+              { "id": "var-wls-blue", "title": "Blue", "price": 8500, "available": true },
+              { "id": "var-wls-champagne", "title": "Champagne", "price": 8500, "available": true },
+              { "id": "var-wls-neon", "title": "Neon", "price": 8500, "available": true }
+            ]
+          },
+          {
+            "id": "watch-pearly-gold",
+            "title": "Pearly Gold",
+            "type": "watch",
+            "slots": 14,
+            "price": 9500,
+            "defaultColor": "gold",
+            "image": {{ 'watch-pearly-gold.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-wpg-gold", "title": "Gold", "price": 9500, "available": true },
+              { "id": "var-wpg-silver", "title": "Silver", "price": 9500, "available": true },
+              { "id": "var-wpg-mixed", "title": "Mixed Gold x Silver", "price": 9500, "available": true },
+              { "id": "var-wpg-purple", "title": "Purple", "price": 9500, "available": true },
+              { "id": "var-wpg-black", "title": "Black", "price": 9500, "available": true },
+              { "id": "var-wpg-red", "title": "Red", "price": 9500, "available": true },
+              { "id": "var-wpg-blue", "title": "Blue", "price": 9500, "available": true },
+              { "id": "var-wpg-champagne", "title": "Champagne", "price": 9500, "available": true },
+              { "id": "var-wpg-neon", "title": "Neon", "price": 9500, "available": true }
+            ]
+          },
+          {
+            "id": "watch-pearly-silver",
+            "title": "Pearly Silver",
+            "type": "watch",
+            "slots": 14,
+            "price": 8500,
+            "defaultColor": "silver",
+            "image": {{ 'watch-pearly-silver.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-wps-gold", "title": "Gold", "price": 8500, "available": true },
+              { "id": "var-wps-silver", "title": "Silver", "price": 8500, "available": true },
+              { "id": "var-wps-mixed", "title": "Mixed Gold x Silver", "price": 8500, "available": true },
+              { "id": "var-wps-purple", "title": "Purple", "price": 8500, "available": true },
+              { "id": "var-wps-black", "title": "Black", "price": 8500, "available": true },
+              { "id": "var-wps-red", "title": "Red", "price": 8500, "available": true },
+              { "id": "var-wps-blue", "title": "Blue", "price": 8500, "available": true },
+              { "id": "var-wps-champagne", "title": "Champagne", "price": 8500, "available": true },
+              { "id": "var-wps-neon", "title": "Neon", "price": 8500, "available": true }
+            ]
+          },
+          {
+            "id": "watch-sky-blue",
+            "title": "Sky Blue",
+            "type": "watch",
+            "slots": 14,
+            "price": 8500,
+            "defaultColor": "silver",
+            "image": {{ 'watch-sky-blue.png' | asset_url | json }},
+            "variants": [
+              { "id": "var-wsb-gold", "title": "Gold", "price": 8500, "available": true },
+              { "id": "var-wsb-silver", "title": "Silver", "price": 8500, "available": true },
+              { "id": "var-wsb-mixed", "title": "Mixed Gold x Silver", "price": 8500, "available": true },
+              { "id": "var-wsb-purple", "title": "Purple", "price": 8500, "available": true },
+              { "id": "var-wsb-black", "title": "Black", "price": 8500, "available": true },
+              { "id": "var-wsb-red", "title": "Red", "price": 8500, "available": true },
+              { "id": "var-wsb-blue", "title": "Blue", "price": 8500, "available": true },
+              { "id": "var-wsb-champagne", "title": "Champagne", "price": 8500, "available": true },
+              { "id": "var-wsb-neon", "title": "Neon", "price": 8500, "available": true }
             ]
           }
         {%- endif -%}
@@ -1044,27 +1306,57 @@
     },
     {
       "type": "color",
-      "id": "swatch_silver",
-      "label": "Silver Swatch Color",
-      "default": "#d9dcdb"
-    },
-    {
-      "type": "color",
       "id": "swatch_gold",
       "label": "Gold Swatch Color",
       "default": "#d4a748"
     },
     {
       "type": "color",
-      "id": "swatch_rose",
-      "label": "Rose Gold Swatch Color",
-      "default": "#e5a494"
+      "id": "swatch_silver",
+      "label": "Silver Swatch Color",
+      "default": "#d9dcdb"
+    },
+    {
+      "type": "color",
+      "id": "swatch_mixed",
+      "label": "Mixed Gold x Silver Swatch Base Color",
+      "default": "#e0c078"
+    },
+    {
+      "type": "color",
+      "id": "swatch_purple",
+      "label": "Purple Swatch Color",
+      "default": "#8a4fff"
     },
     {
       "type": "color",
       "id": "swatch_black",
       "label": "Black Swatch Color",
       "default": "#222224"
+    },
+    {
+      "type": "color",
+      "id": "swatch_red",
+      "label": "Red Swatch Color",
+      "default": "#d92534"
+    },
+    {
+      "type": "color",
+      "id": "swatch_blue",
+      "label": "Blue Swatch Color",
+      "default": "#2563eb"
+    },
+    {
+      "type": "color",
+      "id": "swatch_champagne",
+      "label": "Champagne Swatch Color",
+      "default": "#e8d8b0"
+    },
+    {
+      "type": "color",
+      "id": "swatch_neon",
+      "label": "Neon Swatch Color",
+      "default": "#39ff14"
     },
     {
       "type": "header",
@@ -1185,44 +1477,37 @@
         {
           "type": "image_picker",
           "id": "model_image",
-          "label": "Custom Thumbnail / Centerpiece Image (optional override)"
-        },
-        {
-          "type": "select",
-          "id": "dial_color",
-          "label": "Watch Dial Preset (if watch & no custom image)",
-          "options": [
-            { "value": "blue", "label": "Blue Dial" },
-            { "value": "pink", "label": "Pink Dial" },
-            { "value": "white", "label": "White Dial" },
-            { "value": "black", "label": "Black Dial" },
-            { "value": "emerald", "label": "Emerald Dial" }
-          ],
-          "default": "blue"
+          "label": "Custom Thumbnail / Centerpiece Image (optional override)",
+          "info": "Optional. Leave blank to automatically use the official transparent watch image or the linked product's image."
         },
         {
           "type": "select",
           "id": "default_color",
           "label": "Default Metal Color",
           "options": [
-            { "value": "silver", "label": "Silver" },
             { "value": "gold", "label": "Gold" },
-            { "value": "rose", "label": "Rose Gold" },
-            { "value": "black", "label": "Black" }
+            { "value": "silver", "label": "Silver" },
+            { "value": "mixed", "label": "Mixed Gold x Silver" },
+            { "value": "purple", "label": "Purple" },
+            { "value": "black", "label": "Black" },
+            { "value": "red", "label": "Red" },
+            { "value": "blue", "label": "Blue" },
+            { "value": "champagne", "label": "Champagne" },
+            { "value": "neon", "label": "Neon" }
           ],
-          "default": "silver"
+          "default": "gold"
         },
         {
           "type": "text",
           "id": "model_id",
           "label": "Model ID / Key (optional)",
-          "info": "e.g. original-bracelet, como-watch-silver-blue"
+          "info": "e.g. original-bracelet, watch-blush-gold"
         },
         {
           "type": "number",
           "id": "price",
           "label": "Fallback Base Price (cents, used if product not linked)",
-          "default": 2499
+          "default": 4000
         }
       ]
     }
@@ -1238,80 +1523,118 @@
             "title": "Original Bracelet",
             "model_type": "bracelet",
             "slots_count": 16,
-            "price": 2499,
-            "default_color": "silver"
-          }
-        },
-        {
-          "type": "bracelet_model",
-          "settings": {
-            "model_id": "como-watch-silver-blue",
-            "title": "Como Watch Silver – Blue Dial Edition",
-            "model_type": "watch",
-            "dial_color": "blue",
-            "slots_count": 14,
-            "price": 12000,
-            "default_color": "silver"
-          }
-        },
-        {
-          "type": "bracelet_model",
-          "settings": {
-            "model_id": "como-watch-silver-pink",
-            "title": "Como Watch Silver – Pink Dial Edition",
-            "model_type": "watch",
-            "dial_color": "pink",
-            "slots_count": 14,
-            "price": 12000,
-            "default_color": "silver"
-          }
-        },
-        {
-          "type": "bracelet_model",
-          "settings": {
-            "model_id": "como-watch-silver-white",
-            "title": "Como Watch Silver – White Dial Edition",
-            "model_type": "watch",
-            "dial_color": "white",
-            "slots_count": 14,
-            "price": 12000,
-            "default_color": "silver"
-          }
-        },
-        {
-          "type": "bracelet_model",
-          "settings": {
-            "model_id": "como-watch-silver-black",
-            "title": "Como Watch Silver – Black Dial Edition",
-            "model_type": "watch",
-            "dial_color": "black",
-            "slots_count": 14,
-            "price": 12000,
-            "default_color": "silver"
-          }
-        },
-        {
-          "type": "bracelet_model",
-          "settings": {
-            "model_id": "como-watch-gold-white",
-            "title": "Como Watch Gold – White Dial Edition",
-            "model_type": "watch",
-            "dial_color": "white",
-            "slots_count": 14,
-            "price": 12900,
+            "price": 4000,
             "default_color": "gold"
           }
         },
         {
           "type": "bracelet_model",
           "settings": {
-            "model_id": "como-watch-gold-emerald",
-            "title": "Como Watch Gold – Emerald Dial Edition",
+            "model_id": "watch-blush-gold",
+            "title": "Blush Gold",
             "model_type": "watch",
-            "dial_color": "emerald",
             "slots_count": 14,
-            "price": 12900,
+            "price": 9500,
             "default_color": "gold"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-blush-silver",
+            "title": "Blush Silver",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 8500,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-flower",
+            "title": "Flower",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 8500,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-fuchsia",
+            "title": "Fuchsia",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 8500,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-glittery",
+            "title": "Glittery",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 9500,
+            "default_color": "gold"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-lilac-gold",
+            "title": "Lilac Gold",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 9500,
+            "default_color": "gold"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-lilac-silver",
+            "title": "Lilac Silver",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 8500,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-pearly-gold",
+            "title": "Pearly Gold",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 9500,
+            "default_color": "gold"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-pearly-silver",
+            "title": "Pearly Silver",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 8500,
+            "default_color": "silver"
+          }
+        },
+        {
+          "type": "bracelet_model",
+          "settings": {
+            "model_id": "watch-sky-blue",
+            "title": "Sky Blue",
+            "model_type": "watch",
+            "slots_count": 14,
+            "price": 8500,
+            "default_color": "silver"
           }
         }
       ]
