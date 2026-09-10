@@ -1428,12 +1428,18 @@
 
         // Theme Filter (OR condition within themes if any selected)
         if (this.activeThemes.size > 0) {
-          const charmTheme = (charm.theme ? String(charm.theme).toLowerCase() : '');
-          const charmTags = Array.isArray(charm.tags) ? charm.tags.map(t => String(t).toLowerCase()) : [];
+          const charmTheme = (charm.theme ? String(charm.theme).toLowerCase().trim() : '');
+          const charmTags = Array.isArray(charm.tags) ? charm.tags.map(t => String(t).toLowerCase().trim()) : [];
           let matchTheme = false;
           for (const theme of this.activeThemes) {
-            const tLower = String(theme).toLowerCase();
-            if (charmTheme === tLower || charmTags.includes(tLower) || charmTags.includes('theme:' + tLower)) {
+            const tLower = String(theme).toLowerCase().trim();
+            if (
+              charmTheme === tLower ||
+              charmTags.includes(tLower) ||
+              charmTags.includes('theme:' + tLower) ||
+              charmTags.includes('theme: ' + tLower) ||
+              charmTags.some(t => t.replace(/^theme:\s*/i, '') === tLower)
+            ) {
               matchTheme = true;
               break;
             }
@@ -1443,12 +1449,18 @@
 
         // Color / Finish Filter
         if (this.activeColors.size > 0) {
-          const charmColor = (charm.color ? String(charm.color).toLowerCase() : '');
-          const charmTags = Array.isArray(charm.tags) ? charm.tags.map(t => String(t).toLowerCase()) : [];
+          const charmColor = (charm.color ? String(charm.color).toLowerCase().trim() : '');
+          const charmTags = Array.isArray(charm.tags) ? charm.tags.map(t => String(t).toLowerCase().trim()) : [];
           let matchColor = false;
           for (const color of this.activeColors) {
-            const cLower = String(color).toLowerCase();
-            if (charmColor === cLower || charmTags.includes(cLower) || charmTags.includes('color:' + cLower)) {
+            const cLower = String(color).toLowerCase().trim();
+            if (
+              charmColor === cLower ||
+              charmTags.includes(cLower) ||
+              charmTags.includes('color:' + cLower) ||
+              charmTags.includes('color: ' + cLower) ||
+              charmTags.some(t => t.replace(/^color:\s*/i, '') === cLower)
+            ) {
               matchColor = true;
               break;
             }
