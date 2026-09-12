@@ -790,18 +790,9 @@
   width: 128px;
 }
 
-/* Modular Link Dimensional Shadow Notch */
+/* Modular Link Dimensional Shadow Notch - superseded by dedicated high-res physical link textures */
 .bb-slot:before {
-  content: "";
-  pointer-events: none;
-  border-radius: 0 0 2px 2px;
-  width: calc(100% + 3px);
-  height: 9px;
-  position: absolute;
-  top: 47px;
-  left: 2px;
-  box-shadow: 0 1px 4px rgba(128, 128, 128, 0.7);
-  z-index: 2;
+  display: none;
 }
 
 /* Hide old artificial shells & plus sign */
