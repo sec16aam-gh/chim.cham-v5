@@ -1371,7 +1371,7 @@
               const destPendantH = Math.round(pendantH * scale);
 
               const canvasW = Math.max(64, destPendantW);
-              const canvasH = 64 + destPendantH;
+              const canvasH = 60 + destPendantH;
               const offsetX = Math.round((canvasW - 64) / 2);
 
               const compCanvas = document.createElement('canvas');
@@ -1379,19 +1379,19 @@
               compCanvas.height = canvasH;
               const cCtx = compCanvas.getContext('2d');
 
-              // A. Draw link body to fill exactly 64px width and 64px height (spanning lines 1-2 and 3-4)
+              // A. Draw link body inset by 4px (56x56) inside the 64x64 top slot area
               cCtx.drawImage(
                 canvas,
                 linkMinX, minY, linkW, linkH,
-                offsetX, 0, 64, 64
+                offsetX + 4, 4, 56, 56
               );
 
-              // B. Draw hanging pendant below y = 64px, centered horizontally
+              // B. Draw hanging pendant below y = 60px, centered horizontally
               const destPendantX = Math.round(offsetX + (64 - destPendantW) / 2);
               cCtx.drawImage(
                 canvas,
                 minX, pendantSourceY, pendantW, pendantH,
-                destPendantX, 64, destPendantW, destPendantH
+                destPendantX, 60, destPendantW, destPendantH
               );
 
               if (!this.calibratedCanvases) this.calibratedCanvases = {};
@@ -1470,8 +1470,13 @@
           ? this.transparentCache[placed.charm.image]
           : placed.charm.image;
 
-        slot.style.setProperty('--bracelet-link', 'none');
+        slot.style.setProperty('--bracelet-link', `url('${linkImg}')`);
+        const baseImgHtml = isDouble
+          ? `<img class="bb-slot-base-img link-1" src="${linkImg}" alt="link" draggable="false"><img class="bb-slot-base-img link-2" src="${linkImg}" alt="link" draggable="false">`
+          : `<img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">`;
+
         slot.innerHTML = `
+          ${baseImgHtml}
           <div class="placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''}">
             <img class="bb-slot-charm-img" src="${charmImgSrc}" alt="${placed.charm.title}">
           </div>
@@ -1927,8 +1932,8 @@
               ctx.drawImage(existingImg, 0, linkH, nw, nh - linkH, 0, slotHeight, slotWidth, canvasHeight - slotHeight);
             }
           } else {
-            // Edge-to-edge flush on block face (64x64 or 128x64)
-            ctx.drawImage(existingImg, 0, 0, slotWidth, slotHeight);
+            // Beveled inset on block face (56x56 or 120x56)
+            ctx.drawImage(existingImg, 4, 4, slotWidth - 8, slotHeight - 8);
           }
           charmDrawn = true;
         } catch (err) {
@@ -1959,8 +1964,12 @@
       ghost.style.height = `${slotHeight}px`;
       ghost.style.zIndex = '999999';
       ghost.style.pointerEvents = 'none';
-      ghost.style.backgroundImage = 'none';
-      ghost.style.background = 'transparent';
+
+      const baseImg = document.createElement('img');
+      baseImg.className = `bb-slot-base-img ${isDouble ? 'span-2' : ''}`;
+      baseImg.src = linkImg;
+      baseImg.draggable = false;
+      ghost.appendChild(baseImg);
 
       const placedDiv = document.createElement('div');
       placedDiv.className = `placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''}`;

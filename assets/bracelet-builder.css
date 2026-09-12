@@ -789,6 +789,14 @@
 .bb-slot-base-img.span-2 {
   width: 128px;
 }
+.bb-slot.is-double-start .bb-slot-base-img.link-1 {
+  width: 64px;
+  left: 0;
+}
+.bb-slot.is-double-start .bb-slot-base-img.link-2 {
+  width: 64px;
+  left: 64px;
+}
 
 /* Modular Link Dimensional Shadow Notch - superseded by dedicated high-res physical link textures */
 .bb-slot:before {
@@ -841,27 +849,48 @@
   justify-content: center;
 }
 
-/* Hide background generic metal link when a charm is placed so the charm's own authentic link completely replaces the block */
+/* Authentic Modular Link Placement: Charm sits beautifully inset with a 4px beveled border revealing the bracelet link */
 .bb-slot.is-occupied {
-  background-image: none !important;
-  background-color: transparent !important;
+  background-image: var(--bracelet-link);
 }
 
 .bb-slot.is-occupied .bb-slot-base-img {
-  display: none !important;
+  display: block !important;
+}
+
+.placed-charm {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 56px;
+  height: 56px;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.22));
 }
 
 .placed-charm.span-2 {
-  width: 128px;
+  top: 4px;
+  left: 4px;
+  width: 120px;
+  height: 56px;
 }
 
 .placed-charm.kind-hanging {
-  width: 64px;
-  height: 64px;
-  overflow: visible;
+  top: 0 !important;
+  left: 0 !important;
+  width: 64px !important;
+  height: 64px !important;
+  overflow: visible !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
 }
 
-/* Placed Charm Image Inside Slot - Sits flush on metal link with true transparent alpha */
+/* Placed Charm Image Inside Slot - Sits inset within the beveled frame */
 .bb-slot-charm-img,
 .placed-charm img {
   object-fit: fill;
@@ -874,8 +903,7 @@
   left: 0 !important;
   pointer-events: none;
   z-index: 3;
-  filter: none !important;
-  box-shadow: none !important;
+  border-radius: 2px;
 }
 
 /* 2-Link Double Charm (Spans 128px) */
@@ -885,7 +913,10 @@
   background-size: 50% 100%, 50% 100%;
 }
 .bb-slot.is-double-start .placed-charm {
-  width: 128px;
+  width: 120px;
+  height: 56px;
+  top: 4px;
+  left: 4px;
 }
 .bb-slot.is-double-start .bb-slot-charm-img,
 .placed-charm.span-2 img {
@@ -900,7 +931,7 @@
   display: none !important;
 }
 
-/* Drop / Hanging Charm (Top link body fills block, pendant hangs centered below) */
+/* Drop / Hanging Charm (Top link body sits inset inside slot, pendant hangs centered below) */
 .bb-slot.is-hanging {
   overflow: visible !important;
 }
@@ -908,10 +939,13 @@
 .placed-charm.kind-hanging {
   width: 64px !important;
   height: 64px !important;
+  top: 0 !important;
+  left: 0 !important;
   overflow: visible !important;
   display: flex !important;
   justify-content: center !important;
   align-items: flex-start !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.22));
 }
 .bb-slot.is-hanging .bb-slot-charm-img,
 .placed-charm.kind-hanging img {
@@ -924,6 +958,7 @@
   max-width: none !important;
   max-height: none !important;
   object-fit: visible !important;
+  border-radius: 0 !important;
 }
 
 /* ==========================================================================
