@@ -54,16 +54,16 @@
       this.assetUrls = (this.config && this.config.assetUrls) || {};
 
       this.swatches = {
-        gold: (this.settings.swatches && this.settings.swatches.gold) || '#d4a748',
-        silver: (this.settings.swatches && this.settings.swatches.silver) || '#d9dcdb',
-        mixed: (this.settings.swatches && this.settings.swatches.mixed) || 'linear-gradient(135deg, #d4a748 50%, #d9dcdb 50%)',
-        purple: (this.settings.swatches && this.settings.swatches.purple) || '#8a4fff',
-        black: (this.settings.swatches && this.settings.swatches.black) || '#222224',
-        red: (this.settings.swatches && this.settings.swatches.red) || '#d92534',
-        blue: (this.settings.swatches && this.settings.swatches.blue) || '#2563eb',
-        champagne: (this.settings.swatches && this.settings.swatches.champagne) || '#e8d8b0',
-        neon: (this.settings.swatches && this.settings.swatches.neon) || '#39ff14',
-        rose: (this.settings.swatches && this.settings.swatches.rose) || '#e5a494'
+        gold: (this.settings.swatches && this.settings.swatches.gold) || 'linear-gradient(135deg, #fff3cf 0%, #ecd38a 35%, #cca54c 70%, #9b7226 100%)',
+        silver: (this.settings.swatches && this.settings.swatches.silver) || 'linear-gradient(135deg, #f5f6f8 0%, #d8dade 40%, #b4b8be 70%, #90949a 100%)',
+        mixed: (this.settings.swatches && this.settings.swatches.mixed) || 'linear-gradient(180deg, #ecd38a 0%, #cca54c 22%, #ffffff 24%, #d8dade 50%, #b4b8be 76%, #ecd38a 78%, #cca54c 100%)',
+        purple: (this.settings.swatches && this.settings.swatches.purple) || 'linear-gradient(135deg, #f2ecf8 0%, #cfc0e2 40%, #b1a5c5 75%, #7e699c 100%)',
+        black: (this.settings.swatches && this.settings.swatches.black) || 'linear-gradient(135deg, #4c4e52 0%, #2a2b2e 45%, #18191b 80%, #0c0d0e 100%)',
+        red: (this.settings.swatches && this.settings.swatches.red) || 'linear-gradient(135deg, #ff8278 0%, #eb382c 40%, #d52b20 75%, #8a0e05 100%)',
+        blue: (this.settings.swatches && this.settings.swatches.blue) || 'linear-gradient(135deg, #f0f7ff 0%, #bedcf8 40%, #b2cde6 75%, #598cb8 100%)',
+        champagne: (this.settings.swatches && this.settings.swatches.champagne) || 'linear-gradient(135deg, #faf5ee 0%, #dfd3c3 40%, #c4b7a6 75%, #8f816d 100%)',
+        neon: (this.settings.swatches && this.settings.swatches.neon) || 'linear-gradient(135deg, #ffffe0 0%, #eef17c 35%, #dccc64 70%, #969c18 100%)',
+        rose: (this.settings.swatches && this.settings.swatches.rose) || 'linear-gradient(135deg, #fce5df 0%, #e8b2a5 40%, #c58677 75%, #9b5c4d 100%)'
       };
 
       this.selectedModel = this.models[0] || {
@@ -1087,7 +1087,12 @@
     getMetalLinkImageSrc(handle) {
       const assetUrls = this.assetUrls || {};
       const h = (handle || '').toLowerCase();
-      if (h === 'mixed') return assetUrls.braceletGold || 'bracelet-gold.png';
+      if (h === 'mixed' || h.includes('mixed')) return assetUrls.braceletMixed || 'bracelet-mixed.png';
+      if (h.includes('purple')) return assetUrls.braceletPurple || 'bracelet-purple.png';
+      if (h.includes('red')) return assetUrls.braceletRed || 'bracelet-red.png';
+      if (h.includes('blue')) return assetUrls.braceletBlue || 'bracelet-blue.png';
+      if (h.includes('champagne')) return assetUrls.braceletChampagne || 'bracelet-champagne.png';
+      if (h.includes('neon')) return assetUrls.braceletNeon || 'bracelet-neon.png';
       if (h.includes('gold') && !h.includes('rose')) return assetUrls.braceletGold || 'bracelet-gold.png';
       if (h.includes('rose')) return assetUrls.braceletRose || 'bracelet-rose-gold.png';
       if (h.includes('black')) return assetUrls.braceletBlack || 'bracelet-black.png';
@@ -1096,7 +1101,7 @@
 
     preloadMetalLinks() {
       if (!this.preloadedLinks) this.preloadedLinks = {};
-      const handles = ['silver', 'gold', 'rose', 'black'];
+      const handles = ['silver', 'gold', 'mixed', 'purple', 'black', 'red', 'blue', 'champagne', 'neon', 'rose'];
       handles.forEach(handle => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -1353,10 +1358,8 @@
         }
       }
 
-      const finishHandle = this.selectedColor.handle || 'gold';
-      const linkImg = (finishHandle === 'mixed')
-        ? (index % 2 === 0 ? this.getMetalLinkImageSrc('gold') : this.getMetalLinkImageSrc('silver'))
-        : this.getMetalLinkImageSrc(finishHandle);
+      const finishHandle = this.selectedColor?.handle || 'silver';
+      const linkImg = this.getMetalLinkImageSrc(finishHandle);
       slot.style.setProperty('--bracelet-link', `url('${linkImg}')`);
       const placed = this.slots[index];
 
@@ -1791,9 +1794,22 @@
       if (linkObj && linkObj.complete && linkObj.naturalWidth > 0) {
         ctx.drawImage(linkObj, 0, 0, slotWidth, slotHeight);
       } else {
-        ctx.fillStyle = finishHandle === 'gold' ? '#dfbe75' : finishHandle === 'rose' ? '#e2a799' : finishHandle === 'black' ? '#2b2b2b' : '#e6e8e7';
+        const fallbackColors = {
+          gold: { fill: '#ecd38a', stroke: '#9b7226' },
+          silver: { fill: '#d8dade', stroke: '#90949a' },
+          mixed: { fill: '#ecd38a', stroke: '#90949a' },
+          purple: { fill: '#b1a5c5', stroke: '#7e699c' },
+          black: { fill: '#202120', stroke: '#0c0d0e' },
+          red: { fill: '#d52b20', stroke: '#8a0e05' },
+          blue: { fill: '#b2cde6', stroke: '#598cb8' },
+          champagne: { fill: '#c4b7a6', stroke: '#8f816d' },
+          neon: { fill: '#dccc64', stroke: '#969c18' },
+          rose: { fill: '#e8b2a5', stroke: '#9b5c4d' }
+        };
+        const fb = fallbackColors[finishHandle] || fallbackColors.silver;
+        ctx.fillStyle = fb.fill;
         ctx.fillRect(0, 0, slotWidth, slotHeight);
-        ctx.strokeStyle = finishHandle === 'gold' ? '#bfa058' : finishHandle === 'rose' ? '#c88c80' : finishHandle === 'black' ? '#1a1a1a' : '#c0c4c2';
+        ctx.strokeStyle = fb.stroke;
         ctx.lineWidth = 1;
         ctx.strokeRect(0, 0, slotWidth, slotHeight);
       }

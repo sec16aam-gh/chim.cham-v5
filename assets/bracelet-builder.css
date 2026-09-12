@@ -262,16 +262,16 @@
   flex-shrink: 0;
 }
 
-.bb-swatch.swatch-gold { background: var(--bb-swatch-gold, linear-gradient(135deg, #f5d77f, #d4a748, #b88628)); }
-.bb-swatch.swatch-silver { background: var(--bb-swatch-silver, linear-gradient(135deg, #f0f0f0, #d5d7db, #a8abb0)); }
-.bb-swatch.swatch-mixed { background: var(--bb-swatch-mixed, linear-gradient(135deg, #f5d77f 0%, #d4a748 48%, #d5d7db 52%, #f0f0f0 100%)); }
-.bb-swatch.swatch-purple { background: var(--bb-swatch-purple, linear-gradient(135deg, #b072e6, #7e38b7, #531b82)); }
-.bb-swatch.swatch-black { background: var(--bb-swatch-black, linear-gradient(135deg, #444446, #222224, #111112)); }
-.bb-swatch.swatch-red { background: var(--bb-swatch-red, linear-gradient(135deg, #ff6b6b, #d92534, #940f1a)); }
-.bb-swatch.swatch-blue { background: var(--bb-swatch-blue, linear-gradient(135deg, #5b9bf8, #1e5799, #0d3261)); }
-.bb-swatch.swatch-champagne { background: var(--bb-swatch-champagne, linear-gradient(135deg, #fff3db, #e8d8b0, #bfa879)); }
-.bb-swatch.swatch-neon { background: var(--bb-swatch-neon, linear-gradient(135deg, #a6ff85, #39ff14, #1fa800)); }
-.bb-swatch.swatch-rose { background: linear-gradient(135deg, #fcd5cb, #e5a494, #b97666); }
+.bb-swatch.swatch-gold { background: var(--bb-swatch-gold, linear-gradient(135deg, #fff3cf 0%, #ecd38a 35%, #cca54c 70%, #9b7226 100%)); }
+.bb-swatch.swatch-silver { background: var(--bb-swatch-silver, linear-gradient(135deg, #f5f6f8 0%, #d8dade 40%, #b4b8be 70%, #90949a 100%)); }
+.bb-swatch.swatch-mixed { background: var(--bb-swatch-mixed, linear-gradient(180deg, #ecd38a 0%, #cca54c 22%, #ffffff 24%, #d8dade 50%, #b4b8be 76%, #ecd38a 78%, #cca54c 100%)); }
+.bb-swatch.swatch-purple { background: var(--bb-swatch-purple, linear-gradient(135deg, #f2ecf8 0%, #cfc0e2 40%, #b1a5c5 75%, #7e699c 100%)); }
+.bb-swatch.swatch-black { background: var(--bb-swatch-black, linear-gradient(135deg, #4c4e52 0%, #2a2b2e 45%, #18191b 80%, #0c0d0e 100%)); }
+.bb-swatch.swatch-red { background: var(--bb-swatch-red, linear-gradient(135deg, #ff8278 0%, #eb382c 40%, #d52b20 75%, #8a0e05 100%)); }
+.bb-swatch.swatch-blue { background: var(--bb-swatch-blue, linear-gradient(135deg, #f0f7ff 0%, #bedcf8 40%, #b2cde6 75%, #598cb8 100%)); }
+.bb-swatch.swatch-champagne { background: var(--bb-swatch-champagne, linear-gradient(135deg, #faf5ee 0%, #dfd3c3 40%, #c4b7a6 75%, #8f816d 100%)); }
+.bb-swatch.swatch-neon { background: var(--bb-swatch-neon, linear-gradient(135deg, #ffffe0 0%, #eef17c 35%, #dccc64 70%, #969c18 100%)); }
+.bb-swatch.swatch-rose { background: linear-gradient(135deg, #fce5df 0%, #e8b2a5 40%, #c58677 75%, #9b5c4d 100%); }
 
 .bb-chevron {
   width: 14px;
@@ -692,76 +692,55 @@
 
 .bb-bracelet-row.metal-silver {
   --bracelet-link: var(--bb-link-silver, url('bracelet-silver.png'));
-  --metal: #d5d8d6;
-  --metal-dark: #8f9493;
+  --metal: #d8dade;
+  --metal-dark: #90949a;
 }
 .bb-bracelet-row.metal-gold {
   --bracelet-link: var(--bb-link-gold, url('bracelet-gold.png'));
-  --metal: #deb757;
-  --metal-dark: #9c6c19;
+  --metal: #ecd38a;
+  --metal-dark: #9b7226;
 }
 .bb-bracelet-row.metal-mixed {
-  --bracelet-link: var(--bb-link-gold, url('bracelet-gold.png'));
-  --metal: #deb757;
-  --metal-dark: #8f9493;
-}
-.bb-bracelet-row.metal-mixed .bb-slot:nth-child(even) {
-  --bracelet-link: var(--bb-link-silver, url('bracelet-silver.png'));
-}
-.bb-bracelet-row.metal-mixed .bb-slot:nth-child(odd) {
-  --bracelet-link: var(--bb-link-gold, url('bracelet-gold.png'));
+  --bracelet-link: var(--bb-link-mixed, url('bracelet-mixed.png'));
+  --metal: #ecd38a;
+  --metal-dark: #90949a;
 }
 .bb-bracelet-row.metal-purple {
-  --bracelet-link: var(--bb-link-silver, url('bracelet-silver.png'));
-  --metal: #8a4fff;
-  --metal-dark: #531b82;
-}
-.bb-bracelet-row.metal-purple .bb-slot-base-img {
-  filter: sepia(1) hue-rotate(225deg) saturate(2.8) brightness(0.92) contrast(1.15);
+  --bracelet-link: var(--bb-link-purple, url('bracelet-purple.png'));
+  --metal: #b1a5c5;
+  --metal-dark: #7e699c;
 }
 .bb-bracelet-row.metal-black {
   --bracelet-link: var(--bb-link-black, url('bracelet-black.png'));
-  --metal: #484849;
-  --metal-dark: #19191a;
+  --metal: #202120;
+  --metal-dark: #0c0d0e;
 }
 .bb-bracelet-row.metal-red {
-  --bracelet-link: var(--bb-link-silver, url('bracelet-silver.png'));
-  --metal: #d92534;
-  --metal-dark: #940f1a;
-}
-.bb-bracelet-row.metal-red .bb-slot-base-img {
-  filter: sepia(1) hue-rotate(310deg) saturate(3.6) brightness(0.9) contrast(1.2);
+  --bracelet-link: var(--bb-link-red, url('bracelet-red.png'));
+  --metal: #d52b20;
+  --metal-dark: #8a0e05;
 }
 .bb-bracelet-row.metal-blue {
-  --bracelet-link: var(--bb-link-silver, url('bracelet-silver.png'));
-  --metal: #2563eb;
-  --metal-dark: #0d3261;
-}
-.bb-bracelet-row.metal-blue .bb-slot-base-img {
-  filter: sepia(1) hue-rotate(175deg) saturate(2.8) brightness(0.96) contrast(1.12);
+  --bracelet-link: var(--bb-link-blue, url('bracelet-blue.png'));
+  --metal: #b2cde6;
+  --metal-dark: #598cb8;
 }
 .bb-bracelet-row.metal-champagne {
-  --bracelet-link: var(--bb-link-silver, url('bracelet-silver.png'));
-  --metal: #e8d8b0;
-  --metal-dark: #bfa879;
-}
-.bb-bracelet-row.metal-champagne .bb-slot-base-img {
-  filter: sepia(0.55) hue-rotate(350deg) saturate(1.2) brightness(1.12) contrast(1.05);
+  --bracelet-link: var(--bb-link-champagne, url('bracelet-champagne.png'));
+  --metal: #c4b7a6;
+  --metal-dark: #8f816d;
 }
 .bb-bracelet-row.metal-neon {
-  --bracelet-link: var(--bb-link-silver, url('bracelet-silver.png'));
-  --metal: #39ff14;
-  --metal-dark: #1fb300;
-}
-.bb-bracelet-row.metal-neon .bb-slot-base-img {
-  filter: sepia(1) hue-rotate(75deg) saturate(4.2) brightness(1.18) contrast(1.15);
+  --bracelet-link: var(--bb-link-neon, url('bracelet-neon.png'));
+  --metal: #dccc64;
+  --metal-dark: #969c18;
 }
 .bb-bracelet-row.metal-rose_gold,
 .bb-bracelet-row.metal-rose,
 .bb-bracelet-row.metal-rose-gold {
   --bracelet-link: var(--bb-link-rose, url('bracelet-rose-gold.png'));
-  --metal: #d2a083;
-  --metal-dark: #925f46;
+  --metal: #e8b2a5;
+  --metal-dark: #9b5c4d;
 }
 
 /* Hide rail */

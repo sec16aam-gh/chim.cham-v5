@@ -33,15 +33,21 @@
       --bb-link-gold: url('{{ 'bracelet-gold.png' | asset_url }}');
       --bb-link-rose: url('{{ 'bracelet-rose-gold.png' | asset_url }}');
       --bb-link-black: url('{{ 'bracelet-black.png' | asset_url }}');
-      --bb-swatch-gold: {{ section.settings.swatch_gold | default: '#d4a748' }};
-      --bb-swatch-silver: {{ section.settings.swatch_silver | default: '#d9dcdb' }};
-      --bb-swatch-mixed: {{ section.settings.swatch_mixed | default: 'linear-gradient(135deg, #d4a748 50%, #d9dcdb 50%)' }};
-      --bb-swatch-purple: {{ section.settings.swatch_purple | default: '#8a4fff' }};
-      --bb-swatch-black: {{ section.settings.swatch_black | default: '#222224' }};
-      --bb-swatch-red: {{ section.settings.swatch_red | default: '#d92534' }};
-      --bb-swatch-blue: {{ section.settings.swatch_blue | default: '#2563eb' }};
-      --bb-swatch-champagne: {{ section.settings.swatch_champagne | default: '#e8d8b0' }};
-      --bb-swatch-neon: {{ section.settings.swatch_neon | default: '#39ff14' }};
+      --bb-link-mixed: url('{{ 'bracelet-mixed.png' | asset_url }}');
+      --bb-link-purple: url('{{ 'bracelet-purple.png' | asset_url }}');
+      --bb-link-red: url('{{ 'bracelet-red.png' | asset_url }}');
+      --bb-link-blue: url('{{ 'bracelet-blue.png' | asset_url }}');
+      --bb-link-champagne: url('{{ 'bracelet-champagne.png' | asset_url }}');
+      --bb-link-neon: url('{{ 'bracelet-neon.png' | asset_url }}');
+      --bb-swatch-gold: {{ section.settings.swatch_gold | default: 'linear-gradient(135deg, #fff3cf 0%, #ecd38a 35%, #cca54c 70%, #9b7226 100%)' }};
+      --bb-swatch-silver: {{ section.settings.swatch_silver | default: 'linear-gradient(135deg, #f5f6f8 0%, #d8dade 40%, #b4b8be 70%, #90949a 100%)' }};
+      --bb-swatch-mixed: {{ section.settings.swatch_mixed | default: 'linear-gradient(180deg, #ecd38a 0%, #cca54c 22%, #ffffff 24%, #d8dade 50%, #b4b8be 76%, #ecd38a 78%, #cca54c 100%)' }};
+      --bb-swatch-purple: {{ section.settings.swatch_purple | default: 'linear-gradient(135deg, #f2ecf8 0%, #cfc0e2 40%, #b1a5c5 75%, #7e699c 100%)' }};
+      --bb-swatch-black: {{ section.settings.swatch_black | default: 'linear-gradient(135deg, #4c4e52 0%, #2a2b2e 45%, #18191b 80%, #0c0d0e 100%)' }};
+      --bb-swatch-red: {{ section.settings.swatch_red | default: 'linear-gradient(135deg, #ff8278 0%, #eb382c 40%, #d52b20 75%, #8a0e05 100%)' }};
+      --bb-swatch-blue: {{ section.settings.swatch_blue | default: 'linear-gradient(135deg, #f0f7ff 0%, #bedcf8 40%, #b2cde6 75%, #598cb8 100%)' }};
+      --bb-swatch-champagne: {{ section.settings.swatch_champagne | default: 'linear-gradient(135deg, #faf5ee 0%, #dfd3c3 40%, #c4b7a6 75%, #8f816d 100%)' }};
+      --bb-swatch-neon: {{ section.settings.swatch_neon | default: 'linear-gradient(135deg, #ffffe0 0%, #eef17c 35%, #dccc64 70%, #969c18 100%)' }};
     }
     @media (max-width: 991px) {
       #bracelet-builder-section-{{ section_id }} .bb-sidebar-scroll-spacer,
@@ -675,15 +681,15 @@
         "emptyStateTitle": {{ section.settings.empty_state_title | default: "Your story starts here." | json }},
         "emptyStateSub": {{ section.settings.empty_state_sub | default: "Drag or tap any charm to begin." | json }},
         "swatches": {
-          "gold": {{ section.settings.swatch_gold | default: "#d4a748" | json }},
-          "silver": {{ section.settings.swatch_silver | default: "#d9dcdb" | json }},
-          "mixed": {{ section.settings.swatch_mixed | default: "linear-gradient(135deg, #d4a748 50%, #d9dcdb 50%)" | json }},
-          "purple": {{ section.settings.swatch_purple | default: "#8a4fff" | json }},
-          "black": {{ section.settings.swatch_black | default: "#222224" | json }},
-          "red": {{ section.settings.swatch_red | default: "#d92534" | json }},
-          "blue": {{ section.settings.swatch_blue | default: "#2563eb" | json }},
-          "champagne": {{ section.settings.swatch_champagne | default: "#e8d8b0" | json }},
-          "neon": {{ section.settings.swatch_neon | default: "#39ff14" | json }}
+          "gold": {{ section.settings.swatch_gold | default: "linear-gradient(135deg, #fff3cf 0%, #ecd38a 35%, #cca54c 70%, #9b7226 100%)" | json }},
+          "silver": {{ section.settings.swatch_silver | default: "linear-gradient(135deg, #f5f6f8 0%, #d8dade 40%, #b4b8be 70%, #90949a 100%)" | json }},
+          "mixed": {{ section.settings.swatch_mixed | default: "linear-gradient(180deg, #ecd38a 0%, #cca54c 22%, #ffffff 24%, #d8dade 50%, #b4b8be 76%, #ecd38a 78%, #cca54c 100%)" | json }},
+          "purple": {{ section.settings.swatch_purple | default: "linear-gradient(135deg, #f2ecf8 0%, #cfc0e2 40%, #b1a5c5 75%, #7e699c 100%)" | json }},
+          "black": {{ section.settings.swatch_black | default: "linear-gradient(135deg, #4c4e52 0%, #2a2b2e 45%, #18191b 80%, #0c0d0e 100%)" | json }},
+          "red": {{ section.settings.swatch_red | default: "linear-gradient(135deg, #ff8278 0%, #eb382c 40%, #d52b20 75%, #8a0e05 100%)" | json }},
+          "blue": {{ section.settings.swatch_blue | default: "linear-gradient(135deg, #f0f7ff 0%, #bedcf8 40%, #b2cde6 75%, #598cb8 100%)" | json }},
+          "champagne": {{ section.settings.swatch_champagne | default: "linear-gradient(135deg, #faf5ee 0%, #dfd3c3 40%, #c4b7a6 75%, #8f816d 100%)" | json }},
+          "neon": {{ section.settings.swatch_neon | default: "linear-gradient(135deg, #ffffe0 0%, #eef17c 35%, #dccc64 70%, #969c18 100%)" | json }}
         }
       },
       "assetUrls": {
@@ -691,6 +697,12 @@
         "braceletGold": {{ 'bracelet-gold.png' | asset_url | json }},
         "braceletRose": {{ 'bracelet-rose-gold.png' | asset_url | json }},
         "braceletBlack": {{ 'bracelet-black.png' | asset_url | json }},
+        "braceletMixed": {{ 'bracelet-mixed.png' | asset_url | json }},
+        "braceletPurple": {{ 'bracelet-purple.png' | asset_url | json }},
+        "braceletRed": {{ 'bracelet-red.png' | asset_url | json }},
+        "braceletBlue": {{ 'bracelet-blue.png' | asset_url | json }},
+        "braceletChampagne": {{ 'bracelet-champagne.png' | asset_url | json }},
+        "braceletNeon": {{ 'bracelet-neon.png' | asset_url | json }},
         "watchBlushGold": {{ 'watch-blush-gold.png' | asset_url | json }},
         "watchBlushSilver": {{ 'watch-blush-silver.png' | asset_url | json }},
         "watchFlower": {{ 'watch-flower.png' | asset_url | json }},
@@ -1308,55 +1320,55 @@
       "type": "color",
       "id": "swatch_gold",
       "label": "Gold Swatch Color",
-      "default": "#d4a748"
+      "default": "#cca54c"
     },
     {
       "type": "color",
       "id": "swatch_silver",
       "label": "Silver Swatch Color",
-      "default": "#d9dcdb"
+      "default": "#d8dade"
     },
     {
       "type": "color",
       "id": "swatch_mixed",
       "label": "Mixed Gold x Silver Swatch Base Color",
-      "default": "#e0c078"
+      "default": "#ecd38a"
     },
     {
       "type": "color",
       "id": "swatch_purple",
       "label": "Purple Swatch Color",
-      "default": "#8a4fff"
+      "default": "#b1a5c5"
     },
     {
       "type": "color",
       "id": "swatch_black",
       "label": "Black Swatch Color",
-      "default": "#222224"
+      "default": "#202120"
     },
     {
       "type": "color",
       "id": "swatch_red",
       "label": "Red Swatch Color",
-      "default": "#d92534"
+      "default": "#d52b20"
     },
     {
       "type": "color",
       "id": "swatch_blue",
       "label": "Blue Swatch Color",
-      "default": "#2563eb"
+      "default": "#b2cde6"
     },
     {
       "type": "color",
       "id": "swatch_champagne",
       "label": "Champagne Swatch Color",
-      "default": "#e8d8b0"
+      "default": "#c4b7a6"
     },
     {
       "type": "color",
       "id": "swatch_neon",
       "label": "Neon Swatch Color",
-      "default": "#39ff14"
+      "default": "#dccc64"
     },
     {
       "type": "header",
