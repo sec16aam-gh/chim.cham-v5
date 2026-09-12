@@ -1185,19 +1185,101 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
 
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const w = canvas.width;
+          const h = canvas.height;
+          const imgData = ctx.getImageData(0, 0, w, h);
           const data = imgData.data;
-          const len = data.length;
 
-          // Remove white/near-white studio photo background (make transparent)
-          for (let i = 0; i < len; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            // If near-white with low color saturation (pure studio background)
-            if (r > 225 && g > 225 && b > 225 && Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b)) < 20) {
-              data[i + 3] = 0; // Alpha 0 = 100% transparent
+          // Helper to check if a pixel is white studio background or already transparent
+          function isBg(idx) {
+            const a = data[idx + 3];
+            if (a < 25) return true;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            if (r > 225 && g > 225 && b > 225) {
+              const diff = Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b));
+              if (diff < 20) return true;
             }
+            return false;
+          }
+
+          // Edge-connected flood fill: only erase background connected to the outer perimeter
+          // Preserves all internal metallic highlights, silver reflections, and gold surfaces
+          const visited = new Uint8Array(w * h);
+          const queue = new Int32Array(w * h);
+          let head = 0;
+          let tail = 0;
+
+          // Seed top and bottom edges
+          for (let x = 0; x < w; x++) {
+            const idx0 = x * 4;
+            if (isBg(idx0)) {
+              visited[x] = 1;
+              queue[tail++] = x;
+            }
+            const pLast = (h - 1) * w + x;
+            const idxLast = pLast * 4;
+            if (!visited[pLast] && isBg(idxLast)) {
+              visited[pLast] = 1;
+              queue[tail++] = pLast;
+            }
+          }
+          // Seed left and right edges
+          for (let y = 0; y < h; y++) {
+            const pLeft = y * w;
+            const idxLeft = pLeft * 4;
+            if (!visited[pLeft] && isBg(idxLeft)) {
+              visited[pLeft] = 1;
+              queue[tail++] = pLeft;
+            }
+            const pRight = y * w + (w - 1);
+            const idxRight = pRight * 4;
+            if (!visited[pRight] && isBg(idxRight)) {
+              visited[pRight] = 1;
+              queue[tail++] = pRight;
+            }
+          }
+
+          // BFS traversal through background
+          while (head < tail) {
+            const p = queue[head++];
+            const px = p % w;
+            const py = (p / w) | 0;
+
+            if (px > 0) {
+              const n = p - 1;
+              if (!visited[n] && isBg(n * 4)) {
+                visited[n] = 1;
+                queue[tail++] = n;
+              }
+            }
+            if (px < w - 1) {
+              const n = p + 1;
+              if (!visited[n] && isBg(n * 4)) {
+                visited[n] = 1;
+                queue[tail++] = n;
+              }
+            }
+            if (py > 0) {
+              const n = p - w;
+              if (!visited[n] && isBg(n * 4)) {
+                visited[n] = 1;
+                queue[tail++] = n;
+              }
+            }
+            if (py < h - 1) {
+              const n = p + w;
+              if (!visited[n] && isBg(n * 4)) {
+                visited[n] = 1;
+                queue[tail++] = n;
+              }
+            }
+          }
+
+          // Make only edge-connected background pixels transparent
+          for (let i = 0; i < tail; i++) {
+            data[queue[i] * 4 + 3] = 0;
           }
 
           ctx.putImageData(imgData, 0, 0);
@@ -1384,12 +1466,12 @@
           slot.classList.add('is-hanging');
         }
 
-        const charmImgSrc = this.transparentCache && this.transparentCache[placed.charm.image]
+        const charmImgSrc = (this.transparentCache && this.transparentCache[placed.charm.image])
           ? this.transparentCache[placed.charm.image]
           : placed.charm.image;
 
+        slot.style.setProperty('--bracelet-link', 'none');
         slot.innerHTML = `
-          <img class="bb-slot-base-img ${isDouble ? 'span-2' : ''}" src="${linkImg}" alt="link" draggable="false">
           <div class="placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''}">
             <img class="bb-slot-charm-img" src="${charmImgSrc}" alt="${placed.charm.title}">
           </div>
@@ -1877,12 +1959,8 @@
       ghost.style.height = `${slotHeight}px`;
       ghost.style.zIndex = '999999';
       ghost.style.pointerEvents = 'none';
-
-      const baseImg = document.createElement('img');
-      baseImg.className = `bb-slot-base-img ${isDouble ? 'span-2' : ''}`;
-      baseImg.src = linkImg;
-      baseImg.draggable = false;
-      ghost.appendChild(baseImg);
+      ghost.style.backgroundImage = 'none';
+      ghost.style.background = 'transparent';
 
       const placedDiv = document.createElement('div');
       placedDiv.className = `placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''}`;

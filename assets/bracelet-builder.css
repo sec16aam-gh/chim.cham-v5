@@ -842,6 +842,11 @@
 }
 
 /* Hide background generic metal link when a charm is placed so the charm's own authentic link completely replaces the block */
+.bb-slot.is-occupied {
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
 .bb-slot.is-occupied .bb-slot-base-img {
   display: none !important;
 }
