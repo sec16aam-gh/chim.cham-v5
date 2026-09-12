@@ -68,9 +68,21 @@
           >
           {%- for block in section.blocks -%}
           <div class="col collectionlist-item carousel__slide-wrapper--{{ block.id }}" {{ block.shopify_attributes }} >
-            {%- assign featured_collection = collections[block.settings.collection] -%}
-            {%- assign featured_image = block.settings.image -%}
-            {%- render 'collection-grid-item' , featured_image: featured_image, featured_collection: featured_collection, column: 'none', size_image: section.settings.size_image, headinglist: section.settings.size_text -%}
+            {%- if block.type == 'link' -%}
+              {%- render 'collection-grid-item', 
+                featured_image: block.settings.image, 
+                custom_url: block.settings.link, 
+                custom_title: block.settings.title, 
+                custom_count: block.settings.count, 
+                column: 'none', 
+                size_image: section.settings.size_image, 
+                headinglist: section.settings.size_text 
+              -%}
+            {%- else -%}
+              {%- assign featured_collection = collections[block.settings.collection] -%}
+              {%- assign featured_image = block.settings.image -%}
+              {%- render 'collection-grid-item' , featured_image: featured_image, featured_collection: featured_collection, column: 'none', size_image: section.settings.size_image, headinglist: section.settings.size_text -%}
+            {%- endif -%}
           </div>
           {%- endfor -%}
         </div>
@@ -85,9 +97,9 @@
 
 {% schema %}
 {
-  "name": "Collection list",
+  "name": "Collection & Link list",
   "class": "index-section",
-  "max_blocks": 6,
+  "max_blocks": 12,
   "settings": [
     {
       "type": "select",
@@ -434,11 +446,39 @@
           "label": "Image"
         }
       ]
+    },
+    {
+      "type": "link",
+      "name": "Custom link",
+      "settings": [
+        {
+          "id": "title",
+          "type": "text",
+          "label": "Title",
+          "default": "Link title"
+        },
+        {
+          "id": "link",
+          "type": "url",
+          "label": "Link"
+        },
+        {
+          "id": "image",
+          "type": "image_picker",
+          "label": "Image"
+        },
+        {
+          "id": "count",
+          "type": "text",
+          "label": "Count / Subtitle badge",
+          "info": "Optional badge text (e.g., item count or custom label)"
+        }
+      ]
     }
   ],
   "presets": [
     {
-      "name": "Collection list",
+      "name": "Collection & Link list",
       "category": "Collection",
       "blocks": [
         {

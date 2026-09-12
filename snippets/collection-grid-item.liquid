@@ -92,7 +92,8 @@
 
 
 {%- capture current -%}{%- cycle 1, 2, 3, 4, 5, 6 -%}{%- endcapture -%}
-{%- assign collectionTitle = featured_collection.title | default: 'Collection title' -%}
+{%- assign collectionTitle = custom_title | default: featured_collection.title | default: 'Collection title' -%}
+{%- assign item_url = custom_url | default: featured_collection.url | default: '#' -%}
 {%- liquid 
   if featured_image != blank 
     assign featured_image = featured_image
@@ -108,7 +109,7 @@
 <div class="collection-card-1 text-center {% if grid_item_width != blank %}{{ grid_item_width }}{% elsif column != 'none' %} col-lg-4 col-12  {% endif %}" {{ block.shopify_attributes }}>
   <div class="mb-2 collection-carditem">
     <div class="collection-card__image overflow-hidden position-relative ">
-      <a class="hv-image-saturate image-content__image-wrapper {{ size_image }}" href="{{ featured_collection.url | default : '#' }}" 
+      <a class="hv-image-saturate image-content__image-wrapper {{ size_image }}" href="{{ item_url }}" 
       {%- if featured_image != blank -%}
       style="padding-top:{{ 1 | divided_by: featured_image.aspect_ratio | times: 100 }}%;"
       {% elsif featured_collection.image != blank %} 
@@ -153,13 +154,16 @@
   </div>
   <div class="position-relative d-inline-block">
     <h4 class="pt-3 m-0 {{ headinglist }}">
-      <a class="" href="{{ featured_collection.url | default : '#' }}">
+      <a class="" href="{{ item_url }}">
         {{ collectionTitle }}
       </a>
     </h4>
-    {% unless hide_counts %}
+    {%- if custom_count != blank -%}
+    <p class="text-theme collection-count "> {{ custom_count }}
+    </p>
+    {%- elsif featured_collection != blank and hide_counts != true -%}
     <p class="text-theme collection-count "> {{ featured_collection.products_count }}
     </p>
-    {% endunless %}
+    {%- endif -%}
   </div>
 </div>
