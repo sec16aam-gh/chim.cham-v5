@@ -469,6 +469,15 @@
         this.toggleDropdown(this.dom.colorFilterBtn, this.dom.colorPopover);
       });
 
+      // Keep filter popovers open while selecting options; only close when clicking outside
+      this.dom.themePopover?.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      this.dom.colorPopover?.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
       // Search Toggle
       this.dom.searchToggleBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -490,7 +499,10 @@
 
       // Close popovers, search, and mobile accordion on outside click
       document.addEventListener('click', (e) => {
-        this.closeAllDropdowns();
+        // If click occurred inside a filter popover or trigger button, do not close filter interface
+        if (!e.target.closest('.bb-filter-popover, [data-theme-filter-btn], [data-color-filter-btn]')) {
+          this.closeAllDropdowns();
+        }
         if (this.dom.searchControl?.classList.contains('is-open')) {
           if (!e.target.closest('[data-search-control]')) {
             this.closeSearch();
