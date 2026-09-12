@@ -1564,7 +1564,7 @@
 }
 
 .bb-charms-row:hover {
-  border-color: #b8b6b0;
+  border-color: var(--bb-accent-purple, #BC90D5);
 }
 
 .bb-row-thumb {
@@ -1625,7 +1625,7 @@
 }
 
 .bb-row-delete-btn:hover {
-  color: #e03131;
+  color: var(--bb-accent-purple, #BC90D5);
 }
 
 /* Empty Charms Container */
