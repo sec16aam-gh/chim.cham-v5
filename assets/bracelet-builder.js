@@ -79,24 +79,34 @@
       const defaultVariants = (this.selectedModel.variants && this.selectedModel.variants.length > 0)
         ? this.selectedModel.variants
         : [
-            { id: 'var-gold', title: 'Gold', price: this.selectedModel.price || 4000, available: true },
-            { id: 'var-silver', title: 'Silver', price: this.selectedModel.price || 4000, available: true },
-            { id: 'var-mixed', title: 'Mixed Gold x Silver', price: this.selectedModel.price || 4000, available: true },
-            { id: 'var-purple', title: 'Purple', price: this.selectedModel.price || 4000, available: true },
-            { id: 'var-black', title: 'Black', price: this.selectedModel.price || 4000, available: true },
-            { id: 'var-red', title: 'Red', price: this.selectedModel.price || 4000, available: true },
-            { id: 'var-blue', title: 'Blue', price: this.selectedModel.price || 4000, available: true },
-            { id: 'var-champagne', title: 'Champagne', price: this.selectedModel.price || 4000, available: true },
-            { id: 'var-neon', title: 'Neon', price: this.selectedModel.price || 4000, available: true }
+            { id: 'var-gold-6-5', title: 'Gold / 6.5', color: 'Gold', size: '6.5', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-silver-6-5', title: 'Silver / 6.5', color: 'Silver', size: '6.5', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-mixed-6-5', title: 'Mixed Gold x Silver / 6.5', color: 'Mixed Gold x Silver', size: '6.5', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-purple-6-5', title: 'Purple / 6.5', color: 'Purple', size: '6.5', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-black-6-5', title: 'Black / 6.5', color: 'Black', size: '6.5', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-red-6-5', title: 'Red / 6.5', color: 'Red', size: '6.5', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-blue-6-5', title: 'Blue / 6.5', color: 'Blue', size: '6.5', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-champagne-6-5', title: 'Champagne / 6.5', color: 'Champagne', size: '6.5', price: this.selectedModel.price || 4000, available: true },
+            { id: 'var-neon-6-5', title: 'Neon / 6.5', color: 'Neon', size: '6.5', price: this.selectedModel.price || 4000, available: true }
           ];
 
       const initialModelDefault = this.getMetalHandle(this.selectedModel.defaultColor || this.selectedModel.default_color || 'silver');
-      const initialVariant = defaultVariants.find(v => this.getMetalHandle(v.title) === initialModelDefault) || defaultVariants[0] || { id: 'var-silver', title: 'Silver', price: 4000 };
+      this.selectedSize = this.selectedModel.defaultSize || '6.5';
+      const initialVariant = defaultVariants.find(v => {
+        const h = this.getMetalHandle(v.color || v.title);
+        const s = String(v.size || '').trim();
+        return h === initialModelDefault && (!this.selectedSize || s === this.selectedSize);
+      }) || defaultVariants.find(v => this.getMetalHandle(v.color || v.title) === initialModelDefault) || defaultVariants[0] || { id: 'var-silver-6-5', title: 'Silver / 6.5', color: 'Silver', size: '6.5', price: 4000 };
+
       this.selectedVariant = initialVariant;
-      const initialHandle = this.getMetalHandle(this.selectedVariant.title || initialModelDefault);
+      if (initialVariant.size) {
+        this.selectedSize = String(initialVariant.size).trim();
+      }
+      const initialHandle = this.getMetalHandle(this.selectedVariant.color || this.selectedVariant.title || initialModelDefault);
+      const initialColorTitle = this.selectedVariant.color || (this.selectedVariant.title ? this.selectedVariant.title.split('/')[0].trim() : 'Silver');
       this.selectedColor = {
         id: this.selectedVariant.id,
-        title: this.selectedVariant.title || 'Silver',
+        title: initialColorTitle,
         handle: initialHandle,
         price: this.selectedVariant.price || 4000,
         swatch: this.swatches[initialHandle] || '#d9dcdb',
@@ -142,6 +152,9 @@
         colorBtn: c.querySelector('[data-color-btn]'),
         colorMenu: c.querySelector('[data-color-menu]'),
         colorSelectWrap: c.querySelector('[data-color-select-wrap]'),
+        sizeBtn: c.querySelector('[data-size-btn]'),
+        sizeMenu: c.querySelector('[data-size-menu]'),
+        sizeSelectWrap: c.querySelector('[data-size-select-wrap]'),
         searchControl: c.querySelector('[data-search-control]'),
         searchToggleBtn: c.querySelector('[data-search-toggle-btn]'),
         searchInput: c.querySelector('[data-search-input]'),
@@ -216,6 +229,7 @@
           modelId: this.selectedModel ? this.selectedModel.id : null,
           variantId: this.selectedVariant ? this.selectedVariant.id : null,
           colorTitle: this.selectedColor ? this.selectedColor.title : null,
+          sizeVal: this.selectedSize,
           slotsCount: this.slotsCount,
           slots: this.slots.map(s => {
             if (!s || !s.charm) return null;
@@ -264,7 +278,11 @@
           }
         }
 
-        // 2. Restore Variant / Color
+        // 2. Restore Variant / Color / Size
+        if (saved.sizeVal) {
+          this.selectedSize = String(saved.sizeVal).trim();
+        }
+
         const modelVariants = (this.selectedModel && Array.isArray(this.selectedModel.variants) && this.selectedModel.variants.length > 0)
           ? this.selectedModel.variants
           : [];
@@ -274,20 +292,29 @@
           matchedVariant = modelVariants.find(v => String(v.id) === String(saved.variantId));
         }
         if (!matchedVariant && saved.colorTitle && modelVariants.length > 0) {
-          matchedVariant = modelVariants.find(v => (v.title || '').toLowerCase() === saved.colorTitle.toLowerCase());
+          matchedVariant = modelVariants.find(v => {
+            const vColor = (v.color || v.title || '').toLowerCase();
+            const sColor = saved.colorTitle.toLowerCase();
+            const sMatches = !this.selectedSize || String(v.size || '').trim() === this.selectedSize;
+            return (vColor.includes(sColor) || sColor.includes(vColor)) && sMatches;
+          }) || modelVariants.find(v => (v.color || v.title || '').toLowerCase().includes(saved.colorTitle.toLowerCase()));
         }
 
         if (matchedVariant) {
           this.selectedVariant = matchedVariant;
-          const finishHandle = this.getMetalHandle(matchedVariant.title);
+          const finishHandle = this.getMetalHandle(matchedVariant.color || matchedVariant.title);
+          const displayTitle = matchedVariant.color || (matchedVariant.title ? matchedVariant.title.split('/')[0].trim() : 'Silver');
           this.selectedColor = {
             id: matchedVariant.id,
-            title: matchedVariant.title,
+            title: displayTitle,
             handle: finishHandle,
             price: matchedVariant.price,
             swatch: this.swatches[finishHandle] || '#d9dcdb',
             image: matchedVariant.image || null
           };
+          if (matchedVariant.size) {
+            this.selectedSize = String(matchedVariant.size).trim();
+          }
         }
 
         // 3. Restore Slots
@@ -427,7 +454,8 @@
 
     init() {
       try { this.renderDynamicFilters(); } catch (e) { console.warn('BraceletBuilder: Dynamic filters error', e); }
-      try { this.renderColorDropdown(); } catch (e) { console.warn('BraceletBuilder: Color dropdown error', e); }
+      try { this.renderSizeDropdown(false); } catch (e) { console.warn('BraceletBuilder: Size dropdown error', e); }
+      try { this.renderColorDropdown(false); } catch (e) { console.warn('BraceletBuilder: Color dropdown error', e); }
       this.updateModelToolbarUI();
       this.bindEvents();
       this.renderCanvas();
@@ -459,6 +487,11 @@
       this.dom.colorBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         this.toggleDropdown(this.dom.colorBtn, this.dom.colorMenu);
+      });
+
+      this.dom.sizeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.dom.sizeBtn, this.dom.sizeMenu);
       });
 
       this.dom.themeFilterBtn?.addEventListener('click', (e) => {
@@ -546,6 +579,18 @@
         if (!item) return;
         const colorId = item.dataset.colorId;
         this.selectColor(colorId);
+        this.closeAllDropdowns();
+        if (window.innerWidth < 992) {
+          this.collapseMobileToolbar();
+        }
+      });
+
+      // Size Select Items
+      this.dom.sizeMenu?.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-size-val]');
+        if (!item) return;
+        const sizeVal = item.dataset.sizeVal;
+        this.selectSize(sizeVal);
         this.closeAllDropdowns();
         if (window.innerWidth < 992) {
           this.collapseMobileToolbar();
@@ -842,6 +887,73 @@
       }
     }
 
+    getModelSizes(model = this.selectedModel) {
+      if (!model) return [];
+      // 1. Try options array
+      if (Array.isArray(model.options) && model.options.length > 0) {
+        const sizeOpt = model.options.find(opt => {
+          const n = (opt.name || '').toLowerCase();
+          return n.includes('size') || opt.position === 2;
+        });
+        if (sizeOpt && Array.isArray(sizeOpt.values) && sizeOpt.values.length > 0) {
+          return sizeOpt.values.map(v => String(v).trim()).filter(Boolean);
+        }
+      }
+      // 2. Try unique sizes in variants
+      if (Array.isArray(model.variants) && model.variants.length > 0) {
+        const sizeSet = new Set();
+        model.variants.forEach(v => {
+          if (v && v.size && String(v.size).trim()) {
+            sizeSet.add(String(v.size).trim());
+          }
+        });
+        if (sizeSet.size > 0) {
+          return Array.from(sizeSet);
+        }
+      }
+      // 3. Fallback for bracelet type
+      if (model.type === 'bracelet') {
+        return ['5.5', '6.5', '7.5', '8.25 - 8.5', '9'];
+      }
+      return [];
+    }
+
+    getMatchingVariant(colorHandleOrTitle, sizeVal) {
+      const variants = (this.selectedModel && Array.isArray(this.selectedModel.variants) && this.selectedModel.variants.length > 0)
+        ? this.selectedModel.variants
+        : [];
+      if (variants.length === 0) return null;
+
+      const targetHandle = this.getMetalHandle(colorHandleOrTitle);
+      const targetSize = sizeVal ? String(sizeVal).trim().toLowerCase() : null;
+
+      // 1. Exact match on both color and size
+      if (targetSize) {
+        const exact = variants.find(v => {
+          const vHandle = this.getMetalHandle(v.color || v.title);
+          const vSize = String(v.size || '').trim().toLowerCase();
+          return vHandle === targetHandle && (vSize === targetSize || vSize.includes(targetSize) || targetSize.includes(vSize));
+        });
+        if (exact) return exact;
+      }
+
+      // 2. Match color only
+      const colorMatch = variants.find(v => this.getMetalHandle(v.color || v.title) === targetHandle);
+      if (colorMatch) return colorMatch;
+
+      // 3. Match size only
+      if (targetSize) {
+        const sizeMatch = variants.find(v => {
+          const vSize = String(v.size || '').trim().toLowerCase();
+          return vSize === targetSize;
+        });
+        if (sizeMatch) return sizeMatch;
+      }
+
+      // 4. Fallback to first variant
+      return variants[0];
+    }
+
     renderColorDropdown(useModelDefault = false) {
       try {
         if (!this.dom || !this.dom.colorMenu) return;
@@ -850,15 +962,15 @@
         const variants = (this.selectedModel && Array.isArray(this.selectedModel.variants) && this.selectedModel.variants.length > 0)
           ? this.selectedModel.variants
           : [
-              { id: 'var-gold', title: 'Gold', price: basePrice, available: true },
-              { id: 'var-silver', title: 'Silver', price: basePrice, available: true },
-              { id: 'var-mixed', title: 'Mixed Gold x Silver', price: basePrice, available: true },
-              { id: 'var-purple', title: 'Purple', price: basePrice, available: true },
-              { id: 'var-black', title: 'Black', price: basePrice, available: true },
-              { id: 'var-red', title: 'Red', price: basePrice, available: true },
-              { id: 'var-blue', title: 'Blue', price: basePrice, available: true },
-              { id: 'var-champagne', title: 'Champagne', price: basePrice, available: true },
-              { id: 'var-neon', title: 'Neon', price: basePrice, available: true }
+              { id: 'var-gold-6-5', title: 'Gold / 6.5', color: 'Gold', size: '6.5', price: basePrice, available: true },
+              { id: 'var-silver-6-5', title: 'Silver / 6.5', color: 'Silver', size: '6.5', price: basePrice, available: true },
+              { id: 'var-mixed-6-5', title: 'Mixed Gold x Silver / 6.5', color: 'Mixed Gold x Silver', size: '6.5', price: basePrice, available: true },
+              { id: 'var-purple-6-5', title: 'Purple / 6.5', color: 'Purple', size: '6.5', price: basePrice, available: true },
+              { id: 'var-black-6-5', title: 'Black / 6.5', color: 'Black', size: '6.5', price: basePrice, available: true },
+              { id: 'var-red-6-5', title: 'Red / 6.5', color: 'Red', size: '6.5', price: basePrice, available: true },
+              { id: 'var-blue-6-5', title: 'Blue / 6.5', color: 'Blue', size: '6.5', price: basePrice, available: true },
+              { id: 'var-champagne-6-5', title: 'Champagne / 6.5', color: 'Champagne', size: '6.5', price: basePrice, available: true },
+              { id: 'var-neon-6-5', title: 'Neon / 6.5', color: 'Neon', size: '6.5', price: basePrice, available: true }
             ];
 
         // Resolve model's default finish handle
@@ -869,23 +981,24 @@
           ? modelDefaultHandle
           : (this.selectedColor ? this.selectedColor.handle : modelDefaultHandle);
 
-        let matchedVariant = variants.find(v => this.getMetalHandle(v?.title) === targetHandle);
+        let matchedVariant = this.getMatchingVariant(targetHandle, this.selectedSize);
         if (!matchedVariant && !useModelDefault && this.selectedVariant) {
           matchedVariant = variants.find(v => String(v.id) === String(this.selectedVariant.id));
         }
         if (!matchedVariant) {
-          matchedVariant = variants.find(v => this.getMetalHandle(v?.title) === modelDefaultHandle) ||
+          matchedVariant = variants.find(v => this.getMetalHandle(v.color || v.title) === modelDefaultHandle) ||
                            variants[0] ||
-                           { id: 'var-gold', title: 'Gold', price: basePrice, available: true };
+                           { id: 'var-gold-6-5', title: 'Gold / 6.5', color: 'Gold', size: '6.5', price: basePrice, available: true };
         }
 
         this.selectedVariant = matchedVariant;
-        const finishHandle = this.getMetalHandle(matchedVariant?.title || targetHandle);
+        const finishHandle = this.getMetalHandle(matchedVariant.color || matchedVariant.title || targetHandle);
         const swatchHex = this.swatches[finishHandle] || '#d4a748';
+        const displayColorTitle = matchedVariant.color || (matchedVariant.title ? matchedVariant.title.split('/')[0].trim() : 'Gold');
 
         this.selectedColor = {
           id: matchedVariant.id,
-          title: matchedVariant.title || 'Gold',
+          title: displayColorTitle,
           handle: finishHandle,
           price: matchedVariant.price || basePrice,
           swatch: swatchHex,
@@ -896,27 +1009,31 @@
         const uniqueVariants = [];
         const seenColors = new Set();
         for (const v of variants) {
-          const vHandle = this.getMetalHandle(v?.title || 'Gold');
+          const vHandle = this.getMetalHandle(v.color || v.title || 'Gold');
           if (!seenColors.has(vHandle)) {
             seenColors.add(vHandle);
-            uniqueVariants.push(v);
+            // Match variant with current size to get accurate price for this color & size combo
+            const vForColor = this.getMatchingVariant(vHandle, this.selectedSize) || v;
+            uniqueVariants.push(vForColor);
           }
         }
 
         // Build HTML for color dropdown options
         this.dom.colorMenu.innerHTML = uniqueVariants.map(v => {
-          const vHandle = this.getMetalHandle(v?.title || 'Silver');
+          const vHandle = this.getMetalHandle(v.color || v.title || 'Silver');
           const vSwatch = this.swatches[vHandle] || '#d9dcdb';
-          const isActive = (String(v.id) === String(this.selectedVariant.id)) || (vHandle === finishHandle);
+          const isActive = (vHandle === finishHandle);
+          const vTitle = v.color || (v.title ? v.title.split('/')[0].trim() : 'Silver');
           const vPriceFormatted = this.formatMoney(v.price || basePrice);
 
           return `
             <button type="button" 
                     class="bb-dropdown-item ${isActive ? 'is-active' : ''}" 
-                    data-color-id="${v.id}">
+                    data-color-id="${v.id}"
+                    data-color-handle="${vHandle}">
               <div class="bb-item-left">
                 <span class="bb-swatch swatch-${vHandle}" style="background: ${vSwatch};"></span>
-                <span class="bb-item-title">${v.title}</span>
+                <span class="bb-item-title">${vTitle}</span>
               </div>
               <span class="bb-item-price">${vPriceFormatted}</span>
             </button>
@@ -927,7 +1044,7 @@
         if (this.dom.colorBtn) {
           this.dom.colorBtn.innerHTML = `
             <span class="bb-swatch swatch-${finishHandle}" style="background: ${swatchHex};"></span>
-            <span>Color: ${matchedVariant.title}</span>
+            <span>Color: ${displayColorTitle}</span>
             <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
           `;
         }
@@ -939,6 +1056,133 @@
       }
     }
 
+    renderSizeDropdown(useDefault = false) {
+      try {
+        if (!this.dom || !this.dom.sizeMenu) return;
+
+        const sizes = this.getModelSizes(this.selectedModel);
+        if (!sizes || sizes.length === 0) {
+          if (this.dom.sizeSelectWrap) {
+            this.dom.sizeSelectWrap.style.display = 'none';
+          }
+          this.selectedSize = null;
+          return;
+        }
+
+        if (this.dom.sizeSelectWrap) {
+          this.dom.sizeSelectWrap.style.display = '';
+        }
+
+        // Determine selected size
+        if (useDefault || !this.selectedSize || !sizes.includes(this.selectedSize)) {
+          const defSize = this.selectedModel?.defaultSize;
+          if (defSize && sizes.includes(String(defSize).trim())) {
+            this.selectedSize = String(defSize).trim();
+          } else {
+            this.selectedSize = sizes[0];
+          }
+        }
+
+        // Resolve matching variant for current color and size
+        const currentHandle = this.selectedColor?.handle || this.getMetalHandle(this.selectedModel?.defaultColor || 'silver');
+        const matchedVariant = this.getMatchingVariant(currentHandle, this.selectedSize);
+        if (matchedVariant) {
+          this.selectedVariant = matchedVariant;
+          if (this.selectedColor) {
+            this.selectedColor.id = matchedVariant.id;
+            this.selectedColor.price = matchedVariant.price;
+          }
+        }
+
+        // Build HTML for size dropdown items
+        const basePrice = this.selectedModel?.price || 4000;
+        this.dom.sizeMenu.innerHTML = sizes.map(sizeVal => {
+          const isActive = String(sizeVal).trim() === String(this.selectedSize).trim();
+          const variantForSize = this.getMatchingVariant(currentHandle, sizeVal);
+          const sizePrice = (variantForSize && variantForSize.price != null) ? variantForSize.price : basePrice;
+          const priceFormatted = this.formatMoney(sizePrice);
+
+          return `
+            <button type="button" 
+                    class="bb-dropdown-item ${isActive ? 'is-active' : ''}" 
+                    data-size-val="${sizeVal}">
+              <div class="bb-item-left">
+                <span class="bb-item-title">Size ${sizeVal}</span>
+              </div>
+              <span class="bb-item-price">${priceFormatted}</span>
+            </button>
+          `;
+        }).join('');
+
+        // Update Size Button UI
+        if (this.dom.sizeBtn) {
+          this.dom.sizeBtn.innerHTML = `
+            <svg class="bb-pill-icon-svg" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.3 8.7 8.7 21.3c-1 1-2.6 1-3.6 0l-1.4-1.4c-1-1-1-2.6 0-3.6L16.3 3.7c1-1 2.6-1 3.6 0l1.4 1.4c1 1 1 2.6 0 3.6z"></path>
+              <path d="m14.5 5.5 2 2"></path>
+              <path d="m11.5 8.5 2 2"></path>
+              <path d="m8.5 11.5 2 2"></path>
+              <path d="m5.5 14.5 2 2"></path>
+            </svg>
+            <span>Size: ${this.selectedSize}</span>
+            <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          `;
+        }
+      } catch (err) {
+        console.warn('BraceletBuilder: Error rendering size dropdown', err);
+      }
+    }
+
+    selectSize(sizeVal) {
+      if (!sizeVal) return;
+      this.selectedSize = String(sizeVal).trim();
+
+      const currentHandle = this.selectedColor?.handle || this.getMetalHandle(this.selectedModel?.defaultColor || 'silver');
+      const matched = this.getMatchingVariant(currentHandle, this.selectedSize);
+      if (matched) {
+        this.selectedVariant = matched;
+        if (this.selectedColor) {
+          this.selectedColor.id = matched.id;
+          this.selectedColor.price = matched.price;
+        }
+      }
+
+      // Update active highlight in size dropdown menu
+      if (this.dom.sizeMenu) {
+        this.dom.sizeMenu.querySelectorAll('[data-size-val]').forEach(item => {
+          if (String(item.dataset.sizeVal).trim() === this.selectedSize) {
+            item.classList.add('is-active');
+          } else {
+            item.classList.remove('is-active');
+          }
+        });
+      }
+
+      // Update Size Button UI
+      if (this.dom.sizeBtn) {
+        this.dom.sizeBtn.innerHTML = `
+          <svg class="bb-pill-icon-svg" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.3 8.7 8.7 21.3c-1 1-2.6 1-3.6 0l-1.4-1.4c-1-1-1-2.6 0-3.6L16.3 3.7c1-1 2.6-1 3.6 0l1.4 1.4c1 1 1 2.6 0 3.6z"></path>
+            <path d="m14.5 5.5 2 2"></path>
+            <path d="m11.5 8.5 2 2"></path>
+            <path d="m8.5 11.5 2 2"></path>
+            <path d="m5.5 14.5 2 2"></path>
+          </svg>
+          <span>Size: ${this.selectedSize}</span>
+          <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        `;
+      }
+
+      // Re-render color dropdown to update prices for this size
+      this.renderColorDropdown(false);
+
+      // Update mobile summary bar, sidebar, and persist
+      this.updateMobileSummaryUI();
+      this.updateSidebar();
+      this.updateHeaderMeta();
+      this.savePersistedState();
+    }
+
     selectModel(modelId) {
       const found = this.models.find(m => String(m.id) === String(modelId));
       if (!found) return;
@@ -948,6 +1192,9 @@
       if (found.type === 'watch' && this.slotsCount % 2 !== 0) {
         this.slotsCount = 14;
       }
+
+      // First re-populate size dropdown for this model (using default size)
+      this.renderSizeDropdown(true);
 
       // Re-populate color dropdown dynamically using this model's Default Metal Color!
       this.renderColorDropdown(true);
@@ -975,32 +1222,35 @@
     }
 
     selectColor(variantId) {
-      const basePrice = this.selectedModel?.price || 4000;
       const variants = (this.selectedModel && this.selectedModel.variants && this.selectedModel.variants.length > 0)
         ? this.selectedModel.variants
-        : [
-            { id: 'var-gold', title: 'Gold', price: basePrice, available: true },
-            { id: 'var-silver', title: 'Silver', price: basePrice, available: true },
-            { id: 'var-mixed', title: 'Mixed Gold x Silver', price: basePrice, available: true },
-            { id: 'var-purple', title: 'Purple', price: basePrice, available: true },
-            { id: 'var-black', title: 'Black', price: basePrice, available: true },
-            { id: 'var-red', title: 'Red', price: basePrice, available: true },
-            { id: 'var-blue', title: 'Blue', price: basePrice, available: true },
-            { id: 'var-champagne', title: 'Champagne', price: basePrice, available: true },
-            { id: 'var-neon', title: 'Neon', price: basePrice, available: true }
-          ];
+        : [];
 
-      const found = variants.find(v => String(v.id) === String(variantId)) ||
-                    variants.find(v => this.getMetalHandle(v.title) === String(variantId).toLowerCase());
+      // Find by variant ID or handle
+      let found = variants.find(v => String(v.id) === String(variantId));
+      let finishHandle = '';
+      if (found) {
+        finishHandle = this.getMetalHandle(found.color || found.title);
+      } else {
+        finishHandle = this.getMetalHandle(variantId);
+      }
+
+      // Match variant for this finishHandle AND this.selectedSize
+      const matchedWithCurrentSize = this.getMatchingVariant(finishHandle, this.selectedSize);
+      if (matchedWithCurrentSize) {
+        found = matchedWithCurrentSize;
+        finishHandle = this.getMetalHandle(found.color || found.title);
+      }
+
       if (!found) return;
 
       this.selectedVariant = found;
-      const finishHandle = this.getMetalHandle(found.title);
       const swatchHex = this.swatches[finishHandle] || '#d9dcdb';
+      const displayColorTitle = found.color || (found.title ? found.title.split('/')[0].trim() : 'Silver');
 
       this.selectedColor = {
         id: found.id,
-        title: found.title,
+        title: displayColorTitle,
         handle: finishHandle,
         price: found.price,
         swatch: swatchHex,
@@ -1009,8 +1259,9 @@
 
       // Update active highlight in color dropdown menu
       if (this.dom.colorMenu) {
-        this.dom.colorMenu.querySelectorAll('[data-color-id]').forEach(item => {
-          if (String(item.dataset.colorId) === String(found.id)) {
+        this.dom.colorMenu.querySelectorAll('[data-color-id], [data-color-handle]').forEach(item => {
+          const itemHandle = item.dataset.colorHandle || this.getMetalHandle(item.textContent);
+          if (itemHandle === finishHandle || String(item.dataset.colorId) === String(found.id)) {
             item.classList.add('is-active');
           } else {
             item.classList.remove('is-active');
@@ -1022,10 +1273,13 @@
       if (this.dom.colorBtn) {
         this.dom.colorBtn.innerHTML = `
           <span class="bb-swatch swatch-${finishHandle}" style="background: ${swatchHex};"></span>
-          <span>Color: ${found.title}</span>
+          <span>Color: ${displayColorTitle}</span>
           <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         `;
       }
+
+      // Update size dropdown prices for this color
+      this.renderSizeDropdown(false);
 
       // Update Mobile Summary Bar
       this.updateMobileSummaryUI();
@@ -2152,7 +2406,9 @@
         this.dom.summaryTitle.textContent = this.selectedModel.title;
       }
       if (this.dom.summaryMeta) {
-        this.dom.summaryMeta.textContent = (this.selectedVariant && this.selectedVariant.title) || this.selectedColor.title || '';
+        const colorTitle = (this.selectedColor && this.selectedColor.title) || 'Silver';
+        const sizeText = this.selectedSize ? ` · Size ${this.selectedSize}` : '';
+        this.dom.summaryMeta.textContent = `${colorTitle}${sizeText}`;
       }
       if (this.dom.summaryThumb) {
         if (this.selectedVariant && this.selectedVariant.image) {
@@ -2167,7 +2423,7 @@
       }
 
       // Base Price (from selected model variant)
-      const basePrice = parseInt((this.selectedVariant && this.selectedVariant.price) || this.selectedColor.price || this.selectedModel.price, 10) || 2499;
+      const basePrice = parseInt((this.selectedVariant && this.selectedVariant.price) || this.selectedColor.price || this.selectedModel.price, 10) || 4000;
       const effectiveBasePrice = basePrice;
 
       if (this.dom.summaryPrice) {
@@ -2338,7 +2594,8 @@
     copyDesignSummary() {
       const placedCount = this.getPlacedCharmsCount();
       let summaryText = `CHIM.CHAM Custom Bracelet Build\n`;
-      summaryText += `Model: ${this.selectedModel.title} (${this.selectedColor.title})\n`;
+      const sizeText = this.selectedSize ? `, Size: ${this.selectedSize}` : '';
+      summaryText += `Model: ${this.selectedModel.title} (${this.selectedColor.title}${sizeText})\n`;
       summaryText += `Total Charms: ${placedCount}/${this.slotsCount}\n\n`;
       summaryText += `Layout:\n`;
 
@@ -2418,17 +2675,22 @@
           }
         }
 
+        const baseProperties = {
+          '_bundle_id': bundleId,
+          '_bundle_role': 'base_bracelet',
+          'Bracelet Model': this.selectedModel.title,
+          'Color / Finish': (this.selectedColor && this.selectedColor.title) || (this.selectedVariant && this.selectedVariant.color) || 'Silver',
+          'Total Charms': `${placedCount} charms`,
+          'Design Layout': layoutSummary.join(' | ')
+        };
+        if (this.selectedSize) {
+          baseProperties['Bracelet Size'] = this.selectedSize;
+        }
+
         items.push({
           id: parseInt(baseVariantId, 10),
           quantity: 1,
-          properties: {
-            '_bundle_id': bundleId,
-            '_bundle_role': 'base_bracelet',
-            'Bracelet Model': this.selectedModel.title,
-            'Color / Finish': (this.selectedVariant && this.selectedVariant.title) || this.selectedColor.title,
-            'Total Charms': `${placedCount} charms`,
-            'Design Layout': layoutSummary.join(' | ')
-          }
+          properties: baseProperties
         });
       }
 

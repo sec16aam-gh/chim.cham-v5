@@ -253,6 +253,17 @@
   display: inline-block;
 }
 
+.bb-pill-icon-svg {
+  width: 15px;
+  height: 15px;
+  color: var(--bb-accent-purple, #BC90D5);
+  flex-shrink: 0;
+}
+
+[data-size-menu] {
+  min-width: 190px;
+}
+
 .bb-swatch {
   width: 14px;
   height: 14px;

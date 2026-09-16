@@ -364,6 +364,55 @@
               </div>
             </div>
 
+            {%- comment -%} 3. Size Dropdown {%- endcomment -%}
+            <div class="bb-select-wrap" data-size-select-wrap>
+              <button class="bb-pill-btn" type="button" data-size-btn aria-expanded="false">
+                <svg class="bb-pill-icon-svg" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/>
+                  <path d="m14.5 12.5 2-2"/>
+                  <path d="m11.5 9.5 2-2"/>
+                  <path d="m8.5 6.5 2-2"/>
+                  <path d="m17.5 15.5 2-2"/>
+                </svg>
+                <span>Size: 6.5</span>
+                <svg class="bb-chevron" aria-hidden="true" fill="none" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </button>
+
+              <div class="bb-dropdown-menu" data-size-menu>
+                {%- comment -%} Dynamically populated by JS from selected base product variants {%- endcomment -%}
+                <button type="button" class="bb-dropdown-item" data-size-val="5.5">
+                  <div class="bb-item-left">
+                    <span class="bb-item-title">Size 5.5</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item is-active" data-size-val="6.5">
+                  <div class="bb-item-left">
+                    <span class="bb-item-title">Size 6.5</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-size-val="7.5">
+                  <div class="bb-item-left">
+                    <span class="bb-item-title">Size 7.5</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-size-val="8.25 - 8.5">
+                  <div class="bb-item-left">
+                    <span class="bb-item-title">Size 8.25 - 8.5</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+                <button type="button" class="bb-dropdown-item" data-size-val="9">
+                  <div class="bb-item-left">
+                    <span class="bb-item-title">Size 9</span>
+                  </div>
+                  <span class="bb-item-price">4.000 {{ currency_code }}</span>
+                </button>
+              </div>
+            </div>
+
           </div>
 
           {%- comment -%} Toolbar Actions: Search, Reset, Help {%- endcomment -%}
@@ -774,18 +823,23 @@
               "productId": {{ linked_prod.id | json }},
               "defaultColor": {{ block.settings.default_color | default: "gold" | json }},
               "image": {{ model_img | json }},
+              "options": [
+                {%- if linked_prod != blank and linked_prod.options_with_values.size > 0 -%}
+                  {%- for opt in linked_prod.options_with_values -%}
+                    {
+                      "name": {{ opt.name | json }},
+                      "position": {{ opt.position | json }},
+                      "values": {{ opt.values | json }}
+                    }{%- unless forloop.last -%},{%- endunless -%}
+                  {%- endfor -%}
+                {%- endif -%}
+              ],
               "variants": [
                 {%- if linked_prod != blank and linked_prod.variants.size > 0 -%}
-                  {%- assign seen_colors = '' -%}
-                  {%- assign first_printed = false -%}
                   {%- for v in linked_prod.variants -%}
                     {%- liquid
                       assign opt_color = v.option1 | default: v.title | strip
-                      assign color_key = opt_color | downcase | append: ':::'
-                      if seen_colors contains color_key
-                        continue
-                      endif
-                      assign seen_colors = seen_colors | append: color_key
+                      assign opt_size = v.option2 | default: '' | strip
 
                       assign v_img = ''
                       if v.featured_image != blank
@@ -794,28 +848,36 @@
                         assign v_img = linked_prod.featured_image | image_url: width: 400
                       endif
                     -%}
-                    {%- if first_printed -%},{%- endif -%}
                     {
                       "id": {{ v.id | json }},
-                      "title": {{ opt_color | json }},
+                      "title": {{ v.title | json }},
+                      "color": {{ opt_color | json }},
+                      "size": {{ opt_size | json }},
                       "price": {{ v.price | json }},
                       "available": {{ v.available | json }},
                       "sku": {{ v.sku | json }},
                       "image": {{ v_img | json }}
-                    }
-                    {%- assign first_printed = true -%}
+                    }{%- unless forloop.last -%},{%- endunless -%}
                   {%- endfor -%}
                 {%- else -%}
                   {%- assign base_pr = block.settings.price | default: 4000 -%}
-                  { "id": "var-gold", "title": "Gold", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-silver", "title": "Silver", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-mixed", "title": "Mixed Gold x Silver", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-purple", "title": "Purple", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-black", "title": "Black", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-red", "title": "Red", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-blue", "title": "Blue", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-champagne", "title": "Champagne", "price": {{ base_pr | json }}, "available": true },
-                  { "id": "var-neon", "title": "Neon", "price": {{ base_pr | json }}, "available": true }
+                  {%- assign fallback_colors = "Gold,Silver,Mixed Gold x Silver,Purple,Black,Red,Blue,Champagne,Neon" | split: "," -%}
+                  {%- assign fallback_sizes = "5.5,6.5,7.5,8.25 - 8.5,9" | split: "," -%}
+                  {%- assign fb_idx = 0 -%}
+                  {%- for c in fallback_colors -%}
+                    {%- for s in fallback_sizes -%}
+                      {%- if fb_idx > 0 -%},{%- endif -%}
+                      {
+                        "id": "var-{{ c | handleize }}-{{ s | handleize }}",
+                        "title": "{{ c }} / {{ s }}",
+                        "color": {{ c | json }},
+                        "size": {{ s | json }},
+                        "price": {{ base_pr | json }},
+                        "available": true
+                      }
+                      {%- assign fb_idx = fb_idx | plus: 1 -%}
+                    {%- endfor -%}
+                  {%- endfor -%}
                 {%- endif -%}
               ]
             }{%- unless forloop.last -%},{%- endunless -%}
@@ -828,17 +890,30 @@
             "slots": 16,
             "price": 4000,
             "defaultColor": "silver",
+            "defaultSize": "6.5",
             "image": {{ 'bracelet-silver.png' | asset_url | json }},
+            "options": [
+              { "name": "Color", "position": 1, "values": ["Gold", "Silver", "Mixed Gold x Silver", "Purple", "Black", "Red", "Blue", "Champagne", "Neon"] },
+              { "name": "Choose your size", "position": 2, "values": ["5.5", "6.5", "7.5", "8.25 - 8.5", "9"] }
+            ],
             "variants": [
-              { "id": "var-b-gold", "title": "Gold", "price": 4000, "available": true },
-              { "id": "var-b-silver", "title": "Silver", "price": 4000, "available": true },
-              { "id": "var-b-mixed", "title": "Mixed Gold x Silver", "price": 4000, "available": true },
-              { "id": "var-b-purple", "title": "Purple", "price": 4000, "available": true },
-              { "id": "var-b-black", "title": "Black", "price": 4000, "available": true },
-              { "id": "var-b-red", "title": "Red", "price": 4000, "available": true },
-              { "id": "var-b-blue", "title": "Blue", "price": 4000, "available": true },
-              { "id": "var-b-champagne", "title": "Champagne", "price": 4000, "available": true },
-              { "id": "var-b-neon", "title": "Neon", "price": 4000, "available": true }
+              {%- assign fallback_colors = "Gold,Silver,Mixed Gold x Silver,Purple,Black,Red,Blue,Champagne,Neon" | split: "," -%}
+              {%- assign fallback_sizes = "5.5,6.5,7.5,8.25 - 8.5,9" | split: "," -%}
+              {%- assign fb_idx = 0 -%}
+              {%- for c in fallback_colors -%}
+                {%- for s in fallback_sizes -%}
+                  {%- if fb_idx > 0 -%},{%- endif -%}
+                  {
+                    "id": "var-b-{{ c | handleize }}-{{ s | handleize }}",
+                    "title": "{{ c }} / {{ s }}",
+                    "color": {{ c | json }},
+                    "size": {{ s | json }},
+                    "price": 4000,
+                    "available": true
+                  }
+                  {%- assign fb_idx = fb_idx | plus: 1 -%}
+                {%- endfor -%}
+              {%- endfor -%}
             ]
           },
           {
