@@ -1,0 +1,52 @@
+{% layout none %}
+{%- paginate collection.products by 250 -%}
+{
+  "page": {{ paginate.current_page | json }},
+  "pages": {{ paginate.pages | json }},
+  "total": {{ paginate.items | json }},
+  "charms": [
+    {%- for prod in collection.products -%}
+      {%- liquid
+        assign charm_type = prod.metafields.custom.charm_type | default: 'simple'
+        assign charm_slots = prod.metafields.custom.slots_count | default: 1
+        assign charm_theme = prod.metafields.custom.theme | default: ''
+        assign charm_color = prod.metafields.custom.color | default: ''
+
+        for tag in prod.tags
+          assign tag_lower = tag | downcase
+          if tag_lower contains 'theme:'
+            assign charm_theme = tag | split: ':' | last | strip
+          elsif tag_lower contains 'color:'
+            assign charm_color = tag | split: ':' | last | strip
+          elsif tag_lower contains 'type:drop' or tag_lower == 'drop'
+            assign charm_type = 'drop'
+          elsif tag_lower contains 'type:2-links' or tag_lower == '2-links' or tag_lower == 'double'
+            assign charm_type = 'double'
+            assign charm_slots = 2
+          endif
+        endfor
+
+        assign prod_img = ''
+        if prod.featured_image != blank
+          assign prod_img = prod.featured_image | image_url: width: 300
+        endif
+
+        assign prod_var_id = prod.selected_or_first_available_variant.id | default: prod.variants.first.id | default: prod.id
+      -%}
+      {
+        "id": {{ prod.id | json }},
+        "title": {{ prod.title | json }},
+        "price": {{ prod.price | json }},
+        "image": {{ prod_img | json }},
+        "description": {{ prod.description | strip_html | truncate: 140 | json }},
+        "theme": {{ charm_theme | json }},
+        "color": {{ charm_color | json }},
+        "type": {{ charm_type | json }},
+        "slots": {{ charm_slots | json }},
+        "tags": {{ prod.tags | json }},
+        "variantId": {{ prod_var_id | json }}
+      }{%- unless forloop.last -%},{%- endunless -%}
+    {%- endfor -%}
+  ]
+}
+{%- endpaginate -%}

@@ -42,6 +42,9 @@
 -%}
 
 <div class="section-{{ section.id }}-padding {{ section.settings.collection_width }} " data-aos="fade">
+  {%- if section.settings.enable_filtering -%}
+    {% render 'theme-filter-bar', results: collection, section: section %}
+  {%- endif -%}
   {% comment %} Sort is the first tabbable element when filter type is vertical {% endcomment %}
   {%- if section.settings.enable_sorting and section.settings.filter_type == 'vertical' -%}
    
@@ -106,7 +109,11 @@
         filter_type: section.settings.filter_type,
         first_group: section.settings.first_group,
         open_group: section.settings.open_group,
-        productPerrow : productPerrow
+        productPerrow : productPerrow,
+        filter_visibility_mode: section.settings.filter_visibility_mode,
+        filter_list: section.settings.filter_list,
+        theme_filter_display_mode: section.settings.theme_filter_display_mode,
+        theme_filter_label: section.settings.theme_filter_label
         %}
       </aside>
     {%- endif -%}
@@ -319,6 +326,121 @@
       "default": "horizontal",
       "label": "Desktop filter layout",
       "info": "Drawer is the default mobile layout."
+    },
+    {
+      "type": "header",
+      "content": "Filter Visibility"
+    },
+    {
+      "type": "select",
+      "id": "filter_visibility_mode",
+      "label": "Filter visibility mode",
+      "info": "Control which filters appear on this collection template.",
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": "Show all available filters"
+        },
+        {
+          "value": "include",
+          "label": "Only show specified filters"
+        },
+        {
+          "value": "exclude",
+          "label": "Hide specified filters"
+        }
+      ]
+    },
+    {
+      "type": "textarea",
+      "id": "filter_list",
+      "label": "Filter list",
+      "info": "Comma-separated filter names (e.g. Availability, Price, Theme). Case-insensitive."
+    },
+    {
+      "type": "header",
+      "content": "Horizontal Theme Filter Bar"
+    },
+    {
+      "type": "select",
+      "id": "theme_filter_display_mode",
+      "label": "Theme filter display mode",
+      "info": "Choose how the Theme filter is displayed on this collection template.",
+      "default": "drawer_only",
+      "options": [
+        {
+          "value": "drawer_only",
+          "label": "Native drawer only"
+        },
+        {
+          "value": "bar_only",
+          "label": "Horizontal pill bar only (hides from drawer)"
+        },
+        {
+          "value": "both",
+          "label": "Both (horizontal bar and inside drawer)"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "theme_filter_label",
+      "label": "Target filter name",
+      "info": "The filter label to display as a horizontal bar (case-insensitive).",
+      "default": "Theme"
+    },
+    {
+      "type": "checkbox",
+      "id": "theme_filter_show_all",
+      "label": "Show 'All' pill at the start",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "theme_filter_all_label",
+      "label": "'All' pill label",
+      "default": "All"
+    },
+    {
+      "type": "checkbox",
+      "id": "theme_filter_show_counts",
+      "label": "Show product counts on pills",
+      "default": false
+    },
+    {
+      "type": "color",
+      "id": "theme_filter_pill_bg",
+      "label": "Pill background color",
+      "default": "#f6edf3"
+    },
+    {
+      "type": "color",
+      "id": "theme_filter_pill_color",
+      "label": "Pill text color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "theme_filter_pill_active_bg",
+      "label": "Active pill background color",
+      "default": "#bc90d5"
+    },
+    {
+      "type": "color",
+      "id": "theme_filter_pill_active_color",
+      "label": "Active pill text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "theme_filter_pill_radius",
+      "min": 0,
+      "max": 30,
+      "step": 2,
+      "unit": "px",
+      "label": "Pill corner radius",
+      "default": 6
     },
     {
       "type": "header",

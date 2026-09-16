@@ -672,6 +672,11 @@
   {%- comment -%} ================= EMBEDDED CONFIGURATION DATA ================= {%- endcomment -%}
   <script type="application/json" id="bracelet-builder-data-{{ section_id }}" class="bb-data-json">
     {
+      "collection": {
+        "handle": {{ charms_collection.handle | json }},
+        "allProductsCount": {{ charms_collection.all_products_count | default: 0 | json }},
+        "title": {{ charms_collection.title | json }}
+      },
       "settings": {
         "currencyCode": {{ currency_code | json }},
         "currencySymbol": {{ currency_code | json }},

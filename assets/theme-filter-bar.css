@@ -1,0 +1,280 @@
+/* ==========================================================================
+   Horizontal Theme Filter Pill Bar
+   Responsive, branded, smooth horizontal swipeable bar
+   ========================================================================== */
+
+theme-filter-bar,
+.theme-filter-bar {
+  display: block !important;
+  width: 100%;
+  margin-bottom: 24px !important;
+  margin-top: 4px;
+  position: relative;
+}
+
+/* Ensure exact 24px spacing between theme filter bar and collection toolbar */
+theme-filter-bar + * .facets-container,
+theme-filter-bar + * .facets-container-drawer,
+theme-filter-bar + div .facets-container,
+theme-filter-bar + div .facets-container-drawer,
+theme-filter-bar ~ * .facets-container,
+theme-filter-bar ~ * .facets-container-drawer,
+theme-filter-bar + * .facets-wrapper,
+theme-filter-bar + div .facets-wrapper,
+theme-filter-bar ~ * .facets-wrapper,
+theme-filter-bar + .facets-vertical-sort,
+.theme-filter-bar + * .facets-container,
+.theme-filter-bar + * .facets-container-drawer,
+.theme-filter-bar + div .facets-container,
+.theme-filter-bar + div .facets-container-drawer,
+.theme-filter-bar ~ * .facets-container,
+.theme-filter-bar ~ * .facets-container-drawer,
+.theme-filter-bar + * .facets-wrapper,
+.theme-filter-bar + div .facets-wrapper,
+.theme-filter-bar ~ * .facets-wrapper,
+.theme-filter-bar + .facets-vertical-sort {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+theme-filter-bar ~ * .mobile-facets__open,
+theme-filter-bar + div .mobile-facets__open,
+theme-filter-bar + * .mobile-facets__open,
+.theme-filter-bar ~ * .mobile-facets__open,
+.theme-filter-bar + div .mobile-facets__open,
+.theme-filter-bar + * .mobile-facets__open {
+  padding-top: 0 !important;
+}
+
+.theme-filter-bar__wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Dynamic Left & Right Edge Gradient Fades */
+.theme-filter-bar__fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 42px;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.25s ease;
+  opacity: 0;
+}
+
+.theme-filter-bar__fade--left {
+  left: 0;
+  background: linear-gradient(to right, var(--color-body-bg, #ffffff) 20%, rgba(255, 255, 255, 0));
+}
+
+.theme-filter-bar__fade--right {
+  right: 0;
+  background: linear-gradient(to left, var(--color-body-bg, #ffffff) 20%, rgba(255, 255, 255, 0));
+}
+
+.theme-filter-bar__fade.is-visible {
+  opacity: 1;
+}
+
+/* Desktop & Tablet Navigation Arrow Buttons */
+.theme-filter-bar__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 4;
+  transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  color: #333333;
+  padding: 0;
+}
+
+.theme-filter-bar__nav.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.theme-filter-bar__nav:hover {
+  background: var(--theme-filter-bg, #f6edf3);
+  color: var(--theme-filter-active-bg, #bc90d5);
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+.theme-filter-bar__nav:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.theme-filter-bar__nav--prev {
+  left: -6px;
+}
+
+.theme-filter-bar__nav--next {
+  right: -6px;
+}
+
+.theme-filter-bar__nav svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Horizontal Scroll Track */
+.theme-filter-bar__track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
+  padding: 0 36px 0 2px;
+  margin: 0;
+  list-style: none;
+  width: 100%;
+  cursor: grab;
+}
+
+.theme-filter-bar__track.is-dragging {
+  cursor: grabbing !important;
+  scroll-behavior: auto !important;
+}
+
+.theme-filter-bar__track::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Pill Item Wrapper */
+.theme-filter-bar__item {
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.theme-filter-bar__item facet-remove {
+  display: inline-flex;
+}
+
+/* Pill Link Button */
+.theme-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none !important;
+  border-radius: var(--theme-filter-radius, 6px);
+  background-color: var(--theme-filter-bg, #f6edf3);
+  color: var(--theme-filter-color, #333333) !important;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+  user-select: none;
+}
+
+.theme-filter-pill:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  opacity: 0.92;
+}
+
+.theme-filter-pill:active {
+  transform: translateY(0);
+}
+
+/* Active Highlighted State */
+.theme-filter-pill.is-active {
+  background-color: var(--theme-filter-active-bg, #bc90d5);
+  color: var(--theme-filter-active-color, #ffffff) !important;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(188, 144, 213, 0.4);
+}
+
+.theme-filter-pill.is-active:hover {
+  opacity: 0.95;
+  box-shadow: 0 6px 14px rgba(188, 144, 213, 0.45);
+}
+
+/* Optional Pill Count */
+.theme-filter-pill__count {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.theme-filter-pill.is-active .theme-filter-pill__count {
+  opacity: 0.9;
+}
+
+/* Responsive tweaks */
+@media (max-width: 749px) {
+  .theme-filter-bar {
+    margin-bottom: 24px !important;
+    margin-top: 4px;
+  }
+
+  .theme-filter-bar__track {
+    padding: 0 24px 0 2px;
+  }
+
+  .theme-filter-bar__nav {
+    display: none !important;
+  }
+
+  .theme-filter-pill {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+
+  .theme-filter-bar + * .facets-container,
+  .theme-filter-bar + * .facets-container-drawer,
+  .theme-filter-bar + div .facets-container,
+  .theme-filter-bar + div .facets-container-drawer,
+  .theme-filter-bar ~ * .facets-container,
+  .theme-filter-bar ~ * .facets-container-drawer,
+  .theme-filter-bar + * .facets-wrapper,
+  .theme-filter-bar + div .facets-wrapper,
+  .theme-filter-bar ~ * .facets-wrapper {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .theme-filter-bar ~ * .mobile-facets__open,
+  .theme-filter-bar + div .mobile-facets__open,
+  .theme-filter-bar + * .mobile-facets__open {
+    padding-top: 0 !important;
+  }
+}
+
+@media (max-width: 989px) {
+  .theme-filter-bar {
+    margin-bottom: 24px !important;
+  }
+}

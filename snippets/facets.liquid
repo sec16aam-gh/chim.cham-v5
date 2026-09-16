@@ -22,9 +22,14 @@
     assign terms = results.terms | escape
     assign results_url = '?q=' | append: terms | append: '&options%5Bprefix%5D=last&sort_by=' | append: sort_by
   endif
+  assign filter_visibility_mode = filter_visibility_mode | default: 'all'
+  assign filter_list_raw = filter_list | default: '' | strip
+  assign filter_list_array = filter_list_raw | downcase | split: ','
+  assign theme_filter_display_mode = theme_filter_display_mode | default: 'drawer_only'
+  assign theme_filter_label_clean = theme_filter_label | default: 'Theme' | downcase | strip
 -%}
 
-<div class="facets-container{% if filter_type == 'drawer' %} facets-container-drawer{% endif %} {% if filter_type == 'vertical' %} pt-0 js-stick-parent{% endif %}">
+<div class="facets-container{% if filter_type == 'drawer' %} facets-container-drawer{% endif %}{% if filter_type == 'vertical' %} js-stick-parent{% endif %}"{% if theme_filter_display_mode == 'bar_only' or theme_filter_display_mode == 'both' %} style="padding-top: 0 !important; margin-top: 0 !important;"{% endif %}>
   {%- if filter_type == 'vertical' or filter_type == 'horizontal' -%}
     <facet-filters-form class="facets small-hide ">
       <form id="FacetFiltersForm" class="{% if filter_type == 'horizontal' %}facets__form{% else %}facets__form-vertical{% endif %}">
@@ -53,6 +58,29 @@
                   </facet-remove>
                 </div>
                 {%- for filter in results.filters -%}
+                  {%- liquid
+                    assign filter_label_clean = filter.label | downcase | strip
+                    assign show_this_filter = true
+                    if filter_visibility_mode == 'include' and filter_list_raw != ''
+                      assign show_this_filter = false
+                      for item in filter_list_array
+                        assign item_clean = item | strip
+                        if item_clean != '' and item_clean == filter_label_clean
+                          assign show_this_filter = true
+                          break
+                        endif
+                      endfor
+                    elsif filter_visibility_mode == 'exclude' and filter_list_raw != ''
+                      for item in filter_list_array
+                        assign item_clean = item | strip
+                        if item_clean != '' and item_clean == filter_label_clean
+                          assign show_this_filter = false
+                          break
+                        endif
+                      endfor
+                    endif
+                  -%}
+                  {%- unless show_this_filter -%}{%- continue -%}{%- endunless -%}
                   {%- for value in filter.active_values -%}
                     <facet-remove>
                       <a href="{{ value.url_to_remove }}" class="active-facets__button active-facets__button--light">
@@ -119,6 +147,32 @@
             {%- endif-%}
             {% comment %} Filters for both horizontal and vertical filter {% endcomment %}
             {%- for filter in results.filters -%}
+              {%- liquid
+                assign filter_label_clean = filter.label | downcase | strip
+                assign show_this_filter = true
+                if filter_visibility_mode == 'include' and filter_list_raw != ''
+                  assign show_this_filter = false
+                  for item in filter_list_array
+                    assign item_clean = item | strip
+                    if item_clean != '' and item_clean == filter_label_clean
+                      assign show_this_filter = true
+                      break
+                    endif
+                  endfor
+                elsif filter_visibility_mode == 'exclude' and filter_list_raw != ''
+                  for item in filter_list_array
+                    assign item_clean = item | strip
+                    if item_clean != '' and item_clean == filter_label_clean
+                      assign show_this_filter = false
+                      break
+                    endif
+                  endfor
+                endif
+                if theme_filter_display_mode == 'bar_only' and filter_label_clean == theme_filter_label_clean
+                  assign show_this_filter = false
+                endif
+              -%}
+              {%- unless show_this_filter -%}{%- continue -%}{%- endunless -%}
               {%- assign total_active_values = total_active_values | plus: filter.active_values.size -%}
               {% case filter.type %}
               {% when 'boolean' or 'list' %}
@@ -543,6 +597,32 @@
             <div class="mobile-facets__main has-submenu gradient">
               {%- if enable_filtering -%}
                 {%- for filter in results.filters -%}
+                  {%- liquid
+                    assign filter_label_clean = filter.label | downcase | strip
+                    assign show_this_filter = true
+                    if filter_visibility_mode == 'include' and filter_list_raw != ''
+                      assign show_this_filter = false
+                      for item in filter_list_array
+                        assign item_clean = item | strip
+                        if item_clean != '' and item_clean == filter_label_clean
+                          assign show_this_filter = true
+                          break
+                        endif
+                      endfor
+                    elsif filter_visibility_mode == 'exclude' and filter_list_raw != ''
+                      for item in filter_list_array
+                        assign item_clean = item | strip
+                        if item_clean != '' and item_clean == filter_label_clean
+                          assign show_this_filter = false
+                          break
+                        endif
+                      endfor
+                    endif
+                    if theme_filter_display_mode == 'bar_only' and filter_label_clean == theme_filter_label_clean
+                      assign show_this_filter = false
+                    endif
+                  -%}
+                  {%- unless show_this_filter -%}{%- continue -%}{%- endunless -%}
                   {% case filter.type %}
                   {% when 'boolean' or 'list' %}
                     <details id="Details-Mobile-{{ forloop.index }}-{{ section.id }}" class="mobile-facets__details js-filter" data-index="mobile-{{ forloop.index }}">
@@ -730,6 +810,29 @@
 </div>
   <div class="active-facets active-facets-mobile medium-hide large-up-hide">
     {%- for filter in results.filters -%}
+      {%- liquid
+        assign filter_label_clean = filter.label | downcase | strip
+        assign show_this_filter = true
+        if filter_visibility_mode == 'include' and filter_list_raw != ''
+          assign show_this_filter = false
+          for item in filter_list_array
+            assign item_clean = item | strip
+            if item_clean != '' and item_clean == filter_label_clean
+              assign show_this_filter = true
+              break
+            endif
+          endfor
+        elsif filter_visibility_mode == 'exclude' and filter_list_raw != ''
+          for item in filter_list_array
+            assign item_clean = item | strip
+            if item_clean != '' and item_clean == filter_label_clean
+              assign show_this_filter = false
+              break
+            endif
+          endfor
+        endif
+      -%}
+      {%- unless show_this_filter -%}{%- continue -%}{%- endunless -%}
       {%- for value in filter.active_values -%}
         <facet-remove>
           <a href="{{ value.url_to_remove }}" class="active-facets__button active-facets__button--light">
@@ -821,6 +924,32 @@
       <form id="FacetFiltersPillsForm" class="facets__form">
         <div class="active-facets active-facets-desktop">
           {%- for filter in results.filters -%}
+            {%- liquid
+              assign filter_label_clean = filter.label | downcase | strip
+              assign show_this_filter = true
+              if filter_visibility_mode == 'include' and filter_list_raw != ''
+                assign show_this_filter = false
+                for item in filter_list_array
+                  assign item_clean = item | strip
+                  if item_clean != '' and item_clean == filter_label_clean
+                    assign show_this_filter = true
+                    break
+                  endif
+                endfor
+              elsif filter_visibility_mode == 'exclude' and filter_list_raw != ''
+                for item in filter_list_array
+                  assign item_clean = item | strip
+                  if item_clean != '' and item_clean == filter_label_clean
+                    assign show_this_filter = false
+                    break
+                  endif
+                endfor
+              endif
+              if theme_filter_display_mode == 'bar_only' and filter_label_clean == theme_filter_label_clean
+                assign show_this_filter = false
+              endif
+            -%}
+            {%- unless show_this_filter -%}{%- continue -%}{%- endunless -%}
             {%- for value in filter.active_values -%}
               <facet-remove>
                 <a href="{{ value.url_to_remove }}" class="active-facets__button active-facets__button--light">

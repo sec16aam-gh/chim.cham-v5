@@ -150,14 +150,25 @@ class FacetFiltersForm extends HTMLElement {
   }
 
   static renderAdditionalElements(html) {
-    const mobileElementSelectors = ['.mobile-facets__open', '.mobile-facets__count', '.sorting'];
+    const mobileElementSelectors = ['.mobile-facets__open', '.mobile-facets__count', '.sorting', '.theme-filter-bar'];
 
     mobileElementSelectors.forEach((selector) => {
       if (!html.querySelector(selector)) return;
-      document.querySelector(selector).innerHTML = html.querySelector(selector).innerHTML;
+      const target = document.querySelector(selector);
+      if (target) {
+        target.innerHTML = html.querySelector(selector).innerHTML;
+      }
     });
 
-    document.getElementById('FacetFiltersFormMobile').closest('menu-drawer').bindEvents();
+    const mobileDrawer = document.getElementById('FacetFiltersFormMobile');
+    if (mobileDrawer && mobileDrawer.closest('menu-drawer')) {
+      mobileDrawer.closest('menu-drawer').bindEvents();
+    }
+
+    const filterBar = document.querySelector('theme-filter-bar');
+    if (filterBar && typeof filterBar.init === 'function') {
+      filterBar.init();
+    }
   }
 
   static renderCounts(source, target) {

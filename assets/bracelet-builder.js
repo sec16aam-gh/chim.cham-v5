@@ -50,6 +50,7 @@
           ];
 
       this.charms = (this.config && Array.isArray(this.config.charms)) ? this.config.charms : [];
+      this.collectionInfo = (this.config && this.config.collection) || {};
       this.settings = (this.config && this.config.settings) || {};
       this.assetUrls = (this.config && this.config.assetUrls) || {};
 
@@ -434,6 +435,7 @@
       this.renderCatalog();
       this.updateSidebar();
       this.updateHeaderMeta();
+      this.loadRemainingCharms();
     }
 
     bindEvents() {
@@ -1570,7 +1572,12 @@
 
       // Update Catalog Count
       if (this.dom.catalogCount) {
-        this.dom.catalogCount.textContent = `${filtered.length} charms`;
+        const hasActiveFilter = this.activeThemes.size > 0 || this.activeColors.size > 0 || !!this.searchQuery;
+        const totalExpected = parseInt(this.collectionInfo?.allProductsCount, 10) || 0;
+        const totalCount = (!hasActiveFilter && totalExpected > filtered.length)
+          ? totalExpected
+          : filtered.length;
+        this.dom.catalogCount.textContent = `${totalCount} charms`;
       }
 
       if (filtered.length === 0) {
@@ -2488,6 +2495,153 @@
         console.error('Error adding bracelet bundle to cart', err);
         window.location.href = '/cart';
       }
+    }
+
+    async loadRemainingCharms() {
+      const collectionHandle = this.collectionInfo?.handle || 
+        (window.location.pathname.startsWith('/collections/') ? window.location.pathname.split('/')[2] : null);
+      if (!collectionHandle) return;
+
+      const totalExpected = parseInt(this.collectionInfo?.allProductsCount, 10) || 0;
+      // If we already loaded all expected charms (and have more than 250), or we know there are no more
+      if (totalExpected > 0 && this.charms.length >= totalExpected) return;
+      // If we have less than 250 charms initially, Liquid was able to load all of them in page 1
+      if (this.charms.length < 250 && totalExpected <= 250 && totalExpected > 0) return;
+
+      const existingIds = new Set(this.charms.map(ch => String(ch.id)));
+      let currentPage = 2;
+      let hasMore = true;
+
+      while (hasMore) {
+        try {
+          const charmsFromPage = await this.fetchCharmsPage(collectionHandle, currentPage);
+          if (Array.isArray(charmsFromPage) && charmsFromPage.length > 0) {
+            let added = 0;
+            charmsFromPage.forEach(ch => {
+              if (ch && ch.id && !existingIds.has(String(ch.id))) {
+                existingIds.add(String(ch.id));
+                this.charms.push(ch);
+                added++;
+              }
+            });
+
+            if (added > 0) {
+              // Update filters and catalog UI with the newly added charms
+              try { this.renderDynamicFilters(); } catch (e) {}
+              this.renderCatalog();
+            }
+
+            // If we received fewer than 250 charms or reached/exceeded the expected total, we're done
+            if (charmsFromPage.length < 250 || (totalExpected > 0 && this.charms.length >= totalExpected)) {
+              hasMore = false;
+            } else {
+              currentPage++;
+            }
+          } else {
+            hasMore = false;
+          }
+        } catch (err) {
+          console.warn('BraceletBuilder: Error fetching charms page ' + currentPage, err);
+          hasMore = false;
+        }
+      }
+    }
+
+    async fetchCharmsPage(handle, page) {
+      // Priority 1: Fetch via alternate Liquid template (?view=charms-data)
+      try {
+        const url = `/collections/${encodeURIComponent(handle)}?view=charms-data&page=${page}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const text = await res.text();
+          let data = null;
+          try {
+            data = JSON.parse(text);
+          } catch (pe) {
+            const start = text.indexOf('{');
+            const end = text.lastIndexOf('}');
+            if (start !== -1 && end > start) {
+              data = JSON.parse(text.substring(start, end + 1));
+            }
+          }
+          if (data && Array.isArray(data.charms)) {
+            return data.charms;
+          }
+        }
+      } catch (err1) {
+        console.warn('BraceletBuilder: view=charms-data not available, falling back to products.json', err1);
+      }
+
+      // Priority 2: Fallback to native Shopify /collections/{handle}/products.json
+      try {
+        const url = `/collections/${encodeURIComponent(handle)}/products.json?limit=250&page=${page}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.products)) {
+            return data.products.map(prod => this.mapShopifyProductToCharm(prod));
+          }
+        }
+      } catch (err2) {
+        console.warn('BraceletBuilder: Error in products.json fallback', err2);
+      }
+
+      return [];
+    }
+
+    mapShopifyProductToCharm(prod) {
+      let charmType = 'simple';
+      let charmSlots = 1;
+      let charmTheme = '';
+      let charmColor = '';
+
+      const tags = Array.isArray(prod.tags)
+        ? prod.tags
+        : (typeof prod.tags === 'string' ? prod.tags.split(',').map(t => t.trim()) : []);
+
+      for (const tag of tags) {
+        const t = String(tag).trim();
+        const tLower = t.toLowerCase();
+        if (tLower.startsWith('theme:')) {
+          charmTheme = t.slice(6).trim();
+        } else if (tLower.startsWith('color:')) {
+          charmColor = t.slice(6).trim();
+        } else if (tLower.includes('type:drop') || tLower === 'drop') {
+          charmType = 'drop';
+        } else if (tLower.includes('type:2-links') || tLower === '2-links' || tLower === 'double') {
+          charmType = 'double';
+          charmSlots = 2;
+        }
+      }
+
+      const firstVariant = (prod.variants && prod.variants[0]) || {};
+      let price = 0;
+      if (firstVariant.price != null) {
+        const pStr = String(firstVariant.price);
+        const pNum = parseFloat(pStr);
+        // If 3 decimal places (e.g. 4.000 KWD), multiply by 1000, else by 100
+        if (pStr.includes('.') && pStr.split('.')[1].length === 3) {
+          price = Math.round(pNum * 1000);
+        } else {
+          price = Math.round(pNum * 100);
+        }
+      }
+
+      const image = (prod.images && prod.images[0] && prod.images[0].src) || '';
+
+      return {
+        id: prod.id,
+        title: prod.title,
+        price: price,
+        image: image,
+        description: (prod.body_html || '').replace(/<[^>]*>/g, '').substring(0, 140),
+        theme: charmTheme,
+        color: charmColor,
+        type: charmType,
+        slots: charmSlots,
+        tags: tags,
+        variantId: firstVariant.id || prod.id
+      };
     }
   }
 

@@ -17,6 +17,32 @@
   padding-top: 1rem;
 }
 
+/* Reset facets container top padding on all screen sizes (desktop and mobile) when theme filter bar is present */
+theme-filter-bar ~ * .facets-container,
+theme-filter-bar ~ * .facets-container-drawer,
+theme-filter-bar + div .facets-container,
+theme-filter-bar + div .facets-container-drawer,
+theme-filter-bar + * .facets-container,
+theme-filter-bar + * .facets-container-drawer,
+.theme-filter-bar ~ * .facets-container,
+.theme-filter-bar ~ * .facets-container-drawer,
+.theme-filter-bar + div .facets-container,
+.theme-filter-bar + div .facets-container-drawer,
+.theme-filter-bar + * .facets-container,
+.theme-filter-bar + * .facets-container-drawer {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+theme-filter-bar ~ * .mobile-facets__open,
+theme-filter-bar + div .mobile-facets__open,
+theme-filter-bar + * .mobile-facets__open,
+.theme-filter-bar ~ * .mobile-facets__open,
+.theme-filter-bar + div .mobile-facets__open,
+.theme-filter-bar + * .mobile-facets__open {
+  padding-top: 0 !important;
+}
+
 .active-facets-mobile {
   margin-bottom: 0.5rem;
 }
@@ -1548,10 +1574,18 @@ input.mobile-facets__checkbox {
   }
   
   .facets-container-drawer {
-    display: flex;;
+    display: flex;
     flex-flow: row wrap;
     align-items: center;
     column-gap: 0;
+  }
+
+  theme-filter-bar ~ * .facets-container-drawer,
+  theme-filter-bar + div .facets-container-drawer,
+  .theme-filter-bar ~ * .facets-container-drawer,
+  .theme-filter-bar + div .facets-container-drawer {
+    padding-top: 0;
+    margin-top: 0;
   }
 
   .facets-container-drawer .mobile-facets__wrapper  {

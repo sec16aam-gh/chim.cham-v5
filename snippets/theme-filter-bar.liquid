@@ -1,0 +1,130 @@
+{% comment %}
+  Renders a horizontal theme filter pill bar above the collection toolbar.
+  Accepts:
+  - results: {Object} collection or search object
+  - section: {Object} current section object with settings
+{% endcomment %}
+
+{%- liquid
+  assign display_mode = section.settings.theme_filter_display_mode | default: 'drawer_only'
+  if display_mode == 'drawer_only'
+    assign show_bar = false
+  else
+    assign show_bar = true
+  endif
+
+  assign target_label = section.settings.theme_filter_label | default: 'Theme' | downcase | strip
+  assign target_filter = nil
+
+  if show_bar and results.filters != empty
+    for filter in results.filters
+      assign filter_label_clean = filter.label | downcase | strip
+      if filter_label_clean == target_label
+        assign target_filter = filter
+        break
+      endif
+    endfor
+  endif
+-%}
+
+{%- if show_bar and target_filter != nil and target_filter.values.size > 0 -%}
+  {{ 'theme-filter-bar.css' | asset_url | stylesheet_tag }}
+
+  {%- style -%}
+    theme-filter-bar,
+    .theme-filter-bar,
+    #ThemeFilterBar-{{ section.id }} {
+      display: block !important;
+      width: 100%;
+      --theme-filter-bg: {{ section.settings.theme_filter_pill_bg | default: '#f6edf3' }};
+      --theme-filter-color: {{ section.settings.theme_filter_pill_color | default: '#333333' }};
+      --theme-filter-active-bg: {{ section.settings.theme_filter_pill_active_bg | default: '#bc90d5' }};
+      --theme-filter-active-color: {{ section.settings.theme_filter_pill_active_color | default: '#ffffff' }};
+      --theme-filter-radius: {{ section.settings.theme_filter_pill_radius | default: 6 }}px;
+      margin-top: 4px;
+      margin-bottom: 24px !important;
+      position: relative;
+    }
+    #ThemeFilterBar-{{ section.id }} ~ * .facets-container,
+    #ThemeFilterBar-{{ section.id }} ~ * .facets-container-drawer,
+    #ThemeFilterBar-{{ section.id }} + div .facets-container,
+    #ThemeFilterBar-{{ section.id }} + div .facets-container-drawer,
+    #ThemeFilterBar-{{ section.id }} + * .facets-container,
+    #ThemeFilterBar-{{ section.id }} + * .facets-container-drawer,
+    #ThemeFilterBar-{{ section.id }} ~ * .facets-wrapper,
+    #ThemeFilterBar-{{ section.id }} + div .facets-wrapper,
+    #ThemeFilterBar-{{ section.id }} + * .facets-wrapper {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    #ThemeFilterBar-{{ section.id }} ~ * .mobile-facets__open,
+    #ThemeFilterBar-{{ section.id }} + div .mobile-facets__open,
+    #ThemeFilterBar-{{ section.id }} + * .mobile-facets__open {
+      padding-top: 0 !important;
+    }
+  {%- endstyle -%}
+
+  <theme-filter-bar id="ThemeFilterBar-{{ section.id }}" class="theme-filter-bar" data-filter-name="{{ target_filter.label | escape }}">
+    <div class="theme-filter-bar__wrapper">
+      <button type="button" class="theme-filter-bar__nav theme-filter-bar__nav--prev" aria-label="Previous themes" tabindex="-1">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <div class="theme-filter-bar__fade theme-filter-bar__fade--left"></div>
+
+      <div class="theme-filter-bar__track" role="list">
+        {%- if section.settings.theme_filter_show_all -%}
+          {%- liquid
+            assign all_is_active = true
+            if target_filter.active_values.size > 0
+              assign all_is_active = false
+            endif
+            assign all_reset_url = target_filter.url_to_remove
+          -%}
+          <div class="theme-filter-bar__item" role="listitem">
+            {%- if all_is_active -%}
+              <span class="theme-filter-pill is-active" aria-current="true">
+                {{ section.settings.theme_filter_all_label | default: 'All' }}
+              </span>
+            {%- else -%}
+              <facet-remove>
+                <a href="{{ all_reset_url }}" class="theme-filter-pill js-facet-remove" aria-label="{{ section.settings.theme_filter_all_label | default: 'All' }}">
+                  {{ section.settings.theme_filter_all_label | default: 'All' }}
+                </a>
+              </facet-remove>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+
+        {%- for value in target_filter.values -%}
+          <div class="theme-filter-bar__item" role="listitem">
+            {%- if value.active -%}
+              <facet-remove>
+                <a href="{{ value.url_to_remove }}" class="theme-filter-pill is-active js-facet-remove" aria-label="{{ value.label | escape }} (selected)">
+                  <span>{{ value.label | escape }}</span>
+                  {%- if section.settings.theme_filter_show_counts -%}
+                    <span class="theme-filter-pill__count">({{ value.count }})</span>
+                  {%- endif -%}
+                </a>
+              </facet-remove>
+            {%- else -%}
+              <facet-remove>
+                <a href="{{ value.url_to_add }}" class="theme-filter-pill js-facet-remove{% if value.count == 0 %} is-disabled{% endif %}" aria-label="{{ value.label | escape }}">
+                  <span>{{ value.label | escape }}</span>
+                  {%- if section.settings.theme_filter_show_counts -%}
+                    <span class="theme-filter-pill__count">({{ value.count }})</span>
+                  {%- endif -%}
+                </a>
+              </facet-remove>
+            {%- endif -%}
+          </div>
+        {%- endfor -%}
+      </div>
+
+      <div class="theme-filter-bar__fade theme-filter-bar__fade--right"></div>
+      <button type="button" class="theme-filter-bar__nav theme-filter-bar__nav--next" aria-label="Next themes" tabindex="-1">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+  </theme-filter-bar>
+  <script src="{{ 'theme-filter-bar.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
