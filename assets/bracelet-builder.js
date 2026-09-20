@@ -1478,6 +1478,8 @@
         watchDialEl.style.width = `${watchDims.width}px`;
         watchDialEl.style.minWidth = `${watchDims.width}px`;
         watchDialEl.style.flexBasis = `${watchDims.width}px`;
+        watchDialEl.style.marginLeft = '-4px';
+        watchDialEl.style.marginRight = '-4px';
 
         watchDialEl.innerHTML = `<img src="${watchSrc}" alt="${this.selectedModel.title}" width="${watchDims.width}" height="${watchDims.height}" style="width: ${watchDims.width}px; height: ${watchDims.height}px;">`;
 
