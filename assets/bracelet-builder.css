@@ -943,9 +943,8 @@
 .watch-on-bracelet,
 .bb-watch-dial-slot {
   z-index: 3;
-  width: 84px;
-  min-width: 84px;
   height: 64px;
+  min-height: 64px;
   margin: 0;
   padding: 0;
   position: relative;
@@ -962,10 +961,6 @@
 
 .watch-on-bracelet img,
 .bb-watch-dial-slot img {
-  height: 220px;
-  max-height: 220px;
-  width: auto;
-  max-width: 92px;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -976,6 +971,8 @@
   filter: none !important;
   box-shadow: none !important;
   pointer-events: none;
+  max-width: none !important;
+  max-height: none !important;
 }
 
 .bb-slot.is-before-watch:before,

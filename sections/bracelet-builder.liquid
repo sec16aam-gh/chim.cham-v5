@@ -766,7 +766,17 @@
         "watchLilacSilver": {{ 'watch-lilac-silver.png' | asset_url | json }},
         "watchPearlyGold": {{ 'watch-pearly-gold.png' | asset_url | json }},
         "watchPearlySilver": {{ 'watch-pearly-silver.png' | asset_url | json }},
-        "watchSkyBlue": {{ 'watch-sky-blue.png' | asset_url | json }}
+        "watchSkyBlue": {{ 'watch-sky-blue.png' | asset_url | json }},
+        "watchBlushGoldHorizontal": {{ 'watch-blush-gold-horizontal.png' | asset_url | json }},
+        "watchBlushSilverHorizontal": {{ 'watch-blush-silver-horizontal.png' | asset_url | json }},
+        "watchFlowerHorizontal": {{ 'watch-flower-horizontal.png' | asset_url | json }},
+        "watchFuchsiaHorizontal": {{ 'watch-fuchsia-horizontal.png' | asset_url | json }},
+        "watchGlitteryHorizontal": {{ 'watch-glittery-horizontal.png' | asset_url | json }},
+        "watchLilacGoldHorizontal": {{ 'watch-lilac-gold-horizontal.png' | asset_url | json }},
+        "watchLilacSilverHorizontal": {{ 'watch-lilac-silver-horizontal.png' | asset_url | json }},
+        "watchPearlyGoldHorizontal": {{ 'watch-pearly-gold-horizontal.png' | asset_url | json }},
+        "watchPearlySilverHorizontal": {{ 'watch-pearly-silver-horizontal.png' | asset_url | json }},
+        "watchSkyBlueHorizontal": {{ 'watch-sky-blue-horizontal.png' | asset_url | json }}
       },
       "models": [
         {%- assign model_blocks = section.blocks | where: 'type', 'bracelet_model' -%}
@@ -806,6 +816,29 @@
                     assign model_img = 'bracelet-silver.png' | asset_url
                 endcase
               endif
+              assign model_h_img = ''
+              case block.settings.model_id
+                when 'watch-blush-gold'
+                  assign model_h_img = 'watch-blush-gold-horizontal.png' | asset_url
+                when 'watch-blush-silver'
+                  assign model_h_img = 'watch-blush-silver-horizontal.png' | asset_url
+                when 'watch-flower'
+                  assign model_h_img = 'watch-flower-horizontal.png' | asset_url
+                when 'watch-fuchsia'
+                  assign model_h_img = 'watch-fuchsia-horizontal.png' | asset_url
+                when 'watch-glittery'
+                  assign model_h_img = 'watch-glittery-horizontal.png' | asset_url
+                when 'watch-lilac-gold'
+                  assign model_h_img = 'watch-lilac-gold-horizontal.png' | asset_url
+                when 'watch-lilac-silver'
+                  assign model_h_img = 'watch-lilac-silver-horizontal.png' | asset_url
+                when 'watch-pearly-gold'
+                  assign model_h_img = 'watch-pearly-gold-horizontal.png' | asset_url
+                when 'watch-pearly-silver'
+                  assign model_h_img = 'watch-pearly-silver-horizontal.png' | asset_url
+                when 'watch-sky-blue'
+                  assign model_h_img = 'watch-sky-blue-horizontal.png' | asset_url
+              endcase
               assign block_slots = block.settings.slots_count | default: 16
               if block.settings.model_type == 'watch'
                 assign remainder = block_slots | modulo: 2
@@ -823,6 +856,7 @@
               "productId": {{ linked_prod.id | json }},
               "defaultColor": {{ block.settings.default_color | default: "gold" | json }},
               "image": {{ model_img | json }},
+              "horizontalImage": {{ model_h_img | json }},
               "options": [
                 {%- if linked_prod != blank and linked_prod.options_with_values.size > 0 -%}
                   {%- for opt in linked_prod.options_with_values -%}

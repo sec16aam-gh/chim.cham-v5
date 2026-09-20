@@ -1340,6 +1340,81 @@
       return assetUrls.watchFlower || 'watch-flower.png';
     }
 
+    getWatchHorizontalImageSrc(model) {
+      const modelId = ((model && model.id) || (this.selectedModel && this.selectedModel.id) || '').toLowerCase();
+      const modelTitle = ((model && model.title) || (this.selectedModel && this.selectedModel.title) || '').toLowerCase();
+      const assetUrls = this.assetUrls || {};
+
+      if (modelId.includes('blush-gold') || (modelTitle.includes('blush') && modelTitle.includes('gold'))) {
+        return assetUrls.watchBlushGoldHorizontal || 'watch-blush-gold-horizontal.png';
+      }
+      if (modelId.includes('blush-silver') || (modelTitle.includes('blush') && modelTitle.includes('silver'))) {
+        return assetUrls.watchBlushSilverHorizontal || 'watch-blush-silver-horizontal.png';
+      }
+      if (modelId.includes('flower') || modelTitle.includes('flower')) {
+        return assetUrls.watchFlowerHorizontal || 'watch-flower-horizontal.png';
+      }
+      if (modelId.includes('fuchsia') || modelTitle.includes('fuchsia')) {
+        return assetUrls.watchFuchsiaHorizontal || 'watch-fuchsia-horizontal.png';
+      }
+      if (modelId.includes('glittery') || modelTitle.includes('glitter')) {
+        return assetUrls.watchGlitteryHorizontal || 'watch-glittery-horizontal.png';
+      }
+      if (modelId.includes('lilac-gold') || (modelTitle.includes('lilac') && modelTitle.includes('gold'))) {
+        return assetUrls.watchLilacGoldHorizontal || 'watch-lilac-gold-horizontal.png';
+      }
+      if (modelId.includes('lilac-silver') || (modelTitle.includes('lilac') && modelTitle.includes('silver'))) {
+        return assetUrls.watchLilacSilverHorizontal || 'watch-lilac-silver-horizontal.png';
+      }
+      if (modelId.includes('pearly-gold') || (modelTitle.includes('pearly') && modelTitle.includes('gold'))) {
+        return assetUrls.watchPearlyGoldHorizontal || 'watch-pearly-gold-horizontal.png';
+      }
+      if (modelId.includes('pearly-silver') || (modelTitle.includes('pearly') && modelTitle.includes('silver'))) {
+        return assetUrls.watchPearlySilverHorizontal || 'watch-pearly-silver-horizontal.png';
+      }
+      if (modelId.includes('sky-blue') || (modelTitle.includes('sky') && modelTitle.includes('blue'))) {
+        return assetUrls.watchSkyBlueHorizontal || 'watch-sky-blue-horizontal.png';
+      }
+
+      if (model && model.horizontalImage) return model.horizontalImage;
+      if (this.selectedModel && this.selectedModel.horizontalImage) return this.selectedModel.horizontalImage;
+
+      if (modelId.includes('blue')) return assetUrls.watchSkyBlueHorizontal || 'watch-sky-blue-horizontal.png';
+      if (modelId.includes('pink') || modelId.includes('gold')) return assetUrls.watchBlushGoldHorizontal || 'watch-blush-gold-horizontal.png';
+
+      return assetUrls.watchFlowerHorizontal || 'watch-flower-horizontal.png';
+    }
+
+    getWatchHorizontalDimensions(model) {
+      const modelId = ((model && model.id) || (this.selectedModel && this.selectedModel.id) || '').toLowerCase();
+      const modelTitle = ((model && model.title) || (this.selectedModel && this.selectedModel.title) || '').toLowerCase();
+
+      const dims = {
+        'blush-gold': { width: 367, height: 204 },
+        'blush-silver': { width: 348, height: 203 },
+        'flower': { width: 390, height: 238 },
+        'fuchsia': { width: 367, height: 199 },
+        'glittery': { width: 348, height: 204 },
+        'lilac-gold': { width: 349, height: 204 },
+        'lilac-silver': { width: 338, height: 200 },
+        'pearly-gold': { width: 372, height: 197 },
+        'pearly-silver': { width: 377, height: 194 },
+        'sky-blue': { width: 318, height: 189 }
+      };
+
+      for (const [key, dim] of Object.entries(dims)) {
+        if (modelId.includes(key) || modelTitle.includes(key.replace('-', ' '))) {
+          return dim;
+        }
+      }
+
+      if (modelId.includes('blue') || modelTitle.includes('blue')) return dims['sky-blue'];
+      if (modelId.includes('pink') || modelTitle.includes('pink')) return dims['blush-gold'];
+      if (modelId.includes('gold') || modelTitle.includes('gold')) return dims['pearly-gold'];
+
+      return { width: 360, height: 200 };
+    }
+
     getMetalLinkImageSrc(handle) {
       const assetUrls = this.assetUrls || {};
       const h = (handle || '').toLowerCase();
@@ -1397,8 +1472,14 @@
         watchDialEl.setAttribute('role', 'img');
         watchDialEl.setAttribute('aria-label', this.selectedModel.title);
 
-        const watchSrc = this.getWatchImageSrc(this.selectedModel);
-        watchDialEl.innerHTML = `<img src="${watchSrc}" alt="${this.selectedModel.title}">`;
+        const watchSrc = this.getWatchHorizontalImageSrc(this.selectedModel);
+        const watchDims = this.getWatchHorizontalDimensions(this.selectedModel);
+
+        watchDialEl.style.width = `${watchDims.width}px`;
+        watchDialEl.style.minWidth = `${watchDims.width}px`;
+        watchDialEl.style.flexBasis = `${watchDims.width}px`;
+
+        watchDialEl.innerHTML = `<img src="${watchSrc}" alt="${this.selectedModel.title}" width="${watchDims.width}" height="${watchDims.height}" style="width: ${watchDims.width}px; height: ${watchDims.height}px;">`;
 
         this.dom.braceletRow.appendChild(watchDialEl);
 
