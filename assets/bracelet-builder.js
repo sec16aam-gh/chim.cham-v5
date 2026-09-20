@@ -1390,16 +1390,16 @@
       const modelTitle = ((model && model.title) || (this.selectedModel && this.selectedModel.title) || '').toLowerCase();
 
       const dims = {
-        'blush-gold': { width: 367, height: 204 },
-        'blush-silver': { width: 348, height: 203 },
-        'flower': { width: 390, height: 238 },
-        'fuchsia': { width: 367, height: 199 },
-        'glittery': { width: 348, height: 204 },
-        'lilac-gold': { width: 349, height: 204 },
-        'lilac-silver': { width: 338, height: 200 },
+        'blush-gold': { width: 411, height: 204 },
+        'blush-silver': { width: 391, height: 203 },
+        'flower': { width: 440, height: 238 },
+        'fuchsia': { width: 385, height: 199 },
+        'glittery': { width: 392, height: 204 },
+        'lilac-gold': { width: 390, height: 204 },
+        'lilac-silver': { width: 387, height: 200 },
         'pearly-gold': { width: 372, height: 197 },
-        'pearly-silver': { width: 377, height: 194 },
-        'sky-blue': { width: 318, height: 189 }
+        'pearly-silver': { width: 409, height: 194 },
+        'sky-blue': { width: 317, height: 189 }
       };
 
       for (const [key, dim] of Object.entries(dims)) {
