@@ -892,8 +892,8 @@
   align-items: center !important;
   justify-content: center !important;
 }
-.bb-slot.has-protruding-charm .bb-slot-charm-img,
-.placed-charm.kind-protruding img {
+.bb-slot.has-protruding-charm .bb-slot-charm-img.is-calibrated,
+.placed-charm.kind-protruding img.is-calibrated {
   width: auto !important;
   height: auto !important;
   max-width: none !important;
@@ -932,6 +932,20 @@
   box-shadow: none !important;
 }
 
+/* Uncalibrated / Loading state: strictly bound within 64x64 slot bounds to prevent giant blowup on refresh */
+.bb-slot-charm-img:not(.is-calibrated),
+.placed-charm img:not(.is-calibrated) {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+}
+
 /* 2-Link Double Charm (Spans 128px) */
 .bb-slot.is-double-start {
   flex: 0 0 128px;
@@ -967,8 +981,8 @@
   justify-content: center !important;
   align-items: flex-start !important;
 }
-.bb-slot.is-hanging .bb-slot-charm-img,
-.placed-charm.kind-hanging img {
+.bb-slot.is-hanging .bb-slot-charm-img.is-calibrated,
+.placed-charm.kind-hanging img.is-calibrated {
   position: absolute !important;
   top: 0 !important;
   left: 50% !important;

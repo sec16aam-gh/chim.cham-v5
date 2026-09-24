@@ -125,6 +125,9 @@
       this.activeDrawerCharm = null;
       this.dragSource = null; // 'catalog' | { slotIndex: number }
       this.draggedCharmData = null;
+      this.transparentCache = {};
+      this.charmMetaCache = {};
+      this.calibratedCanvases = {};
 
       // DOM Elements Cache
       this.cacheDOMElements();
@@ -238,6 +241,8 @@
               isDoubleStart: !!s.isDoubleStart,
               isDoubleEnd: !!s.isDoubleEnd,
               isHanging: !!s.isHanging,
+              transUrl: (this.transparentCache && this.transparentCache[s.charm.image]) || null,
+              charmMeta: (this.charmMetaCache && this.charmMetaCache[s.charm.image]) || null,
               charm: {
                 id: s.charm.id,
                 title: s.charm.title,
@@ -253,7 +258,13 @@
           }),
           updatedAt: Date.now()
         };
-        localStorage.setItem(this.getStorageKey(), JSON.stringify(stateToSave));
+        try {
+          localStorage.setItem(this.getStorageKey(), JSON.stringify(stateToSave));
+        } catch (quotaErr) {
+          // If storage quota exceeded, strip large transUrl strings and save core state
+          stateToSave.slots.forEach(s => { if (s) { delete s.transUrl; } });
+          localStorage.setItem(this.getStorageKey(), JSON.stringify(stateToSave));
+        }
       } catch (err) {
         console.warn('BraceletBuilder: Unable to save state to localStorage', err);
       }
@@ -328,6 +339,12 @@
             const charmId = savedItem.charmId || (savedItem.charm && savedItem.charm.id);
             const matchedCharm = this.charms.find(ch => String(ch.id) === String(charmId)) || savedItem.charm;
             if (matchedCharm) {
+              if (savedItem.transUrl && matchedCharm.image) {
+                this.transparentCache[matchedCharm.image] = savedItem.transUrl;
+              }
+              if (savedItem.charmMeta && matchedCharm.image) {
+                this.charmMetaCache[matchedCharm.image] = savedItem.charmMeta;
+              }
               this.slots[i] = {
                 charm: matchedCharm,
                 isDoubleStart: !!savedItem.isDoubleStart,
@@ -1856,6 +1873,7 @@
 
           this.transparentCache[imageUrl] = finalUrl;
           this.charmMetaCache[imageUrl] = meta;
+          this.savePersistedState();
           callback(finalUrl, meta);
         } catch (e) {
           this.transparentCache[imageUrl] = imageUrl;
@@ -1911,33 +1929,37 @@
         const keepBaseLink = (meta && meta.keepBaseLink) || isFreeformTitle || isProtrudingTitle;
         const isProtruding = (meta && meta.isProtruding) || isProtrudingTitle;
 
-        if (isHanging) {
-          slot.classList.add('is-hanging');
+        const isCalibrated = !!(this.transparentCache && this.transparentCache[placed.charm.image]);
+        const charmImgSrc = isCalibrated
+          ? this.transparentCache[placed.charm.image]
+          : placed.charm.image;
+
+        if (isCalibrated) {
+          if (isHanging) {
+            slot.classList.add('is-hanging');
+          }
+          if (isProtruding) {
+            slot.classList.add('has-protruding-charm');
+          }
         }
         if (keepBaseLink) {
           slot.classList.add('keep-base-link');
         }
-        if (isProtruding) {
-          slot.classList.add('has-protruding-charm');
-        }
-
-        const charmImgSrc = (this.transparentCache && this.transparentCache[placed.charm.image])
-          ? this.transparentCache[placed.charm.image]
-          : placed.charm.image;
 
         slot.style.setProperty('--bracelet-link', 'none');
         slot.innerHTML = `
           <img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">
-          <div class="placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''} ${isProtruding ? 'kind-protruding' : ''}">
-            <img class="bb-slot-charm-img" src="${charmImgSrc}" alt="${placed.charm.title}">
+          <div class="placed-charm ${isDouble ? 'span-2' : ''} ${isCalibrated && isHanging ? 'kind-hanging' : ''} ${isCalibrated && isProtruding ? 'kind-protruding' : ''}">
+            <img class="bb-slot-charm-img ${isCalibrated ? 'is-calibrated' : ''}" src="${charmImgSrc}" alt="${placed.charm.title}">
           </div>
         `;
 
-        if (!this.transparentCache || !this.transparentCache[placed.charm.image]) {
+        if (!isCalibrated) {
           this.processImageTransparency(placed.charm.image, (transUrl, charmMeta) => {
             const currentImg = slot.querySelector('.bb-slot-charm-img');
             if (currentImg && transUrl) {
               currentImg.src = transUrl;
+              currentImg.classList.add('is-calibrated');
             }
             if (charmMeta) {
               if (charmMeta.isHanging) {
