@@ -493,6 +493,21 @@
       return Array.isArray(this.slots) && this.slots.some(s => s && s.isChainStart);
     }
 
+    isChainCharm(charm) {
+      if (!charm) return false;
+      if (charm.slots === 4 || charm.type === 'chain') return true;
+      const titleLower = (charm.title || '').toLowerCase();
+      if (titleLower.includes('chain') || titleLower.includes('chaîne')) return true;
+      if (titleLower.includes('vani') || titleLower === 'stars' || titleLower.includes('stars silver') || titleLower.includes('ruby chain') || (titleLower === 'silver' && charm.slots === 2)) return true;
+      if (Array.isArray(charm.tags)) {
+        for (let i = 0; i < charm.tags.length; i++) {
+          const t = String(charm.tags[i]).toLowerCase();
+          if (t === 'chain' || t === 'type:chain' || t.includes('chaîne')) return true;
+        }
+      }
+      return false;
+    }
+
     isSlotInChainSpan(index) {
       if (!Array.isArray(this.slots)) return null;
       for (let i = 0; i < this.slotsCount; i++) {
@@ -1763,7 +1778,34 @@
             const aspectRatio = contentH / contentW;
 
             const charmTitleLower = ((charm && charm.title) ? charm.title : (imageUrl ? decodeURIComponent(imageUrl) : '')).toLowerCase();
-            const isChain = (charm && (charm.type === 'chain' || charm.slots === 4)) || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne');
+            let isChain = this.isChainCharm(charm) || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne') || charmTitleLower.includes('vani') || charmTitleLower.includes('stars') || (charmTitleLower.includes('silver') && (contentW > contentH * 1.05));
+
+            // Automatic Topological Detection for Newly Added Chain Charms:
+            // Chain charms uniquely possess two separated top link attachment clips at x ~ 0-25% and x ~ 75-100%
+            // with a distinct empty gap in the middle (35-65%) across rows ~8-16% of content height.
+            if (!isChain && contentW > 80 && contentH > 40 && (contentW >= contentH * 0.75)) {
+              const checkRow = Math.min(canvas.height - 1, minY + Math.max(4, Math.round(contentH * 0.12)));
+              let leftHas = false, rightHas = false, midCount = 0;
+              const rowOffset = checkRow * canvas.width * 4;
+              for (let x = minX; x < minX + Math.round(contentW * 0.20); x++) {
+                if (data[rowOffset + x * 4 + 3] > 30) { leftHas = true; break; }
+              }
+              for (let x = minX + Math.round(contentW * 0.80); x <= maxX; x++) {
+                if (data[rowOffset + x * 4 + 3] > 30) { rightHas = true; break; }
+              }
+              for (let x = minX + Math.round(contentW * 0.35); x < minX + Math.round(contentW * 0.65); x++) {
+                if (data[rowOffset + x * 4 + 3] > 30) { midCount++; }
+              }
+              if (leftHas && rightHas && midCount === 0) {
+                isChain = true;
+              }
+            }
+
+            if (isChain && charm) {
+              charm.type = 'chain';
+              charm.slots = 4;
+            }
+
             const isFreeform = !isChain && (charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal'));
             const isProtruding = !isChain && (charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant'));
             const isHanging = !isChain && ((charm && (charm.type === 'drop' || charm.type === 'hanging')) || aspectRatio > 1.22);
@@ -1774,7 +1816,7 @@
               isHanging,
               isFreeform,
               isProtruding,
-              keepBaseLink: isFreeform || isProtruding || isChain,
+              keepBaseLink: isFreeform || isProtruding,
               contentW,
               contentH
             };
@@ -1985,7 +2027,7 @@
         const isFreeformTitle = charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal');
         const isProtrudingTitle = charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant');
         const isHanging = !isChain && (placed.charm.type === 'drop' || placed.charm.type === 'hanging' || (meta && meta.isHanging));
-        const keepBaseLink = (meta && meta.keepBaseLink) || isFreeformTitle || isProtrudingTitle || isChain || placed.isChainEnd;
+        const keepBaseLink = !isChain && !placed.isChainEnd && ((meta && meta.keepBaseLink) || isFreeformTitle || isProtrudingTitle);
         const isProtruding = !isChain && ((meta && meta.isProtruding) || isProtrudingTitle);
 
         const isCalibrated = !!(this.transparentCache && this.transparentCache[placed.charm.image]);
@@ -2010,8 +2052,8 @@
 
         slot.style.setProperty('--bracelet-link', 'none');
         if (placed.isChainEnd) {
-          // Right anchor slot: keep base link visible, covered visually by the span-4 chain overlay from isChainStart
-          slot.innerHTML = `<img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">`;
+          // Right anchor slot: empty content, covered cleanly by the 256px chain overlay from isChainStart
+          slot.innerHTML = '';
         } else {
           const charmClasses = [
             'placed-charm',
@@ -2022,7 +2064,7 @@
           ].filter(Boolean).join(' ');
 
           slot.innerHTML = `
-            <img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">
+            ${isChain ? '' : `<img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">`}
             <div class="${charmClasses}">
               <img class="bb-slot-charm-img ${isCalibrated ? 'is-calibrated' : ''}" src="${charmImgSrc}" alt="${placed.charm.title}">
             </div>
@@ -2155,7 +2197,9 @@
 
       this.dom.catalogGrid.innerHTML = filtered.map(charm => {
         let badgeHtml = '';
-        if (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links') {
+        if (this.isChainCharm(charm) || charm.slots === 4 || charm.type === 'chain') {
+          badgeHtml = '<span class="bb-kind-badge">Chain</span>';
+        } else if (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links') {
           badgeHtml = '<span class="bb-kind-badge">2 links</span>';
         } else if (charm.type === 'drop' || charm.type === 'hanging') {
           badgeHtml = '<span class="bb-kind-badge">Drop</span>';
@@ -2418,8 +2462,7 @@
       if (!e.dataTransfer || !e.dataTransfer.setDragImage) return;
 
       const meta = this.charmMetaCache && this.charmMetaCache[charm.image];
-      const charmTitleLower = (charm.title || '').toLowerCase();
-      const isChain = (charm.slots === 4 || charm.type === 'chain' || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne'));
+      const isChain = this.isChainCharm(charm);
       const isDouble = !isChain && (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
       const isHanging = !isChain && (charm.type === 'drop' || charm.type === 'hanging' || (meta && meta.isHanging));
       const isMobile = window.innerWidth < 768;
@@ -2438,9 +2481,10 @@
 
       // Always enforce exact slot width (or double/chain) so the drag avatar
       // matches the bracelet slot 1:1 on the screen (never enlarged)
+      const cachedCanvas = this.calibratedCanvases && this.calibratedCanvases[charm.image];
       const canvasWidth = slotWidth;
       const canvasHeight = isChain
-        ? Math.round(180 * mobileScale)
+        ? Math.round((cachedCanvas ? cachedCanvas.height : 220) * mobileScale)
         : (isHanging ? Math.round(106 * mobileScale) : slotHeight);
 
       // 2. High-DPI Canvas for crisp, synchronously-rendered drag feedback
@@ -2493,7 +2537,6 @@
       // 3. Draw charm image:
       // Priority A: If an offscreen calibrated canvas already exists, draw it directly!
       let charmDrawn = false;
-      const cachedCanvas = this.calibratedCanvases && this.calibratedCanvases[charm.image];
       if (cachedCanvas) {
         try {
           ctx.drawImage(cachedCanvas, 0, 0, slotWidth, canvasHeight);
@@ -2520,6 +2563,8 @@
               // Draw pendant (dangle below)
               ctx.drawImage(existingImg, 0, linkH, nw, nh - linkH, 0, slotHeight, slotWidth, canvasHeight - slotHeight);
             }
+          } else if (isChain) {
+            ctx.drawImage(existingImg, 0, 0, slotWidth, canvasHeight);
           } else {
             // Edge-to-edge flush on block face (64x64 or 128x64)
             ctx.drawImage(existingImg, 0, 0, slotWidth, slotHeight);
@@ -2562,7 +2607,14 @@
       if (existingImg && existingImg.complete && existingImg.naturalWidth > 0) {
         const cloned = existingImg.cloneNode(true);
         cloned.className = 'bb-slot-charm-img';
-        if (isHanging) {
+        if (isChain) {
+          cloned.style.width = `${slotWidth}px`;
+          cloned.style.height = 'auto';
+          cloned.style.position = 'absolute';
+          cloned.style.top = '0';
+          cloned.style.left = '0';
+          cloned.style.objectFit = 'contain';
+        } else if (isHanging) {
           cloned.style.width = '64px';
           cloned.style.height = 'auto';
           cloned.style.position = 'absolute';
@@ -2597,7 +2649,7 @@
 
     placeCharmAtSlot(charm, targetIndex) {
       const charmTitleLower = (charm.title || '').toLowerCase();
-      const isChain = (charm.slots === 4 || charm.type === 'chain' || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne'));
+      const isChain = this.isChainCharm(charm);
       const isDouble = !isChain && (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links' || charmTitleLower.includes('bows'));
 
       if (isChain) {
@@ -2799,7 +2851,7 @@
 
     addCharmToFirstAvailableSlot(charm) {
       const charmTitleLower = (charm.title || '').toLowerCase();
-      const isChain = (charm.slots === 4 || charm.type === 'chain' || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne'));
+      const isChain = this.isChainCharm(charm);
       const isDouble = !isChain && (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links' || charmTitleLower.includes('bows'));
       let targetIndex = -1;
 
