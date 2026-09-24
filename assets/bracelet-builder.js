@@ -1529,6 +1529,64 @@
           const imgData = ctx.getImageData(0, 0, w, h);
           const data = imgData.data;
 
+          // Pre-clear outer letterbox bars (e.g. Cinderella top/bottom black bars and CDN downscaling gray transitions)
+          // Doing this before BFS flood fill prevents anti-aliased gray boundary pixels from trapping the studio background
+          let topClean = 0;
+          const maxScanRows = Math.min(50, Math.floor(h / 4));
+          for (let y = 0; y < maxScanRows; y++) {
+            let darkOrGray = 0;
+            const rowOffset = y * w * 4;
+            for (let x = 0; x < w; x++) {
+              const idx = rowOffset + x * 4;
+              const a = data[idx + 3];
+              const r = data[idx];
+              const g = data[idx + 1];
+              const b = data[idx + 2];
+              if (a < 25 || (r < 50 && g < 50 && b < 50) || (r < 185 && Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b)) < 16)) {
+                darkOrGray++;
+              }
+            }
+            if (darkOrGray > w * 0.8) {
+              topClean = y + 1;
+            } else {
+              break;
+            }
+          }
+
+          let botClean = h;
+          for (let y = h - 1; y >= Math.max(h - 50, Math.floor(h * 3 / 4)); y--) {
+            let darkOrGray = 0;
+            const rowOffset = y * w * 4;
+            for (let x = 0; x < w; x++) {
+              const idx = rowOffset + x * 4;
+              const a = data[idx + 3];
+              const r = data[idx];
+              const g = data[idx + 1];
+              const b = data[idx + 2];
+              if (a < 25 || (r < 50 && g < 50 && b < 50) || (r < 185 && Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b)) < 16)) {
+                darkOrGray++;
+              }
+            }
+            if (darkOrGray > w * 0.8) {
+              botClean = y;
+            } else {
+              break;
+            }
+          }
+
+          for (let y = 0; y < topClean; y++) {
+            const rowOffset = y * w * 4;
+            for (let x = 0; x < w; x++) {
+              data[rowOffset + x * 4 + 3] = 0;
+            }
+          }
+          for (let y = botClean; y < h; y++) {
+            const rowOffset = y * w * 4;
+            for (let x = 0; x < w; x++) {
+              data[rowOffset + x * 4 + 3] = 0;
+            }
+          }
+
           // Helper to check if a pixel is white studio background, letterbox bar, or already transparent
           function isBg(idx) {
             const a = data[idx + 3];
@@ -2017,7 +2075,7 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
             <div class="bb-charm-img-wrap">
-              <img class="bb-charm-img" src="${charm.image}" alt="${charm.title}" crossorigin="anonymous">
+              <img class="bb-charm-img" src="${(this.transparentCache && this.transparentCache[charm.image]) || charm.image}" alt="${charm.title}" crossorigin="anonymous">
             </div>
             ${badgeHtml}
             <div class="bb-card-tooltip">
@@ -2030,11 +2088,18 @@
 
       // Background-warm transparency cache in memory so drag-and-drop and slot placement are instant
       const warmup = () => {
-        const count = Math.min(filtered.length, 60);
+        const count = Math.min(filtered.length, 120);
         for (let i = 0; i < count; i++) {
           const ch = filtered[i];
-          if (ch && ch.image && (!this.transparentCache || !this.transparentCache[ch.image])) {
-            this.processImageTransparency(ch.image, () => {}, true, ch);
+          if (ch && ch.image) {
+            this.processImageTransparency(ch.image, (transUrl) => {
+              if (transUrl && transUrl !== ch.image && this.dom && this.dom.catalogGrid) {
+                const cardImg = this.dom.catalogGrid.querySelector(`.bb-charm-card[data-charm-id="${ch.id}"] .bb-charm-img`);
+                if (cardImg && cardImg.src !== transUrl) {
+                  cardImg.src = transUrl;
+                }
+              }
+            }, true, ch);
           }
         }
       };
@@ -2620,7 +2685,7 @@
 
             return `
               <div class="bb-charms-row" data-placed-slot="${slotIndex}">
-                <img class="bb-row-thumb" src="${charm.image}" alt="${charm.title}">
+                <img class="bb-row-thumb" src="${(this.transparentCache && this.transparentCache[charm.image]) || charm.image}" alt="${charm.title}">
                 <div class="bb-row-info">
                   <div class="bb-row-title">${charm.title}</div>
                   <div class="bb-row-meta">
@@ -2704,7 +2769,7 @@
 
       this.dom.drawerBody.innerHTML = `
         <div class="bb-drawer-img-wrap">
-          <img class="bb-drawer-img" src="${charm.image}" alt="${charm.title}">
+          <img class="bb-drawer-img" src="${(this.transparentCache && this.transparentCache[charm.image]) || charm.image}" alt="${charm.title}">
         </div>
         <div>
           <div class="bb-drawer-eyebrow">${category} · ${colorFinish}</div>
