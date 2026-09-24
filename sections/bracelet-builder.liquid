@@ -1183,7 +1183,10 @@
                 if title_lower contains 'chain' or title_lower contains 'chaîne'
                   assign charm_type = 'chain'
                   assign charm_slots = 4
-                elsif title_lower contains 'vani' or title_lower == 'stars' or title_lower contains 'stars silver' or title_lower contains 'ruby chain' or (title_lower == 'silver' and charm_slots == 2)
+                elsif title_lower contains 'vani' or title_lower == 'stars' or title_lower contains 'stars silver' or title_lower contains 'ruby chain'
+                  assign charm_type = 'chain'
+                  assign charm_slots = 4
+                elsif title_lower == 'silver' and charm_slots == 2
                   assign charm_type = 'chain'
                   assign charm_slots = 4
                 elsif title_lower contains 'bows'
@@ -1242,7 +1245,10 @@
               if title_lower contains 'chain' or title_lower contains 'chaîne'
                 assign charm_type = 'chain'
                 assign charm_slots = 4
-              elsif title_lower contains 'vani' or title_lower == 'stars' or title_lower contains 'stars silver' or title_lower contains 'ruby chain' or (title_lower == 'silver' and charm_slots == 2)
+              elsif title_lower contains 'vani' or title_lower == 'stars' or title_lower contains 'stars silver' or title_lower contains 'ruby chain'
+                assign charm_type = 'chain'
+                assign charm_slots = 4
+              elsif title_lower == 'silver' and charm_slots == 2
                 assign charm_type = 'chain'
                 assign charm_slots = 4
               elsif title_lower contains 'bows'
