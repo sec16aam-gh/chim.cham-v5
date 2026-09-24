@@ -343,20 +343,24 @@
             const charmId = savedItem.charmId || (savedItem.charm && savedItem.charm.id);
             const matchedCharm = this.charms.find(ch => String(ch.id) === String(charmId)) || savedItem.charm;
             if (matchedCharm) {
+              const reallyIsChain = this.isChainCharm(matchedCharm);
               if (savedItem.transUrl && matchedCharm.image) {
                 this.transparentCache[matchedCharm.image] = savedItem.transUrl;
               }
               if (savedItem.charmMeta && matchedCharm.image) {
                 this.charmMetaCache[matchedCharm.image] = savedItem.charmMeta;
+                if (!reallyIsChain && this.charmMetaCache[matchedCharm.image]) {
+                  this.charmMetaCache[matchedCharm.image].isChain = false;
+                }
               }
               this.slots[i] = {
                 charm: matchedCharm,
-                isChainStart: !!savedItem.isChainStart,
-                isChainEnd: !!savedItem.isChainEnd,
-                chainEndIndex: savedItem.chainEndIndex,
-                chainStartIndex: savedItem.chainStartIndex,
-                isDoubleStart: !!savedItem.isDoubleStart,
-                isDoubleEnd: !!savedItem.isDoubleEnd,
+                isChainStart: reallyIsChain && !!savedItem.isChainStart,
+                isChainEnd: reallyIsChain && !!savedItem.isChainEnd,
+                chainEndIndex: reallyIsChain ? savedItem.chainEndIndex : undefined,
+                chainStartIndex: reallyIsChain ? savedItem.chainStartIndex : undefined,
+                isDoubleStart: !reallyIsChain && !!savedItem.isDoubleStart,
+                isDoubleEnd: !reallyIsChain && !!savedItem.isDoubleEnd,
                 isHanging: !!savedItem.isHanging
               };
             }
@@ -495,17 +499,20 @@
 
     isChainCharm(charm) {
       if (!charm) return false;
-      if (charm.slots === 4 || charm.type === 'chain') return true;
-      const titleLower = (charm.title || '').toLowerCase();
-      if (titleLower.includes('chain') || titleLower.includes('chaîne')) return true;
-      if (titleLower.includes('vani') || titleLower === 'stars' || titleLower.includes('stars silver') || titleLower.includes('ruby chain') || (titleLower === 'silver' && charm.slots === 2)) return true;
+      let tags = [];
       if (Array.isArray(charm.tags)) {
-        for (let i = 0; i < charm.tags.length; i++) {
-          const t = String(charm.tags[i]).toLowerCase();
-          if (t === 'chain' || t === 'type:chain' || t.includes('chaîne')) return true;
-        }
+        tags = charm.tags;
+      } else if (typeof charm.tags === 'string' && charm.tags.length > 0) {
+        tags = charm.tags.split(',');
       }
-      return false;
+      if (tags.length > 0) {
+        for (let i = 0; i < tags.length; i++) {
+          const t = String(tags[i]).trim().toLowerCase();
+          if (t === 'type:chain' || t === 'type: chain') return true;
+        }
+        return false;
+      }
+      return charm.type === 'chain';
     }
 
     isSlotInChainSpan(index) {
@@ -1778,28 +1785,7 @@
             const aspectRatio = contentH / contentW;
 
             const charmTitleLower = ((charm && charm.title) ? charm.title : (imageUrl ? decodeURIComponent(imageUrl) : '')).toLowerCase();
-            let isChain = this.isChainCharm(charm) || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne') || charmTitleLower.includes('vani') || charmTitleLower.includes('stars') || (charmTitleLower.includes('silver') && (contentW > contentH * 1.05));
-
-            // Automatic Topological Detection for Newly Added Chain Charms:
-            // Chain charms uniquely possess two separated top link attachment clips at x ~ 0-25% and x ~ 75-100%
-            // with a distinct empty gap in the middle (35-65%) across rows ~8-16% of content height.
-            if (!isChain && contentW > 80 && contentH > 40 && (contentW >= contentH * 0.75)) {
-              const checkRow = Math.min(canvas.height - 1, minY + Math.max(4, Math.round(contentH * 0.12)));
-              let leftHas = false, rightHas = false, midCount = 0;
-              const rowOffset = checkRow * canvas.width * 4;
-              for (let x = minX; x < minX + Math.round(contentW * 0.20); x++) {
-                if (data[rowOffset + x * 4 + 3] > 30) { leftHas = true; break; }
-              }
-              for (let x = minX + Math.round(contentW * 0.80); x <= maxX; x++) {
-                if (data[rowOffset + x * 4 + 3] > 30) { rightHas = true; break; }
-              }
-              for (let x = minX + Math.round(contentW * 0.35); x < minX + Math.round(contentW * 0.65); x++) {
-                if (data[rowOffset + x * 4 + 3] > 30) { midCount++; }
-              }
-              if (leftHas && rightHas && midCount === 0) {
-                isChain = true;
-              }
-            }
+            const isChain = this.isChainCharm(charm);
 
             if (isChain && charm) {
               charm.type = 'chain';
@@ -2196,15 +2182,6 @@
       }
 
       this.dom.catalogGrid.innerHTML = filtered.map(charm => {
-        let badgeHtml = '';
-        if (this.isChainCharm(charm) || charm.slots === 4 || charm.type === 'chain') {
-          badgeHtml = '<span class="bb-kind-badge">Chain</span>';
-        } else if (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links') {
-          badgeHtml = '<span class="bb-kind-badge">2 links</span>';
-        } else if (charm.type === 'drop' || charm.type === 'hanging') {
-          badgeHtml = '<span class="bb-kind-badge">Drop</span>';
-        }
-
         const priceFormatted = this.formatMoney(charm.price);
         const colorLabel = charm.color || 'Standard';
 
@@ -2221,7 +2198,6 @@
             <div class="bb-charm-img-wrap">
               <img class="bb-charm-img" src="${(this.transparentCache && this.transparentCache[charm.image]) || charm.image}" alt="${charm.title}" crossorigin="anonymous">
             </div>
-            ${badgeHtml}
             <div class="bb-card-tooltip">
               <strong>${charm.title}</strong>
               <span>${colorLabel} · ${priceFormatted}</span>
@@ -3411,7 +3387,7 @@
           charmTheme = t.slice(6).trim();
         } else if (tLower.startsWith('color:')) {
           charmColor = t.slice(6).trim();
-        } else if (tLower.includes('type:chain') || tLower === 'chain' || tLower === 'chaîne') {
+        } else if (tLower === 'type:chain' || tLower === 'type: chain') {
           charmType = 'chain';
           charmSlots = 4;
         } else if (tLower.includes('type:drop') || tLower === 'drop') {
@@ -3423,10 +3399,7 @@
       }
 
       const titleLower = String(prod.title || '').toLowerCase();
-      if (titleLower.includes('chain') || titleLower.includes('chaîne')) {
-        charmType = 'chain';
-        charmSlots = 4;
-      } else if (titleLower.includes('bows')) {
+      if (titleLower.includes('bows')) {
         charmType = 'double';
         charmSlots = 2;
       } else if (titleLower.includes('letter ') || titleLower.includes('melted heart') || titleLower.includes('pink stone')) {

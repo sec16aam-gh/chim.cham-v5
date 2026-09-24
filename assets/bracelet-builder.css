@@ -1452,21 +1452,9 @@
   pointer-events: none;
 }
 
-/* Badges for 2 LINKS / DROP */
+/* Badges for 2 LINKS / DROP / CHAIN - Removed per requirement */
 .bb-kind-badge {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  background: rgba(188, 144, 213, 0.92);
-  color: #ffffff;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  text-transform: uppercase;
-  pointer-events: none;
-  z-index: 2;
+  display: none !important;
 }
 
 /* Hover Tooltip (Single line, never wrap) */
