@@ -1173,11 +1173,17 @@
                   elsif tag_lower contains 'type:2-links' or tag_lower == '2-links' or tag_lower == 'double'
                     assign charm_type = 'double'
                     assign charm_slots = 2
+                  elsif tag_lower contains 'type:chain' or tag_lower == 'chain' or tag_lower contains 'chaîne'
+                    assign charm_type = 'chain'
+                    assign charm_slots = 4
                   endif
                 endfor
 
                 assign title_lower = prod.title | downcase
-                if title_lower contains 'bows'
+                if title_lower contains 'chain' or title_lower contains 'chaîne'
+                  assign charm_type = 'chain'
+                  assign charm_slots = 4
+                elsif title_lower contains 'bows'
                   assign charm_type = 'double'
                   assign charm_slots = 2
                 elsif title_lower contains 'letter ' or title_lower contains 'melted heart' or title_lower contains 'pink stone'
@@ -1223,11 +1229,17 @@
                 elsif tag_lower contains 'type:2-links' or tag_lower == '2-links' or tag_lower == 'double'
                   assign charm_type = 'double'
                   assign charm_slots = 2
+                elsif tag_lower contains 'type:chain' or tag_lower == 'chain' or tag_lower contains 'chaîne'
+                  assign charm_type = 'chain'
+                  assign charm_slots = 4
                 endif
               endfor
 
               assign title_lower = prod.title | downcase
-              if title_lower contains 'bows'
+              if title_lower contains 'chain' or title_lower contains 'chaîne'
+                assign charm_type = 'chain'
+                assign charm_slots = 4
+              elsif title_lower contains 'bows'
                 assign charm_type = 'double'
                 assign charm_slots = 2
               elsif title_lower contains 'letter ' or title_lower contains 'melted heart' or title_lower contains 'pink stone'
@@ -1352,7 +1364,9 @@
           { "id": "ch-71", "title": "Family, on Silver", "price": 1399, "image": "https://saa-bs.vercel.app/catalog/charm-071.webp", "theme": "Family", "color": "Silver", "type": "double", "slots": 2, "tags": ["Family", "Silver", "type:2-links"] },
           { "id": "ch-72", "title": "Double Heart with Stones on Gold", "price": 799, "image": "https://saa-bs.vercel.app/catalog/charm-072.webp", "theme": "Love", "color": "Gold", "type": "double", "slots": 2, "tags": ["Love", "Gold", "type:2-links"] },
           { "id": "ch-73", "title": "Pink Butterfly Hanging on Gold", "price": 599, "image": "https://saa-bs.vercel.app/catalog/charm-073.webp", "theme": "Nature", "color": "Gold", "type": "drop", "slots": 1, "tags": ["Nature", "Gold", "type:drop"] },
-          { "id": "ch-74", "title": "Glitter Star on Silver", "price": 499, "image": "https://saa-bs.vercel.app/catalog/charm-074.webp", "theme": "Symbols", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Symbols", "Silver"] }
+          { "id": "ch-74", "title": "Glitter Star on Silver", "price": 499, "image": "https://saa-bs.vercel.app/catalog/charm-074.webp", "theme": "Symbols", "color": "Silver", "type": "simple", "slots": 1, "tags": ["Symbols", "Silver"] },
+          { "id": "ch-75", "title": "Gold Stars Chain", "price": 1499, "image": {{ 'chain-gold-stars.png' | asset_url | json }}, "theme": "Symbols", "color": "Gold", "type": "chain", "slots": 4, "tags": ["Symbols", "Gold", "type:chain", "chain"] },
+          { "id": "ch-76", "title": "Silver Crystals Chain", "price": 1499, "image": {{ 'chain-silver-crystals.png' | asset_url | json }}, "theme": "Symbols", "color": "Silver", "type": "chain", "slots": 4, "tags": ["Symbols", "Silver", "type:chain", "chain"] }
         {%- endif -%}
       ]
     }

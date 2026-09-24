@@ -238,6 +238,10 @@
             if (!s || !s.charm) return null;
             return {
               charmId: s.charm.id,
+              isChainStart: !!s.isChainStart,
+              isChainEnd: !!s.isChainEnd,
+              chainEndIndex: s.chainEndIndex,
+              chainStartIndex: s.chainStartIndex,
               isDoubleStart: !!s.isDoubleStart,
               isDoubleEnd: !!s.isDoubleEnd,
               isHanging: !!s.isHanging,
@@ -347,6 +351,10 @@
               }
               this.slots[i] = {
                 charm: matchedCharm,
+                isChainStart: !!savedItem.isChainStart,
+                isChainEnd: !!savedItem.isChainEnd,
+                chainEndIndex: savedItem.chainEndIndex,
+                chainStartIndex: savedItem.chainStartIndex,
                 isDoubleStart: !!savedItem.isDoubleStart,
                 isDoubleEnd: !!savedItem.isDoubleEnd,
                 isHanging: !!savedItem.isHanging
@@ -467,6 +475,36 @@
       } else {
         wrap.classList.remove('is-overflowing');
       }
+
+      // Chain Charms vertical scrolling:
+      // If chain charms are added to the bracelet, vertical scrolling both on desktop and mobile
+      // is enabled automatically in the bracelet canvas without increasing its height.
+      const hasChains = this.hasChainCharms();
+      wrap.classList.toggle('has-chain-charms', hasChains);
+      if (this.dom.canvasContainer) {
+        this.dom.canvasContainer.classList.toggle('has-chain-charms', hasChains);
+      }
+      if (!hasChains) {
+        wrap.scrollTop = 0;
+      }
+    }
+
+    hasChainCharms() {
+      return Array.isArray(this.slots) && this.slots.some(s => s && s.isChainStart);
+    }
+
+    isSlotInChainSpan(index) {
+      if (!Array.isArray(this.slots)) return null;
+      for (let i = 0; i < this.slotsCount; i++) {
+        const item = this.slots[i];
+        if (item && item.isChainStart) {
+          const endIdx = typeof item.chainEndIndex === 'number' ? item.chainEndIndex : (i + 3);
+          if (index >= i && index <= endIdx) {
+            return { start: i, end: endIdx, item };
+          }
+        }
+      }
+      return null;
     }
 
     init() {
@@ -1725,21 +1763,37 @@
             const aspectRatio = contentH / contentW;
 
             const charmTitleLower = ((charm && charm.title) ? charm.title : (imageUrl ? decodeURIComponent(imageUrl) : '')).toLowerCase();
-            const isFreeform = charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal');
-            const isProtruding = charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant');
-            const isHanging = (charm && (charm.type === 'drop' || charm.type === 'hanging')) || aspectRatio > 1.22;
+            const isChain = (charm && (charm.type === 'chain' || charm.slots === 4)) || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne');
+            const isFreeform = !isChain && (charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal'));
+            const isProtruding = !isChain && (charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant'));
+            const isHanging = !isChain && ((charm && (charm.type === 'drop' || charm.type === 'hanging')) || aspectRatio > 1.22);
 
             meta = {
               aspectRatio,
+              isChain,
               isHanging,
               isFreeform,
               isProtruding,
-              keepBaseLink: isFreeform || isProtruding,
+              keepBaseLink: isFreeform || isProtruding || isChain,
               contentW,
               contentH
             };
 
-            if (isFreeform) {
+            if (isChain) {
+              // 4-Link Chain Charm: calibrate width to exactly 256px (4 links span)
+              const targetW = 256;
+              const scale = targetW / contentW;
+              const destW = 256;
+              const destH = Math.round(contentH * scale);
+              const chainCanvas = document.createElement('canvas');
+              chainCanvas.width = destW;
+              chainCanvas.height = destH;
+              const cCtx = chainCanvas.getContext('2d');
+              cCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, destW, destH);
+              if (!this.calibratedCanvases) this.calibratedCanvases = {};
+              this.calibratedCanvases[imageUrl] = chainCanvas;
+              finalUrl = chainCanvas.toDataURL('image/png');
+            } else if (isFreeform) {
               // Free-form crystal charms: scale naturally within ~52px canvas, preserving base link beneath
               const targetSize = 52;
               const scale = targetSize / Math.max(contentW, contentH);
@@ -1914,7 +1968,11 @@
         slot.classList.add('is-occupied');
         slot.setAttribute('draggable', 'true');
 
-        if (placed.isDoubleStart) {
+        if (placed.isChainStart) {
+          slot.classList.add('is-chain-start');
+        } else if (placed.isChainEnd) {
+          slot.classList.add('is-chain-end');
+        } else if (placed.isDoubleStart) {
           slot.classList.add('is-double-start');
         } else if (placed.isDoubleEnd) {
           slot.classList.add('is-double-end');
@@ -1922,12 +1980,13 @@
 
         const meta = this.charmMetaCache && this.charmMetaCache[placed.charm.image];
         const isDouble = placed.isDoubleStart;
+        const isChain = placed.isChainStart;
         const charmTitleLower = (placed.charm.title || '').toLowerCase();
         const isFreeformTitle = charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal');
         const isProtrudingTitle = charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant');
-        const isHanging = (placed.charm.type === 'drop' || placed.charm.type === 'hanging' || (meta && meta.isHanging));
-        const keepBaseLink = (meta && meta.keepBaseLink) || isFreeformTitle || isProtrudingTitle;
-        const isProtruding = (meta && meta.isProtruding) || isProtrudingTitle;
+        const isHanging = !isChain && (placed.charm.type === 'drop' || placed.charm.type === 'hanging' || (meta && meta.isHanging));
+        const keepBaseLink = (meta && meta.keepBaseLink) || isFreeformTitle || isProtrudingTitle || isChain || placed.isChainEnd;
+        const isProtruding = !isChain && ((meta && meta.isProtruding) || isProtrudingTitle);
 
         const isCalibrated = !!(this.transparentCache && this.transparentCache[placed.charm.image]);
         const charmImgSrc = isCalibrated
@@ -1935,6 +1994,9 @@
           : placed.charm.image;
 
         if (isCalibrated) {
+          if (isChain) {
+            slot.classList.add('is-chain');
+          }
           if (isHanging) {
             slot.classList.add('is-hanging');
           }
@@ -1947,14 +2009,27 @@
         }
 
         slot.style.setProperty('--bracelet-link', 'none');
-        slot.innerHTML = `
-          <img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">
-          <div class="placed-charm ${isDouble ? 'span-2' : ''} ${isCalibrated && isHanging ? 'kind-hanging' : ''} ${isCalibrated && isProtruding ? 'kind-protruding' : ''}">
-            <img class="bb-slot-charm-img ${isCalibrated ? 'is-calibrated' : ''}" src="${charmImgSrc}" alt="${placed.charm.title}">
-          </div>
-        `;
+        if (placed.isChainEnd) {
+          // Right anchor slot: keep base link visible, covered visually by the span-4 chain overlay from isChainStart
+          slot.innerHTML = `<img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">`;
+        } else {
+          const charmClasses = [
+            'placed-charm',
+            isDouble ? 'span-2' : '',
+            isChain ? 'kind-chain span-4' : '',
+            (isCalibrated && isHanging) ? 'kind-hanging' : '',
+            (isCalibrated && isProtruding) ? 'kind-protruding' : ''
+          ].filter(Boolean).join(' ');
 
-        if (!isCalibrated) {
+          slot.innerHTML = `
+            <img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">
+            <div class="${charmClasses}">
+              <img class="bb-slot-charm-img ${isCalibrated ? 'is-calibrated' : ''}" src="${charmImgSrc}" alt="${placed.charm.title}">
+            </div>
+          `;
+        }
+
+        if (!isCalibrated && !placed.isChainEnd) {
           this.processImageTransparency(placed.charm.image, (transUrl, charmMeta) => {
             const currentImg = slot.querySelector('.bb-slot-charm-img');
             if (currentImg && transUrl) {
@@ -1962,7 +2037,10 @@
               currentImg.classList.add('is-calibrated');
             }
             if (charmMeta) {
-              if (charmMeta.isHanging) {
+              if (charmMeta.isChain) {
+                slot.classList.add('is-chain');
+              }
+              if (charmMeta.isHanging && !charmMeta.isChain) {
                 slot.classList.add('is-hanging');
                 const placedWrap = slot.querySelector('.placed-charm');
                 if (placedWrap) placedWrap.classList.add('kind-hanging');
@@ -1970,7 +2048,7 @@
               if (charmMeta.keepBaseLink) {
                 slot.classList.add('keep-base-link');
               }
-              if (charmMeta.isProtruding) {
+              if (charmMeta.isProtruding && !charmMeta.isChain) {
                 slot.classList.add('has-protruding-charm');
                 const placedWrap = slot.querySelector('.placed-charm');
                 if (placedWrap) placedWrap.classList.add('kind-protruding');
@@ -2152,15 +2230,21 @@
             this.createDragGhost(e, charm, card);
           }
         } else if (slot) {
-          const slotIndex = parseInt(slot.dataset.slotIndex, 10);
+          let slotIndex = parseInt(slot.dataset.slotIndex, 10);
           const placed = this.slots[slotIndex];
           if (placed) {
+            if (placed.isChainEnd && typeof placed.chainStartIndex === 'number') {
+              slotIndex = placed.chainStartIndex;
+            } else if (placed.isDoubleEnd && slotIndex > 0 && this.slots[slotIndex - 1]?.isDoubleStart) {
+              slotIndex = slotIndex - 1;
+            }
+            const rootPlaced = this.slots[slotIndex] || placed;
             this.dragSource = { slotIndex };
-            this.draggedCharmData = placed.charm;
+            this.draggedCharmData = rootPlaced.charm;
             e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'slot', slotIndex }));
             e.dataTransfer.effectAllowed = 'move';
             slot.classList.add('is-dragging');
-            this.createDragGhost(e, placed.charm, slot);
+            this.createDragGhost(e, rootPlaced.charm, slot);
           }
         }
       });
@@ -2334,11 +2418,13 @@
       if (!e.dataTransfer || !e.dataTransfer.setDragImage) return;
 
       const meta = this.charmMetaCache && this.charmMetaCache[charm.image];
-      const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
-      const isHanging = (charm.type === 'drop' || charm.type === 'hanging' || (meta && meta.isHanging));
+      const charmTitleLower = (charm.title || '').toLowerCase();
+      const isChain = (charm.slots === 4 || charm.type === 'chain' || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne'));
+      const isDouble = !isChain && (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
+      const isHanging = !isChain && (charm.type === 'drop' || charm.type === 'hanging' || (meta && meta.isHanging));
       const isMobile = window.innerWidth < 768;
       const mobileScale = isMobile ? 0.82 : 1;
-      const baseSlotW = isDouble ? 128 : 64;
+      const baseSlotW = isChain ? 256 : (isDouble ? 128 : 64);
       const slotWidth = Math.round(baseSlotW * mobileScale);
       const slotHeight = Math.round(64 * mobileScale);
       const finishHandle = this.selectedColor.handle || 'silver';
@@ -2350,10 +2436,12 @@
       const imgW = (existingImg && existingImg.naturalWidth) ? existingImg.naturalWidth : slotWidth;
       const imgH = (existingImg && existingImg.naturalHeight) ? existingImg.naturalHeight : slotHeight;
 
-      // Always enforce exact slot width (or double) so the drag avatar
+      // Always enforce exact slot width (or double/chain) so the drag avatar
       // matches the bracelet slot 1:1 on the screen (never enlarged)
       const canvasWidth = slotWidth;
-      const canvasHeight = isHanging ? Math.round(106 * mobileScale) : slotHeight;
+      const canvasHeight = isChain
+        ? Math.round(180 * mobileScale)
+        : (isHanging ? Math.round(106 * mobileScale) : slotHeight);
 
       // 2. High-DPI Canvas for crisp, synchronously-rendered drag feedback
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -2371,9 +2459,15 @@
       const ctx = canvas.getContext('2d');
       ctx.scale(dpr, dpr);
 
-      // Draw base metal link (top 64px)
+      // Draw base metal links (for chain: draw on left anchor and right anchor)
       const linkObj = this.preloadedLinks && this.preloadedLinks[finishHandle];
-      if (linkObj && linkObj.complete && linkObj.naturalWidth > 0) {
+      if (isChain) {
+        const anchorW = Math.round(64 * mobileScale);
+        if (linkObj && linkObj.complete && linkObj.naturalWidth > 0) {
+          ctx.drawImage(linkObj, 0, 0, anchorW, slotHeight);
+          ctx.drawImage(linkObj, slotWidth - anchorW, 0, anchorW, slotHeight);
+        }
+      } else if (linkObj && linkObj.complete && linkObj.naturalWidth > 0) {
         ctx.drawImage(linkObj, 0, 0, slotWidth, slotHeight);
       } else {
         const fallbackColors = {
@@ -2451,7 +2545,7 @@
 
       // 3. Fallback: DOM element with cloned existing image
       const ghost = document.createElement('div');
-      ghost.className = `bb-slot ${finishClass} is-occupied ${isDouble ? 'is-double-start' : ''} ${isHanging ? 'is-hanging' : ''}`;
+      ghost.className = `bb-slot ${finishClass} is-occupied ${isChain ? 'is-chain-start' : (isDouble ? 'is-double-start' : '')} ${isHanging ? 'is-hanging' : ''}`;
       ghost.style.position = 'fixed';
       ghost.style.top = '-9999px';
       ghost.style.left = '-9999px';
@@ -2463,7 +2557,7 @@
       ghost.style.background = 'transparent';
 
       const placedDiv = document.createElement('div');
-      placedDiv.className = `placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''}`;
+      placedDiv.className = `placed-charm ${isChain ? 'kind-chain span-4' : (isDouble ? 'span-2' : '')} ${isHanging ? 'kind-hanging' : ''}`;
 
       if (existingImg && existingImg.complete && existingImg.naturalWidth > 0) {
         const cloned = existingImg.cloneNode(true);
@@ -2502,9 +2596,86 @@
     }
 
     placeCharmAtSlot(charm, targetIndex) {
-      const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
+      const charmTitleLower = (charm.title || '').toLowerCase();
+      const isChain = (charm.slots === 4 || charm.type === 'chain' || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne'));
+      const isDouble = !isChain && (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links' || charmTitleLower.includes('bows'));
 
-      if (isDouble) {
+      if (isChain) {
+        const span = 4;
+        if (targetIndex > this.slotsCount - span) {
+          targetIndex = this.slotsCount - span;
+        }
+        if (targetIndex < 0) targetIndex = 0;
+
+        if (this.selectedModel && this.selectedModel.type === 'watch') {
+          const leftCount = this.slotsCount / 2;
+          if (targetIndex < leftCount && (targetIndex + 3) >= leftCount) {
+            if (leftCount >= span) {
+              targetIndex = leftCount - span;
+            } else {
+              targetIndex = leftCount;
+            }
+          }
+        }
+
+        // Prevent overlapping spans between two chain charms
+        const spanStart = this.isSlotInChainSpan(targetIndex);
+        const spanEnd = this.isSlotInChainSpan(targetIndex + 3);
+        const spanMid1 = this.isSlotInChainSpan(targetIndex + 1);
+        const spanMid2 = this.isSlotInChainSpan(targetIndex + 2);
+        if ((spanStart && spanStart.start !== targetIndex) ||
+            (spanEnd && spanEnd.start !== targetIndex) ||
+            (spanMid1 && spanMid1.start !== targetIndex) ||
+            (spanMid2 && spanMid2.start !== targetIndex)) {
+          let found = -1;
+          for (let i = 0; i <= this.slotsCount - span; i++) {
+            if (this.selectedModel && this.selectedModel.type === 'watch') {
+              const leftCount = this.slotsCount / 2;
+              if (i < leftCount && (i + 3) >= leftCount) continue;
+            }
+            if (!this.isSlotInChainSpan(i) && !this.isSlotInChainSpan(i + 3) && !this.isSlotInChainSpan(i + 1) && !this.isSlotInChainSpan(i + 2)) {
+              if (!this.slots[i] && !this.slots[i + 3]) {
+                found = i;
+                break;
+              }
+            }
+          }
+          if (found !== -1) {
+            targetIndex = found;
+          } else {
+            this.showToast('No room for a chain charm here.');
+            return;
+          }
+        }
+
+        // Clean up any existing charms at anchor slots targetIndex and targetIndex + 3
+        if (this.slots[targetIndex]) {
+          this.removeCharmAtSlot(targetIndex, true);
+        }
+        if (this.slots[targetIndex + 3]) {
+          this.removeCharmAtSlot(targetIndex + 3, true);
+        }
+
+        // Place chain anchors (middle slots targetIndex+1 and targetIndex+2 remain untouched if they have charms)
+        this.slots[targetIndex] = {
+          charm,
+          isChainStart: true,
+          isChainEnd: false,
+          chainEndIndex: targetIndex + 3,
+          isDoubleStart: false,
+          isDoubleEnd: false,
+          isHanging: false
+        };
+        this.slots[targetIndex + 3] = {
+          charm,
+          isChainStart: false,
+          isChainEnd: true,
+          chainStartIndex: targetIndex,
+          isDoubleStart: false,
+          isDoubleEnd: false,
+          isHanging: false
+        };
+      } else if (isDouble) {
         if (targetIndex >= this.slotsCount - 1) {
           targetIndex = this.slotsCount - 2; // Shift left so it fits
         }
@@ -2513,6 +2684,12 @@
           if (targetIndex === leftCount - 1) {
             targetIndex = leftCount - 2; // Shift left so it does not bridge across watch
           }
+        }
+        if (this.slots[targetIndex]) {
+          this.removeCharmAtSlot(targetIndex, true);
+        }
+        if (this.slots[targetIndex + 1]) {
+          this.removeCharmAtSlot(targetIndex + 1, true);
         }
         this.slots[targetIndex] = {
           charm,
@@ -2527,6 +2704,9 @@
           isHanging: false
         };
       } else {
+        if (this.slots[targetIndex]) {
+          this.removeCharmAtSlot(targetIndex, true);
+        }
         this.slots[targetIndex] = {
           charm,
           isDoubleStart: false,
@@ -2549,6 +2729,34 @@
 
       if (!itemFrom) return;
 
+      if (itemFrom.isChainStart || itemFrom.isChainEnd) {
+        const startIdx = itemFrom.isChainStart ? fromIndex : itemFrom.chainStartIndex;
+        const endIdx = itemFrom.isChainStart ? (itemFrom.chainEndIndex || (fromIndex + 3)) : fromIndex;
+        const chainCharm = itemFrom.charm;
+        this.slots[startIdx] = null;
+        if (typeof endIdx === 'number' && endIdx < this.slotsCount) {
+          this.slots[endIdx] = null;
+        }
+        this.placeCharmAtSlot(chainCharm, toIndex);
+        return;
+      }
+
+      if (itemFrom.isDoubleStart || itemFrom.isDoubleEnd) {
+        const startIdx = itemFrom.isDoubleStart ? fromIndex : (fromIndex - 1);
+        const doubleCharm = itemFrom.charm;
+        this.slots[startIdx] = null;
+        if (startIdx + 1 < this.slotsCount) {
+          this.slots[startIdx + 1] = null;
+        }
+        this.placeCharmAtSlot(doubleCharm, toIndex);
+        return;
+      }
+
+      if (itemTo && (itemTo.isChainStart || itemTo.isChainEnd)) {
+        this.showToast('Anchor link is occupied by chain charm.');
+        return;
+      }
+
       // Swap slots
       this.slots[toIndex] = itemFrom;
       this.slots[fromIndex] = itemTo;
@@ -2559,11 +2767,21 @@
       this.savePersistedState();
     }
 
-    removeCharmAtSlot(slotIndex) {
+    removeCharmAtSlot(slotIndex, skipRender = false) {
       const placed = this.slots[slotIndex];
       if (!placed) return;
 
-      if (placed.isDoubleStart && slotIndex + 1 < this.slotsCount && this.slots[slotIndex + 1]?.isDoubleEnd) {
+      if (placed.isChainStart) {
+        const endIdx = typeof placed.chainEndIndex === 'number' ? placed.chainEndIndex : (slotIndex + 3);
+        if (endIdx < this.slotsCount && this.slots[endIdx]?.isChainEnd) {
+          this.slots[endIdx] = null;
+        }
+      } else if (placed.isChainEnd) {
+        const startIdx = typeof placed.chainStartIndex === 'number' ? placed.chainStartIndex : (slotIndex - 3);
+        if (startIdx >= 0 && this.slots[startIdx]?.isChainStart) {
+          this.slots[startIdx] = null;
+        }
+      } else if (placed.isDoubleStart && slotIndex + 1 < this.slotsCount && this.slots[slotIndex + 1]?.isDoubleEnd) {
         this.slots[slotIndex + 1] = null;
       } else if (placed.isDoubleEnd && slotIndex - 1 >= 0 && this.slots[slotIndex - 1]?.isDoubleStart) {
         this.slots[slotIndex - 1] = null;
@@ -2571,18 +2789,41 @@
 
       this.slots[slotIndex] = null;
 
-      this.renderCanvas();
-      this.updateSidebar();
-      this.updateHeaderMeta();
-      this.savePersistedState();
+      if (!skipRender) {
+        this.renderCanvas();
+        this.updateSidebar();
+        this.updateHeaderMeta();
+        this.savePersistedState();
+      }
     }
 
     addCharmToFirstAvailableSlot(charm) {
-      const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
+      const charmTitleLower = (charm.title || '').toLowerCase();
+      const isChain = (charm.slots === 4 || charm.type === 'chain' || charmTitleLower.includes('chain') || charmTitleLower.includes('chaîne'));
+      const isDouble = !isChain && (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links' || charmTitleLower.includes('bows'));
       let targetIndex = -1;
 
-      if (isDouble) {
+      if (isChain) {
+        const span = 4;
+        const isWatch = this.selectedModel && this.selectedModel.type === 'watch';
+        const leftCount = isWatch ? (this.slotsCount / 2) : -1;
+
+        for (let i = 0; i <= this.slotsCount - span; i++) {
+          if (isWatch && i < leftCount && (i + 3) >= leftCount) {
+            continue; // Cannot bridge across watch
+          }
+          if (!this.slots[i] && !this.slots[i + 3]) {
+            if (!this.isSlotInChainSpan(i) && !this.isSlotInChainSpan(i + 3) && !this.isSlotInChainSpan(i + 1) && !this.isSlotInChainSpan(i + 2)) {
+              targetIndex = i;
+              break;
+            }
+          }
+        }
+      } else if (isDouble) {
+        const isWatch = this.selectedModel && this.selectedModel.type === 'watch';
+        const leftCount = isWatch ? (this.slotsCount / 2) : -1;
         for (let i = 0; i < this.slotsCount - 1; i++) {
+          if (isWatch && i === leftCount - 1) continue;
           if (!this.slots[i] && !this.slots[i + 1]) {
             targetIndex = i;
             break;
@@ -2599,7 +2840,10 @@
 
       if (targetIndex !== -1) {
         this.placeCharmAtSlot(charm, targetIndex);
-        this.showToast(`Added "${charm.title}" to position ${targetIndex + 1}`);
+        const posText = isChain
+          ? `positions ${targetIndex + 1} & ${targetIndex + 4}`
+          : (isDouble ? `positions ${targetIndex + 1}-${targetIndex + 2}` : `position ${targetIndex + 1}`);
+        this.showToast(`Added "${charm.title}" to ${posText}`);
         if (this.dom.charmsList) {
           requestAnimationFrame(() => {
             const row = this.dom.charmsList.querySelector(`[data-placed-slot="${targetIndex}"]`);
@@ -2622,7 +2866,7 @@
       for (let i = 0; i < this.slots.length; i++) {
         const slot = this.slots[i];
         if (slot) {
-          if (!slot.isDoubleEnd) count++;
+          if (!slot.isDoubleEnd && !slot.isChainEnd) count++;
         }
       }
       return count;
@@ -2682,7 +2926,7 @@
         const placedItems = [];
         for (let i = 0; i < this.slots.length; i++) {
           const item = this.slots[i];
-          if (item && !item.isDoubleEnd) {
+          if (item && !item.isDoubleEnd && !item.isChainEnd) {
             placedItems.push({
               slotIndex: i,
               item
@@ -2701,9 +2945,11 @@
         } else {
           this.dom.charmsList.innerHTML = placedItems.map(({ slotIndex, item }) => {
             const charm = item.charm;
-            const posLabel = item.isDoubleStart
-              ? `Positions ${slotIndex + 1}-${slotIndex + 2}/${this.slotsCount}`
-              : `Position ${slotIndex + 1}/${this.slotsCount}`;
+            const posLabel = item.isChainStart
+              ? `Positions ${slotIndex + 1} & ${slotIndex + 4}/${this.slotsCount}`
+              : (item.isDoubleStart
+                ? `Positions ${slotIndex + 1}-${slotIndex + 2}/${this.slotsCount}`
+                : `Position ${slotIndex + 1}/${this.slotsCount}`);
 
             return `
               <div class="bb-charms-row" data-placed-slot="${slotIndex}">
@@ -2730,7 +2976,7 @@
       let charmsTotal = 0;
       for (let i = 0; i < this.slots.length; i++) {
         const item = this.slots[i];
-        if (item && !item.isDoubleEnd) {
+        if (item && !item.isDoubleEnd && !item.isChainEnd) {
           charmsTotal += parseInt(item.charm.price, 10) || 0;
         }
       }
@@ -2840,8 +3086,10 @@
 
       for (let i = 0; i < this.slots.length; i++) {
         const item = this.slots[i];
-        if (item && !item.isDoubleEnd) {
-          const pos = item.isDoubleStart ? `Slots ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
+        if (item && !item.isDoubleEnd && !item.isChainEnd) {
+          const pos = item.isChainStart
+            ? `Slots ${i + 1} & ${i + 4}`
+            : (item.isDoubleStart ? `Slots ${i + 1}-${i + 2}` : `Slot ${i + 1}`);
           summaryText += `- ${pos}: ${item.charm.title} (${this.formatMoney(item.charm.price)})\n`;
         }
       }
@@ -2908,8 +3156,10 @@
         const layoutSummary = [];
         for (let i = 0; i < this.slots.length; i++) {
           const item = this.slots[i];
-          if (item && !item.isDoubleEnd) {
-            const pos = item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
+          if (item && !item.isDoubleEnd && !item.isChainEnd) {
+            const pos = item.isChainStart
+              ? `Slots ${i + 1} & ${i + 4}`
+              : (item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`);
             layoutSummary.push(`${pos}: ${item.charm.title}`);
           }
         }
@@ -2936,9 +3186,11 @@
       // 2. Individual Charm Items
       for (let i = 0; i < this.slots.length; i++) {
         const item = this.slots[i];
-        const charmVarId = (item && !item.isDoubleEnd && item.charm) ? (item.charm.variantId || item.charm.id) : null;
+        const charmVarId = (item && !item.isDoubleEnd && !item.isChainEnd && item.charm) ? (item.charm.variantId || item.charm.id) : null;
         if (charmVarId && !String(charmVarId).startsWith('demo-')) {
-          const pos = item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
+          const pos = item.isChainStart
+            ? `Slots ${i + 1} & ${i + 4}`
+            : (item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`);
           items.push({
             id: parseInt(charmVarId, 10),
             quantity: 1,
@@ -3107,6 +3359,9 @@
           charmTheme = t.slice(6).trim();
         } else if (tLower.startsWith('color:')) {
           charmColor = t.slice(6).trim();
+        } else if (tLower.includes('type:chain') || tLower === 'chain' || tLower === 'chaîne') {
+          charmType = 'chain';
+          charmSlots = 4;
         } else if (tLower.includes('type:drop') || tLower === 'drop') {
           charmType = 'drop';
         } else if (tLower.includes('type:2-links') || tLower === '2-links' || tLower === 'double') {
@@ -3116,7 +3371,10 @@
       }
 
       const titleLower = String(prod.title || '').toLowerCase();
-      if (titleLower.includes('bows')) {
+      if (titleLower.includes('chain') || titleLower.includes('chaîne')) {
+        charmType = 'chain';
+        charmSlots = 4;
+      } else if (titleLower.includes('bows')) {
         charmType = 'double';
         charmSlots = 2;
       } else if (titleLower.includes('letter ') || titleLower.includes('melted heart') || titleLower.includes('pink stone')) {

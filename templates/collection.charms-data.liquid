@@ -23,11 +23,17 @@
           elsif tag_lower contains 'type:2-links' or tag_lower == '2-links' or tag_lower == 'double'
             assign charm_type = 'double'
             assign charm_slots = 2
+          elsif tag_lower contains 'type:chain' or tag_lower == 'chain' or tag_lower contains 'chaîne'
+            assign charm_type = 'chain'
+            assign charm_slots = 4
           endif
         endfor
 
         assign title_lower = prod.title | downcase
-        if title_lower contains 'bows'
+        if title_lower contains 'chain' or title_lower contains 'chaîne'
+          assign charm_type = 'chain'
+          assign charm_slots = 4
+        elsif title_lower contains 'bows'
           assign charm_type = 'double'
           assign charm_slots = 2
         elsif title_lower contains 'letter ' or title_lower contains 'melted heart' or title_lower contains 'pink stone'

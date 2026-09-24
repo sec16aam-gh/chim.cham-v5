@@ -635,11 +635,13 @@
   justify-content: center;
   padding: 0;
   position: relative;
+  max-height: 240px;
 }
 
 .bb-bracelet-scroll-wrap {
   width: 100%;
   max-width: 100%;
+  max-height: 240px;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 88px 0;
@@ -650,6 +652,30 @@
   scrollbar-color: #bcbfc4 #f1f2f4;
   -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
+}
+
+/* When chain charms are present on the bracelet: enable vertical scrolling without increasing container height */
+.bb-bracelet-scroll-wrap.has-chain-charms {
+  overflow-y: auto !important;
+  max-height: 240px !important;
+  height: 240px !important;
+  align-items: flex-start !important;
+  padding-top: 48px !important;
+  padding-bottom: 60px !important;
+}
+
+/* Custom sleek vertical scrollbar for chain charms */
+.bb-bracelet-scroll-wrap.has-chain-charms::-webkit-scrollbar {
+  width: 6px;
+  height: 8px;
+  display: block;
+}
+.bb-bracelet-scroll-wrap.has-chain-charms::-webkit-scrollbar-thumb {
+  background: #bcbfc4;
+  border-radius: 6px;
+}
+.bb-bracelet-scroll-wrap.has-chain-charms::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 .bb-bracelet-scroll-wrap.is-overflowing {
@@ -966,6 +992,38 @@
 }
 .bb-slot.is-double-end {
   display: none !important;
+}
+
+/* 4-Link Chain Charm (Anchors on Slot i and Slot i+3, middle links open, chain dangles below) */
+.bb-slot.is-chain-start {
+  overflow: visible !important;
+  z-index: 4;
+}
+.bb-slot.is-chain-end {
+  z-index: 3;
+}
+.placed-charm.kind-chain.span-4 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 256px !important;
+  height: 64px !important;
+  overflow: visible !important;
+  pointer-events: none;
+  z-index: 5;
+}
+.placed-charm.kind-chain.span-4 .bb-slot-charm-img,
+.placed-charm.kind-chain.span-4 img {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 256px !important;
+  max-width: none !important;
+  height: auto !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  transform: none !important;
 }
 
 /* Drop / Hanging Charm (Top link body fills block, pendant hangs centered below) */
@@ -2826,9 +2884,20 @@
 
   /* Mobile: slightly smaller bracelet on canvas (sleek, proportional & touch-friendly) */
   @media (max-width: 767px) {
+    .bb-canvas-container {
+      max-height: 190px;
+    }
     .bb-bracelet-scroll-wrap {
       justify-content: flex-start;
       padding: 68px 12px;
+      max-height: 190px;
+    }
+    .bb-bracelet-scroll-wrap.has-chain-charms {
+      overflow-y: auto !important;
+      max-height: 190px !important;
+      height: 190px !important;
+      padding-top: 36px !important;
+      padding-bottom: 50px !important;
     }
     .bb-bracelet-row {
       zoom: 0.82;
