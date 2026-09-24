@@ -237,11 +237,6 @@
               charmId: s.charm.id,
               isDoubleStart: !!s.isDoubleStart,
               isDoubleEnd: !!s.isDoubleEnd,
-              isChainStart: !!s.isChainStart,
-              isChainEnd: !!s.isChainEnd,
-              chainSpan: s.chainSpan || null,
-              chainEndIndex: s.chainEndIndex != null ? s.chainEndIndex : null,
-              chainStartIndex: s.chainStartIndex != null ? s.chainStartIndex : null,
               isHanging: !!s.isHanging,
               charm: {
                 id: s.charm.id,
@@ -337,11 +332,6 @@
                 charm: matchedCharm,
                 isDoubleStart: !!savedItem.isDoubleStart,
                 isDoubleEnd: !!savedItem.isDoubleEnd,
-                isChainStart: !!savedItem.isChainStart,
-                isChainEnd: !!savedItem.isChainEnd,
-                chainSpan: savedItem.chainSpan || 4,
-                chainEndIndex: savedItem.chainEndIndex,
-                chainStartIndex: savedItem.chainStartIndex,
                 isHanging: !!savedItem.isHanging
               };
             }
@@ -1506,7 +1496,7 @@
       this.checkCanvasOverflow();
     }
 
-    processImageTransparency(imageUrl, callback, isCharm = true, charmData = null) {
+    processImageTransparency(imageUrl, callback, isCharm = true, charm = null) {
       if (!imageUrl) {
         callback(imageUrl, null);
         return;
@@ -1539,29 +1529,25 @@
           const imgData = ctx.getImageData(0, 0, w, h);
           const data = imgData.data;
 
-          // Helper to check if a pixel is background (transparent, letterbox dark border, or white/off-white studio card)
+          // Helper to check if a pixel is white studio background, letterbox bar, or already transparent
           function isBg(idx) {
             const a = data[idx + 3];
-            if (a < 30) return true;
+            if (a < 25) return true;
             const r = data[idx];
             const g = data[idx + 1];
             const b = data[idx + 2];
-            // Dark letterbox / border bar (e.g. black bars on Cinderella)
-            if (r < 25 && g < 25 && b < 25) return true;
-            // Off-white / light studio background & JPEG noise (Letter H, Letter L)
-            if (r > 212 && g > 212 && b > 212) {
+            // Dark letterbox borders (e.g. Cinderella top/bottom black bars)
+            if (r < 30 && g < 30 && b < 30) return true;
+            // High-brightness studio white with tolerance for JPG compression noise (e.g. Letter H, Letter L)
+            if (r > 210 && g > 210 && b > 210) {
               const diff = Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b));
-              if (diff < 28) return true;
-            }
-            if (r > 200 && g > 200 && b > 200) {
-              const diff = Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b));
-              if (diff < 15) return true;
+              if (diff < 32) return true;
             }
             return false;
           }
 
           // Edge-connected flood fill: only erase background connected to the outer perimeter
-          // Preserves all internal metallic highlights, silver reflections, and faceted gems
+          // Preserves all internal metallic highlights, silver reflections, and gold surfaces
           const visited = new Uint8Array(w * h);
           const queue = new Int32Array(w * h);
           let head = 0;
@@ -1663,120 +1649,150 @@
             const contentH = maxY - minY + 1;
             const aspectRatio = contentH / contentW;
 
-            const titleLower = ((charmData && charmData.title) || '').toLowerCase();
-            const urlLower = (imageUrl || '').toLowerCase();
-            const isChain = (charmData && (charmData.type === 'chain' || charmData.slots === 4 || charmData.isChain)) ||
-                            titleLower.includes('chain') || titleLower.includes('chaîne') || urlLower.includes('chain');
-            const isDouble = !isChain && (
-              (charmData && (charmData.type === 'double' || charmData.slots === 2)) ||
-              titleLower.includes('bows') ||
-              (contentW / contentH > 1.75 && contentW > 100)
-            );
-            const isHanging = !isChain && !isDouble && (
-              (charmData && (charmData.type === 'drop' || charmData.type === 'hanging')) ||
-              titleLower.includes('melted') ||
-              titleLower.includes('stone') ||
-              aspectRatio > 1.25
-            );
+            const charmTitleLower = ((charm && charm.title) ? charm.title : (imageUrl ? decodeURIComponent(imageUrl) : '')).toLowerCase();
+            const isFreeform = charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal');
+            const isProtruding = charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant');
+            const isHanging = (charm && (charm.type === 'drop' || charm.type === 'hanging')) || aspectRatio > 1.22;
 
-            if (isChain) {
-              // 4-SLOT CHAIN CHARM CALIBRATION (256px wide, loops at 0..64 and 192..256)
-              const scale = 256.0 / contentW;
-              const destW = 256;
-              const destH = Math.round(contentH * scale);
-              const compCanvas = document.createElement('canvas');
-              compCanvas.width = 256;
-              compCanvas.height = Math.max(64, destH);
-              const cCtx = compCanvas.getContext('2d');
-              cCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, destW, destH);
-              finalUrl = compCanvas.toDataURL('image/png');
-              meta = { isChain: true, chainSpan: 4, aspectRatio: destH / 256, isHanging: false, contentW: 256, contentH: destH };
-            } else if (isDouble) {
-              // 2-SLOT DOUBLE CHARM CALIBRATION (128px wide, 64px high)
-              const scale = 128.0 / contentW;
-              const destW = 128;
-              const destH = Math.round(contentH * scale);
-              const compCanvas = document.createElement('canvas');
-              compCanvas.width = 128;
-              compCanvas.height = 64;
-              const cCtx = compCanvas.getContext('2d');
-              const destY = Math.max(0, Math.round((64 - destH) / 2));
-              cCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, destY, destW, Math.min(64, destH));
-              finalUrl = compCanvas.toDataURL('image/png');
-              meta = { isDouble: true, slots: 2, aspectRatio: 0.5, isHanging: false, contentW: 128, contentH: 64 };
-            } else if (isHanging) {
-              // UNIFIED CONTINUOUS HANGING CHARM (Zero horizontal slicing!)
-              // Scale top link/loop to fit 64px width naturally
-              let topW = 0;
-              const checkH = Math.min(maxY, minY + Math.round(contentH * 0.25));
-              for (let y = minY; y <= checkH; y++) {
-                let rMin = w, rMax = -1;
-                const rOffset = y * w * 4;
-                for (let x = 0; x < w; x++) {
-                  if (data[rOffset + x * 4 + 3] > 20) {
-                    if (x < rMin) rMin = x;
-                    if (x > rMax) rMax = x;
-                  }
-                }
-                if (rMax >= rMin) {
-                  const rw = rMax - rMin + 1;
-                  if (rw > topW) topW = rw;
-                }
-              }
+            meta = {
+              aspectRatio,
+              isHanging,
+              isFreeform,
+              isProtruding,
+              keepBaseLink: isFreeform || isProtruding,
+              contentW,
+              contentH
+            };
 
-              let scale = 1;
-              if (topW > 450) {
-                scale = 64.0 / topW;
-              } else {
-                scale = Math.min(64.0 / contentW, 52.0 / Math.max(1, topW || contentW));
-              }
-
+            if (isFreeform) {
+              // Free-form crystal charms: scale naturally within ~52px canvas, preserving base link beneath
+              const targetSize = 52;
+              const scale = targetSize / Math.max(contentW, contentH);
               const destW = Math.round(contentW * scale);
               const destH = Math.round(contentH * scale);
-              const canvasW = Math.max(64, destW);
+              const ffCanvas = document.createElement('canvas');
+              ffCanvas.width = destW;
+              ffCanvas.height = destH;
+              const ffCtx = ffCanvas.getContext('2d');
+              ffCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, destW, destH);
+              if (!this.calibratedCanvases) this.calibratedCanvases = {};
+              this.calibratedCanvases[imageUrl] = ffCanvas;
+              finalUrl = ffCanvas.toDataURL('image/png');
+            } else if (isProtruding) {
+              // Protruding 3D charms: calibrate inner metal link body to 64x64, allowing decorative elements to protrude naturally
+              const linkBodyW = charmTitleLower.includes('crystal butterfly') ? Math.round(contentW * 0.787) : Math.round(contentW * 0.94);
+              const scale = 64.0 / linkBodyW;
+              const destW = Math.round(contentW * scale);
+              const destH = Math.round(contentH * scale);
+              const protCanvas = document.createElement('canvas');
+              protCanvas.width = destW;
+              protCanvas.height = destH;
+              const pCtx = protCanvas.getContext('2d');
+              pCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, destW, destH);
+              if (!this.calibratedCanvases) this.calibratedCanvases = {};
+              this.calibratedCanvases[imageUrl] = protCanvas;
+              finalUrl = protCanvas.toDataURL('image/png');
+            } else if (isHanging) {
+              // DUAL-ZONE CALIBRATION FOR HANGING CHARMS:
+              const rowInfo = new Array(maxY + 1);
+              for (let y = minY; y <= maxY; y++) {
+                let rMinX = canvas.width, rMaxX = -1;
+                const rowOffset = y * canvas.width * 4;
+                for (let x = minX; x <= maxX; x++) {
+                  if (data[rowOffset + x * 4 + 3] > 20) {
+                    if (x < rMinX) rMinX = x;
+                    if (x > rMaxX) rMaxX = x;
+                  }
+                }
+                const rw = rMaxX >= rMinX ? (rMaxX - rMinX + 1) : 0;
+                rowInfo[y] = { minX: rMinX, maxX: rMaxX, w: rw };
+              }
+
+              // 1. Sample the top section to estimate link width
+              const topSampleH = Math.max(20, Math.round(contentH * 0.08));
+              let topMaxW = 0;
+              for (let y = minY; y <= Math.min(maxY, minY + topSampleH); y++) {
+                if (rowInfo[y] && rowInfo[y].w > topMaxW) topMaxW = rowInfo[y].w;
+              }
+              const estimatedLinkW = topMaxW > 0 ? topMaxW : contentW;
+              const expectedLinkH = Math.round(estimatedLinkW * 0.85);
+              const searchLimit = Math.min(maxY, minY + Math.round(estimatedLinkW * 1.05));
+
+              // 2. Detect link body boundaries in top section
+              let linkMinX = canvas.width, linkMaxX = -1;
+              let linkBottomY = minY;
+              let hasFoundWide = false;
+
+              for (let y = minY; y <= searchLimit; y++) {
+                const rw = rowInfo[y].w;
+                if (rw >= estimatedLinkW * 0.72) {
+                  hasFoundWide = true;
+                  if (rowInfo[y].minX < linkMinX) linkMinX = rowInfo[y].minX;
+                  if (rowInfo[y].maxX > linkMaxX) linkMaxX = rowInfo[y].maxX;
+                  linkBottomY = y;
+                } else if (hasFoundWide) {
+                  if (rw < estimatedLinkW * 0.58 || (y - minY >= expectedLinkH * 0.95)) {
+                    break; // Transition: link body ends, ring/pendant begins
+                  }
+                }
+              }
+
+              if (linkBottomY - minY < expectedLinkH * 0.75) {
+                linkBottomY = minY + expectedLinkH;
+              }
+
+              const linkW = (linkMaxX >= linkMinX) ? (linkMaxX - linkMinX + 1) : estimatedLinkW;
+              const linkH = linkBottomY - minY + 1;
+
+              // 3. Compute uniform pendant dimensions (harmonious ~42px height, max 50px width)
+              const pendantSourceY = linkBottomY;
+              const pendantH = Math.max(1, maxY - pendantSourceY + 1);
+              const pendantW = Math.max(1, contentW);
+
+              const TARGET_DANGLE_H = 42;
+              const MAX_DANGLE_W = 50;
+              const scale = Math.min(TARGET_DANGLE_H / pendantH, MAX_DANGLE_W / pendantW);
+
+              const destPendantW = Math.round(pendantW * scale);
+              const destPendantH = Math.round(pendantH * scale);
+
+              const canvasW = Math.max(64, destPendantW);
+              const canvasH = 64 + destPendantH;
+              const offsetX = Math.round((canvasW - 64) / 2);
+
               const compCanvas = document.createElement('canvas');
               compCanvas.width = canvasW;
-              compCanvas.height = destH;
+              compCanvas.height = canvasH;
               const cCtx = compCanvas.getContext('2d');
-              const destX = Math.round((canvasW - destW) / 2);
-              cCtx.drawImage(canvas, minX, minY, contentW, contentH, destX, 0, destW, destH);
+
+              // A. Draw link body to fill exactly 64px width and 64px height (spanning lines 1-2 and 3-4)
+              cCtx.drawImage(
+                canvas,
+                linkMinX, minY, linkW, linkH,
+                offsetX, 0, 64, 64
+              );
+
+              // B. Draw hanging pendant below y = 64px, centered horizontally
+              const destPendantX = Math.round(offsetX + (64 - destPendantW) / 2);
+              cCtx.drawImage(
+                canvas,
+                minX, pendantSourceY, pendantW, pendantH,
+                destPendantX, 64, destPendantW, destPendantH
+              );
+
+              if (!this.calibratedCanvases) this.calibratedCanvases = {};
+              this.calibratedCanvases[imageUrl] = compCanvas;
               finalUrl = compCanvas.toDataURL('image/png');
-              meta = { isHanging: true, aspectRatio: destH / canvasW, contentW: canvasW, contentH: destH };
             } else {
-              // Standard Flat Charm or Protruding 3D Charm
-              const isStudioTemplate = (w >= 500 && h >= 500 && Math.abs(w - h) < 150 && minX > 50 && minY > 50);
-              if (isStudioTemplate) {
-                const linkH = h * 0.700;
-                const scale = 64.0 / linkH;
-                const trimW = Math.round(contentW * scale);
-                const trimH = Math.round(contentH * scale);
-                const trimCanvas = document.createElement('canvas');
-                trimCanvas.width = trimW;
-                trimCanvas.height = trimH;
-                const tCtx = trimCanvas.getContext('2d');
-                tCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, trimW, trimH);
-                finalUrl = trimCanvas.toDataURL('image/png');
-                meta = {
-                  isHanging: false,
-                  aspectRatio: trimH / trimW,
-                  contentW: trimW,
-                  contentH: trimH,
-                  is3D: true
-                };
-              } else {
-                const trimmedCanvas = document.createElement('canvas');
-                trimmedCanvas.width = contentW;
-                trimmedCanvas.height = contentH;
-                const tCtx = trimmedCanvas.getContext('2d');
-                tCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, contentW, contentH);
-                finalUrl = trimmedCanvas.toDataURL('image/png');
-                meta = {
-                  isHanging: false,
-                  aspectRatio: contentH / contentW,
-                  contentW,
-                  contentH
-                };
-              }
+              // Standard / Flat charm or Double charm: trim whitespace and scale flush
+              const trimmedCanvas = document.createElement('canvas');
+              trimmedCanvas.width = contentW;
+              trimmedCanvas.height = contentH;
+              const tCtx = trimmedCanvas.getContext('2d');
+              tCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, contentW, contentH);
+              if (!this.calibratedCanvases) this.calibratedCanvases = {};
+              this.calibratedCanvases[imageUrl] = trimmedCanvas;
+              finalUrl = trimmedCanvas.toDataURL('image/png');
             }
           }
 
@@ -1826,53 +1842,61 @@
           slot.classList.add('is-double-start');
         } else if (placed.isDoubleEnd) {
           slot.classList.add('is-double-end');
-        } else if (placed.isChainStart) {
-          slot.classList.add('is-chain-start');
-        } else if (placed.isChainEnd) {
-          slot.classList.add('is-chain-end');
         }
 
         const meta = this.charmMetaCache && this.charmMetaCache[placed.charm.image];
         const isDouble = placed.isDoubleStart;
-        const isChain = placed.isChainStart;
+        const charmTitleLower = (placed.charm.title || '').toLowerCase();
+        const isFreeformTitle = charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal');
+        const isProtrudingTitle = charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant');
         const isHanging = (placed.charm.type === 'drop' || placed.charm.type === 'hanging' || (meta && meta.isHanging));
+        const keepBaseLink = (meta && meta.keepBaseLink) || isFreeformTitle || isProtrudingTitle;
+        const isProtruding = (meta && meta.isProtruding) || isProtrudingTitle;
 
         if (isHanging) {
           slot.classList.add('is-hanging');
+        }
+        if (keepBaseLink) {
+          slot.classList.add('keep-base-link');
+        }
+        if (isProtruding) {
+          slot.classList.add('has-protruding-charm');
         }
 
         const charmImgSrc = (this.transparentCache && this.transparentCache[placed.charm.image])
           ? this.transparentCache[placed.charm.image]
           : placed.charm.image;
 
-        if (placed.isChainEnd) {
-          // Right anchor for chain charm: base link underneath, transparent interaction anchor
-          slot.innerHTML = `<img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">`;
-        } else {
-          slot.innerHTML = `
-            <img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">
-            <div class="placed-charm ${isChain ? 'kind-chain span-4' : (isDouble ? 'span-2' : '')} ${isHanging ? 'kind-hanging' : ''} ${meta && meta.is3D ? 'is-protruding' : ''}">
-              <img class="bb-slot-charm-img ${isChain ? 'is-chain-img' : ''}" src="${charmImgSrc}" alt="${placed.charm.title}">
-            </div>
-          `;
+        slot.style.setProperty('--bracelet-link', 'none');
+        slot.innerHTML = `
+          <img class="bb-slot-base-img" src="${linkImg}" alt="link" draggable="false">
+          <div class="placed-charm ${isDouble ? 'span-2' : ''} ${isHanging ? 'kind-hanging' : ''} ${isProtruding ? 'kind-protruding' : ''}">
+            <img class="bb-slot-charm-img" src="${charmImgSrc}" alt="${placed.charm.title}">
+          </div>
+        `;
 
-          if (!this.transparentCache || !this.transparentCache[placed.charm.image]) {
-            this.processImageTransparency(placed.charm.image, (transUrl, charmMeta) => {
-              const currentImg = slot.querySelector('.bb-slot-charm-img');
-              if (currentImg && transUrl) {
-                currentImg.src = transUrl;
-              }
-              if (charmMeta && charmMeta.isHanging) {
+        if (!this.transparentCache || !this.transparentCache[placed.charm.image]) {
+          this.processImageTransparency(placed.charm.image, (transUrl, charmMeta) => {
+            const currentImg = slot.querySelector('.bb-slot-charm-img');
+            if (currentImg && transUrl) {
+              currentImg.src = transUrl;
+            }
+            if (charmMeta) {
+              if (charmMeta.isHanging) {
                 slot.classList.add('is-hanging');
                 const placedWrap = slot.querySelector('.placed-charm');
                 if (placedWrap) placedWrap.classList.add('kind-hanging');
               }
-              if (charmMeta && charmMeta.is3D) {
-                const placedWrap = slot.querySelector('.placed-charm');
-                if (placedWrap) placedWrap.classList.add('is-protruding');
+              if (charmMeta.keepBaseLink) {
+                slot.classList.add('keep-base-link');
               }
-            }, true, placed.charm);
-          }
+              if (charmMeta.isProtruding) {
+                slot.classList.add('has-protruding-charm');
+                const placedWrap = slot.querySelector('.placed-charm');
+                if (placedWrap) placedWrap.classList.add('kind-protruding');
+              }
+            }
+          }, true, placed.charm);
         }
       }
 
@@ -2010,7 +2034,7 @@
         for (let i = 0; i < count; i++) {
           const ch = filtered[i];
           if (ch && ch.image && (!this.transparentCache || !this.transparentCache[ch.image])) {
-            this.processImageTransparency(ch.image, () => {});
+            this.processImageTransparency(ch.image, () => {}, true, ch);
           }
         }
       };
@@ -2391,54 +2415,9 @@
     }
 
     placeCharmAtSlot(charm, targetIndex) {
-      const isChain = (charm.slots === 4 || charm.type === 'chain' || charm.isChain);
-      const isDouble = !isChain && (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
+      const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
 
-      if (isChain) {
-        if (targetIndex > this.slotsCount - 4) {
-          targetIndex = Math.max(0, this.slotsCount - 4);
-        }
-        if (this.selectedModel && this.selectedModel.type === 'watch') {
-          const leftCount = this.slotsCount / 2;
-          if (targetIndex < leftCount && targetIndex + 3 >= leftCount) {
-            if (targetIndex >= leftCount / 2) {
-              targetIndex = leftCount;
-            } else {
-              targetIndex = Math.max(0, leftCount - 4);
-            }
-          }
-        }
-
-        // Clean up any conflicting multi-slot charms at start or end anchors
-        if (this.slots[targetIndex]) {
-          this.removeCharmAtSlot(targetIndex);
-        }
-        if (this.slots[targetIndex + 3]) {
-          this.removeCharmAtSlot(targetIndex + 3);
-        }
-
-        this.slots[targetIndex] = {
-          charm,
-          isChainStart: true,
-          isChainEnd: false,
-          chainSpan: 4,
-          chainEndIndex: targetIndex + 3,
-          isDoubleStart: false,
-          isDoubleEnd: false,
-          isHanging: false
-        };
-        this.slots[targetIndex + 3] = {
-          charm,
-          isChainStart: false,
-          isChainEnd: true,
-          chainSpan: 4,
-          chainStartIndex: targetIndex,
-          isDoubleStart: false,
-          isDoubleEnd: false,
-          isHanging: false
-        };
-        // Intermediate slots (targetIndex + 1 and targetIndex + 2) remain untouched!
-      } else if (isDouble) {
+      if (isDouble) {
         if (targetIndex >= this.slotsCount - 1) {
           targetIndex = this.slotsCount - 2; // Shift left so it fits
         }
@@ -2448,35 +2427,23 @@
             targetIndex = leftCount - 2; // Shift left so it does not bridge across watch
           }
         }
-        if (this.slots[targetIndex]) this.removeCharmAtSlot(targetIndex);
-        if (this.slots[targetIndex + 1]) this.removeCharmAtSlot(targetIndex + 1);
-
         this.slots[targetIndex] = {
           charm,
           isDoubleStart: true,
           isDoubleEnd: false,
-          isChainStart: false,
-          isChainEnd: false,
           isHanging: charm.type === 'drop' || charm.type === 'hanging'
         };
         this.slots[targetIndex + 1] = {
           charm,
           isDoubleStart: false,
           isDoubleEnd: true,
-          isChainStart: false,
-          isChainEnd: false,
           isHanging: false
         };
       } else {
-        if (this.slots[targetIndex]) {
-          this.removeCharmAtSlot(targetIndex);
-        }
         this.slots[targetIndex] = {
           charm,
           isDoubleStart: false,
           isDoubleEnd: false,
-          isChainStart: false,
-          isChainEnd: false,
           isHanging: charm.type === 'drop' || charm.type === 'hanging'
         };
       }
@@ -2491,24 +2458,13 @@
       if (fromIndex === toIndex) return;
 
       const itemFrom = this.slots[fromIndex];
+      const itemTo = this.slots[toIndex];
+
       if (!itemFrom) return;
 
-      const charm = itemFrom.charm;
-      const isMulti = itemFrom.isDoubleStart || itemFrom.isDoubleEnd || itemFrom.isChainStart || itemFrom.isChainEnd;
-
-      if (isMulti) {
-        this.removeCharmAtSlot(fromIndex);
-        this.placeCharmAtSlot(charm, toIndex);
-        return;
-      }
-
-      // Normal single charm move
-      const itemTo = this.slots[toIndex];
-      if (itemTo && (itemTo.isDoubleStart || itemTo.isDoubleEnd || itemTo.isChainStart || itemTo.isChainEnd)) {
-        this.removeCharmAtSlot(toIndex);
-      }
+      // Swap slots
       this.slots[toIndex] = itemFrom;
-      this.slots[fromIndex] = null;
+      this.slots[fromIndex] = itemTo;
 
       this.renderCanvas();
       this.updateSidebar();
@@ -2524,16 +2480,6 @@
         this.slots[slotIndex + 1] = null;
       } else if (placed.isDoubleEnd && slotIndex - 1 >= 0 && this.slots[slotIndex - 1]?.isDoubleStart) {
         this.slots[slotIndex - 1] = null;
-      } else if (placed.isChainStart) {
-        const endIdx = placed.chainEndIndex || (slotIndex + 3);
-        if (endIdx < this.slotsCount && this.slots[endIdx]?.isChainEnd) {
-          this.slots[endIdx] = null;
-        }
-      } else if (placed.isChainEnd) {
-        const startIdx = placed.chainStartIndex || (slotIndex - 3);
-        if (startIdx >= 0 && this.slots[startIdx]?.isChainStart) {
-          this.slots[startIdx] = null;
-        }
       }
 
       this.slots[slotIndex] = null;
@@ -2545,25 +2491,11 @@
     }
 
     addCharmToFirstAvailableSlot(charm) {
-      const isChain = (charm.slots === 4 || charm.type === 'chain' || charm.isChain);
-      const isDouble = !isChain && (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
+      const isDouble = (charm.slots > 1 || charm.type === 'double' || charm.type === '2-links');
       let targetIndex = -1;
 
-      if (isChain) {
-        const leftCount = (this.selectedModel && this.selectedModel.type === 'watch') ? this.slotsCount / 2 : this.slotsCount;
-        for (let i = 0; i < this.slotsCount - 3; i++) {
-          if (this.selectedModel && this.selectedModel.type === 'watch') {
-            if (i < leftCount && i + 3 >= leftCount) continue;
-          }
-          if (!this.slots[i] && !this.slots[i + 3]) {
-            targetIndex = i;
-            break;
-          }
-        }
-      } else if (isDouble) {
-        const leftCount = (this.selectedModel && this.selectedModel.type === 'watch') ? this.slotsCount / 2 : this.slotsCount;
+      if (isDouble) {
         for (let i = 0; i < this.slotsCount - 1; i++) {
-          if (this.selectedModel && this.selectedModel.type === 'watch' && i === leftCount - 1) continue;
           if (!this.slots[i] && !this.slots[i + 1]) {
             targetIndex = i;
             break;
@@ -2603,7 +2535,7 @@
       for (let i = 0; i < this.slots.length; i++) {
         const slot = this.slots[i];
         if (slot) {
-          if (!slot.isDoubleEnd && !slot.isChainEnd) count++;
+          if (!slot.isDoubleEnd) count++;
         }
       }
       return count;
@@ -2638,12 +2570,12 @@
         } else if (this.selectedModel.type === 'watch') {
           this.dom.summaryThumb.src = this.getWatchImageSrc(this.selectedModel);
         } else {
-          this.dom.summaryThumb.src = this.getMetalLinkImageSrc(this.selectedColor?.handle || 'silver');
+          this.dom.summaryThumb.src = this.getMetalLinkImageSrc(this.selectedColor.handle || 'silver');
         }
       }
 
-      // Base Price
-      const basePrice = parseInt(this.selectedVariant ? this.selectedVariant.price : this.selectedModel.price, 10) || 0;
+      // Base Price (from selected model variant)
+      const basePrice = parseInt((this.selectedVariant && this.selectedVariant.price) || this.selectedColor.price || this.selectedModel.price, 10) || 4000;
       const effectiveBasePrice = basePrice;
 
       if (this.dom.summaryPrice) {
@@ -2663,7 +2595,7 @@
         const placedItems = [];
         for (let i = 0; i < this.slots.length; i++) {
           const item = this.slots[i];
-          if (item && !item.isDoubleEnd && !item.isChainEnd) {
+          if (item && !item.isDoubleEnd) {
             placedItems.push({
               slotIndex: i,
               item
@@ -2682,11 +2614,9 @@
         } else {
           this.dom.charmsList.innerHTML = placedItems.map(({ slotIndex, item }) => {
             const charm = item.charm;
-            const posLabel = item.isChainStart
-              ? `Positions ${slotIndex + 1}-${slotIndex + 4}/${this.slotsCount}`
-              : (item.isDoubleStart
-                ? `Positions ${slotIndex + 1}-${slotIndex + 2}/${this.slotsCount}`
-                : `Position ${slotIndex + 1}/${this.slotsCount}`);
+            const posLabel = item.isDoubleStart
+              ? `Positions ${slotIndex + 1}-${slotIndex + 2}/${this.slotsCount}`
+              : `Position ${slotIndex + 1}/${this.slotsCount}`;
 
             return `
               <div class="bb-charms-row" data-placed-slot="${slotIndex}">
@@ -2713,7 +2643,7 @@
       let charmsTotal = 0;
       for (let i = 0; i < this.slots.length; i++) {
         const item = this.slots[i];
-        if (item && !item.isDoubleEnd && !item.isChainEnd) {
+        if (item && !item.isDoubleEnd) {
           charmsTotal += parseInt(item.charm.price, 10) || 0;
         }
       }
@@ -2823,13 +2753,8 @@
 
       for (let i = 0; i < this.slots.length; i++) {
         const item = this.slots[i];
-        if (item && !item.isDoubleEnd && !item.isChainEnd) {
-          let pos = `Slot ${i + 1}`;
-          if (item.isChainStart) {
-            pos = `Slots ${i + 1}-${i + (item.chainSpan || 4)}`;
-          } else if (item.isDoubleStart) {
-            pos = `Slots ${i + 1}-${i + 2}`;
-          }
+        if (item && !item.isDoubleEnd) {
+          const pos = item.isDoubleStart ? `Slots ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
           summaryText += `- ${pos}: ${item.charm.title} (${this.formatMoney(item.charm.price)})\n`;
         }
       }
@@ -2896,13 +2821,8 @@
         const layoutSummary = [];
         for (let i = 0; i < this.slots.length; i++) {
           const item = this.slots[i];
-          if (item && !item.isDoubleEnd && !item.isChainEnd) {
-            let pos = `Slot ${i + 1}`;
-            if (item.isChainStart) {
-              pos = `Slot ${i + 1}-${i + (item.chainSpan || 4)}`;
-            } else if (item.isDoubleStart) {
-              pos = `Slot ${i + 1}-${i + 2}`;
-            }
+          if (item && !item.isDoubleEnd) {
+            const pos = item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
             layoutSummary.push(`${pos}: ${item.charm.title}`);
           }
         }
@@ -2929,14 +2849,9 @@
       // 2. Individual Charm Items
       for (let i = 0; i < this.slots.length; i++) {
         const item = this.slots[i];
-        const charmVarId = (item && !item.isDoubleEnd && !item.isChainEnd && item.charm) ? (item.charm.variantId || item.charm.id) : null;
+        const charmVarId = (item && !item.isDoubleEnd && item.charm) ? (item.charm.variantId || item.charm.id) : null;
         if (charmVarId && !String(charmVarId).startsWith('demo-')) {
-          let pos = `Slot ${i + 1}`;
-          if (item.isChainStart) {
-            pos = `Slot ${i + 1}-${i + (item.chainSpan || 4)}`;
-          } else if (item.isDoubleStart) {
-            pos = `Slot ${i + 1}-${i + 2}`;
-          }
+          const pos = item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`;
           items.push({
             id: parseInt(charmVarId, 10),
             quantity: 1,
@@ -3094,7 +3009,6 @@
       let charmTheme = '';
       let charmColor = '';
 
-      const titleLower = String(prod.title || '').toLowerCase();
       const tags = Array.isArray(prod.tags)
         ? prod.tags
         : (typeof prod.tags === 'string' ? prod.tags.split(',').map(t => t.trim()) : []);
@@ -3106,9 +3020,6 @@
           charmTheme = t.slice(6).trim();
         } else if (tLower.startsWith('color:')) {
           charmColor = t.slice(6).trim();
-        } else if (tLower.includes('type:chain') || tLower === 'chain') {
-          charmType = 'chain';
-          charmSlots = 4;
         } else if (tLower.includes('type:drop') || tLower === 'drop') {
           charmType = 'drop';
         } else if (tLower.includes('type:2-links') || tLower === '2-links' || tLower === 'double') {
@@ -3117,14 +3028,12 @@
         }
       }
 
-      if (charmType === 'simple') {
-        if (titleLower.includes('chain')) {
-          charmType = 'chain';
-          charmSlots = 4;
-        } else if (titleLower.includes('bow')) {
-          charmType = 'double';
-          charmSlots = 2;
-        }
+      const titleLower = String(prod.title || '').toLowerCase();
+      if (titleLower.includes('bows')) {
+        charmType = 'double';
+        charmSlots = 2;
+      } else if (titleLower.includes('letter ') || titleLower.includes('melted heart') || titleLower.includes('pink stone')) {
+        charmType = 'drop';
       }
 
       const firstVariant = (prod.variants && prod.variants[0]) || {};
@@ -3152,8 +3061,6 @@
         color: charmColor,
         type: charmType,
         slots: charmSlots,
-        isChain: charmType === 'chain',
-        isDouble: charmType === 'double',
         tags: tags,
         variantId: firstVariant.id || prod.id
       };

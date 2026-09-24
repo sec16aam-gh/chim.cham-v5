@@ -852,19 +852,57 @@
   justify-content: center;
 }
 
-/* Metal link base image */
-.bb-slot-base-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 64px;
-  height: 64px;
-  z-index: 1;
-  pointer-events: none;
-  display: block;
+/* Hide background generic metal link when a charm is placed so the charm's own authentic link completely replaces the block */
+.bb-slot.is-occupied {
+  background-image: none !important;
+  background-color: transparent !important;
 }
-.bb-slot.is-double-start .bb-slot-base-img {
+
+.bb-slot.is-occupied .bb-slot-base-img {
   display: none !important;
+}
+
+.bb-slot.is-occupied.keep-base-link .bb-slot-base-img {
+  display: block !important;
+}
+.bb-slot.is-occupied.keep-base-link .placed-charm {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.bb-slot.is-occupied.keep-base-link:not(.has-protruding-charm) .bb-slot-charm-img,
+.bb-slot.is-occupied.keep-base-link:not(.has-protruding-charm) .placed-charm img {
+  width: 82% !important;
+  height: 82% !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  object-fit: contain !important;
+}
+
+/* Protruding 3D Decorative Charms (Crystal Butterfly, Lunar Glow, Elegant) */
+.bb-slot.has-protruding-charm,
+.bb-slot.has-protruding-charm .placed-charm {
+  overflow: visible !important;
+}
+.placed-charm.kind-protruding {
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.bb-slot.has-protruding-charm .bb-slot-charm-img,
+.placed-charm.kind-protruding img {
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }
 
 .placed-charm.span-2 {
@@ -875,13 +913,6 @@
   width: 64px;
   height: 64px;
   overflow: visible;
-}
-
-.placed-charm.is-protruding img {
-  width: auto !important;
-  height: auto !important;
-  max-width: none !important;
-  max-height: none !important;
 }
 
 /* Placed Charm Image Inside Slot - Sits flush on metal link with true transparent alpha */
@@ -923,38 +954,6 @@
   display: none !important;
 }
 
-/* 4-Link Chain Charm (Spans 256px / 4 slots) */
-.bb-slot.is-chain-start {
-  position: relative;
-  overflow: visible !important;
-  z-index: 5;
-}
-.bb-slot.is-chain-start .placed-charm.kind-chain.span-4 {
-  width: 256px !important;
-  height: 64px !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  overflow: visible !important;
-  pointer-events: none !important;
-  z-index: 5;
-  display: block !important;
-}
-.bb-slot.is-chain-start .placed-charm.kind-chain.span-4 img.is-chain-img {
-  width: 256px !important;
-  height: auto !important;
-  max-width: none !important;
-  max-height: none !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  pointer-events: none !important;
-  object-fit: contain !important;
-}
-.bb-slot.is-chain-end {
-  position: relative;
-}
-
 /* Drop / Hanging Charm (Top link body fills block, pendant hangs centered below) */
 .bb-slot.is-hanging {
   overflow: visible !important;
@@ -967,7 +966,6 @@
   display: flex !important;
   justify-content: center !important;
   align-items: flex-start !important;
-  z-index: 4;
 }
 .bb-slot.is-hanging .bb-slot-charm-img,
 .placed-charm.kind-hanging img {
@@ -980,7 +978,6 @@
   max-width: none !important;
   max-height: none !important;
   object-fit: visible !important;
-  pointer-events: none;
 }
 
 /* ==========================================================================
