@@ -1761,20 +1761,52 @@
 
           ctx.putImageData(imgData, 0, 0);
 
-          // Find exact content bounding box of physical charm (trim all whitespace padding)
-          let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
+          // Find exact content bounding box of physical charm (trim all whitespace padding & filter border artifacts)
+          const rowCounts = new Int32Array(canvas.height);
           for (let y = 0; y < canvas.height; y++) {
             const rowOffset = y * canvas.width * 4;
             for (let x = 0; x < canvas.width; x++) {
-              const idx = rowOffset + x * 4;
-              if (data[idx + 3] > 20) {
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
+              if (data[rowOffset + x * 4 + 3] > 25) {
+                rowCounts[y]++;
               }
             }
           }
+
+          let minY = -1;
+          for (let y = 0; y < canvas.height; y++) {
+            // Must have real content (> 15 non-transparent pixels) across multiple rows
+            if (rowCounts[y] > 15) {
+              const nextValid = (y + 1 < canvas.height && rowCounts[y + 1] > 15) ||
+                                (y + 2 < canvas.height && rowCounts[y + 2] > 15) ||
+                                (y + 3 < canvas.height && rowCounts[y + 3] > 15);
+              if (nextValid) {
+                minY = y;
+                break;
+              }
+            }
+          }
+          if (minY === -1) minY = 0;
+
+          let maxY = -1;
+          for (let y = canvas.height - 1; y >= minY; y--) {
+            if (rowCounts[y] > 10) {
+              maxY = y;
+              break;
+            }
+          }
+          if (maxY === -1) maxY = canvas.height - 1;
+
+          let minX = canvas.width, maxX = -1;
+          for (let y = minY; y <= maxY; y++) {
+            const rowOffset = y * canvas.width * 4;
+            for (let x = 0; x < canvas.width; x++) {
+              if (data[rowOffset + x * 4 + 3] > 25) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+              }
+            }
+          }
+          if (minX > maxX) { minX = 0; maxX = canvas.width - 1; }
 
           let finalUrl = canvas.toDataURL('image/png');
           let meta = { aspectRatio: 1, isHanging: false };
@@ -1808,19 +1840,99 @@
             };
 
             if (isChain) {
-              // 4-Link Chain Charm: calibrate width to exactly 256px (4 links span)
-              const targetW = 256;
-              const scale = targetW / contentW;
-              const destW = 256;
-              const destH = Math.round(contentH * scale);
-              const chainCanvas = document.createElement('canvas');
-              chainCanvas.width = destW;
-              chainCanvas.height = destH;
-              const cCtx = chainCanvas.getContext('2d');
-              cCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, destW, destH);
-              if (!this.calibratedCanvases) this.calibratedCanvases = {};
-              this.calibratedCanvases[imageUrl] = chainCanvas;
-              finalUrl = chainCanvas.toDataURL('image/png');
+              // 4-Link Chain Charm Anchor Calibration:
+              // Robustly locate left link clip, right link clip, and the dangling chain span
+              let lMinX = -1, lMaxX = -1, rMinX = -1, rMaxX = -1;
+              const sampleY = Math.min(maxY, minY + Math.max(25, Math.round(contentH * 0.08)));
+              const sampleRowOffset = sampleY * canvas.width * 4;
+
+              const rowNonEmpty = [];
+              for (let x = minX; x <= maxX; x++) {
+                if (data[sampleRowOffset + x * 4 + 3] > 25) {
+                  rowNonEmpty.push(x);
+                }
+              }
+
+              const midSplit = minX + contentW * 0.5;
+              const leftXs = rowNonEmpty.filter(x => x < midSplit - 15);
+              const rightXs = rowNonEmpty.filter(x => x > midSplit + 15);
+
+              if (leftXs.length > 5 && rightXs.length > 5) {
+                lMinX = Math.min(...leftXs);
+                lMaxX = Math.max(...leftXs);
+                rMinX = Math.min(...rightXs);
+                rMaxX = Math.max(...rightXs);
+              }
+
+              const lW = (lMaxX > lMinX) ? (lMaxX - lMinX + 1) : 0;
+              const rW = (rMaxX > rMinX) ? (rMaxX - rMinX + 1) : 0;
+
+              if (lW > 30 && rW > 30) {
+                // Full Anchor Calibration:
+                // Left link clip anchors at Slot 1 (x: 0..64, y: 0)
+                // Right link clip anchors at Slot 4 (x: 192..256, y: 0)
+                // Middle slots (64..192) remain 100% transparent for other charms
+                const linkBodyH = Math.round(lW * 0.86);
+                const clipCropH = Math.min(contentH, Math.round(linkBodyH * 1.38));
+
+                const origLCenter = (lMinX + lMaxX) / 2.0;
+                const origRCenter = (rMinX + rMaxX) / 2.0;
+                const origLoopDist = Math.max(50, origRCenter - origLCenter);
+
+                // On a 256px wide span (4 slots of 64px):
+                // Slot 1 center = 32px, Slot 4 center = 224px. Distance = 192px.
+                const chainScale = 192.0 / origLoopDist;
+                const chainOrigH = maxY - minY + 1;
+                const destChainH = Math.round(chainOrigH * chainScale);
+                const destCanvasH = Math.max(64, destChainH + 12);
+
+                const chainCanvas = document.createElement('canvas');
+                chainCanvas.width = 256;
+                chainCanvas.height = destCanvasH;
+                const cCtx = chainCanvas.getContext('2d');
+
+                // 1. Draw the chain between left loop and right loop
+                const chainCropX1 = Math.round(lMinX + lW * 0.25);
+                const chainCropX2 = Math.round(rMaxX - rW * 0.25);
+                const chainCropY1 = Math.round(minY + linkBodyH * 0.45);
+                const chainCropY2 = maxY + 1;
+                const cCropW = chainCropX2 - chainCropX1;
+                const cCropH = chainCropY2 - chainCropY1;
+
+                if (cCropW > 0 && cCropH > 0) {
+                  const cDestW = Math.round(cCropW * chainScale);
+                  const cDestH = Math.round(cCropH * chainScale);
+                  const cDestX = Math.round(32 + (192 - cDestW) / 2);
+                  const cDestY = Math.round(32 + (chainCropY1 - (minY + linkBodyH * 0.5)) * chainScale);
+                  cCtx.drawImage(canvas, chainCropX1, chainCropY1, cCropW, cCropH, cDestX, cDestY, cDestW, cDestH);
+                }
+
+                // 2. Draw Left Link Clip (Anchors flush on Slot 1: x = 0..64, y = 0..destLH)
+                const destLH = Math.round(clipCropH * (64.0 / lW));
+                cCtx.drawImage(canvas, lMinX, minY, lW, clipCropH, 0, 0, 64, destLH);
+
+                // 3. Draw Right Link Clip (Anchors flush on Slot 4: x = 192..256, y = 0..destRH)
+                const destRH = Math.round(clipCropH * (64.0 / rW));
+                cCtx.drawImage(canvas, rMinX, minY, rW, clipCropH, 192, 0, 64, destRH);
+
+                if (!this.calibratedCanvases) this.calibratedCanvases = {};
+                this.calibratedCanvases[imageUrl] = chainCanvas;
+                finalUrl = chainCanvas.toDataURL('image/png');
+              } else {
+                // Fallback: Uniform 256px scale
+                const targetW = 256;
+                const scale = targetW / contentW;
+                const destW = 256;
+                const destH = Math.round(contentH * scale);
+                const chainCanvas = document.createElement('canvas');
+                chainCanvas.width = destW;
+                chainCanvas.height = destH;
+                const cCtx = chainCanvas.getContext('2d');
+                cCtx.drawImage(canvas, minX, minY, contentW, contentH, 0, 0, destW, destH);
+                if (!this.calibratedCanvases) this.calibratedCanvases = {};
+                this.calibratedCanvases[imageUrl] = chainCanvas;
+                finalUrl = chainCanvas.toDataURL('image/png');
+              }
             } else if (isFreeform) {
               // Free-form crystal charms: scale naturally within ~52px canvas, preserving base link beneath
               const targetSize = 52;
