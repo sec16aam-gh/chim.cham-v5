@@ -39,6 +39,22 @@
           unless title_lower contains 'gold'
             assign charm_type = 'drop'
           endunless
+        elsif title_lower contains 'lunar glow'
+          assign charm_color_lower = charm_color | downcase
+          assign has_silver_tag = false
+          for tag in prod.tags
+            assign t_low = tag | downcase
+            if t_low contains 'silver'
+              assign has_silver_tag = true
+            endif
+          endfor
+          if charm_color_lower contains 'silver' or has_silver_tag
+            assign charm_type = 'drop'
+          elsif charm_color_lower contains 'gold'
+            # keep default
+          elsif prod.price > 1000 or prod.price > 1.1
+            assign charm_type = 'drop'
+          endif
         endif
 
         assign prod_img = ''

@@ -344,11 +344,19 @@
             const matchedCharm = this.charms.find(ch => String(ch.id) === String(charmId)) || savedItem.charm;
             if (matchedCharm) {
               const reallyIsChain = this.isChainCharm(matchedCharm);
-              const reallyIsDrop = this.isDropCharm(matchedCharm);
+              const reallyIsDrop = this.isDropCharm(matchedCharm) || ((matchedCharm.title || '').toLowerCase().includes('lunar glow') && ((matchedCharm.color || '').toLowerCase().includes('silver') || (this.charmMetaCache && this.charmMetaCache[matchedCharm.image] && this.charmMetaCache[matchedCharm.image].aspectRatio > 1.22)));
               const titleL = (matchedCharm.title || '').toLowerCase();
               const isGoldHeart = titleL.includes('gold crystal heart') || (titleL.includes('crystal heart') && titleL.includes('gold'));
               // Invalidate stale localStorage cache if Crystal Heart was previously cached as freeform
               if (titleL.includes('crystal heart') && !isGoldHeart && this.charmMetaCache[matchedCharm.image] && this.charmMetaCache[matchedCharm.image].isFreeform) {
+                delete this.charmMetaCache[matchedCharm.image];
+                delete this.transparentCache[matchedCharm.image];
+                if (this.calibratedCanvases) delete this.calibratedCanvases[matchedCharm.image];
+                savedItem.transUrl = null;
+                savedItem.charmMeta = null;
+              }
+              // Invalidate stale localStorage cache if silver Lunar Glow was previously cached as protruding
+              if (titleL.includes('lunar glow') && reallyIsDrop && this.charmMetaCache[matchedCharm.image] && this.charmMetaCache[matchedCharm.image].isProtruding) {
                 delete this.charmMetaCache[matchedCharm.image];
                 delete this.transparentCache[matchedCharm.image];
                 if (this.calibratedCanvases) delete this.calibratedCanvases[matchedCharm.image];
@@ -543,6 +551,19 @@
       const title = String(charm.title || '').toLowerCase();
       if (title.includes('letter ') || title.includes('melted heart') || title.includes('pink stone') || title.includes('cinderella')) return true;
       if (title.includes('crystal heart') && !title.includes('gold')) return true;
+      if (title.includes('lunar glow')) {
+        const color = String(charm.color || charm.variant || '').toLowerCase();
+        const price = parseFloat(charm.price || 0);
+        const meta = this.charmMetaCache && charm.image && this.charmMetaCache[charm.image];
+        const ar = meta ? meta.aspectRatio : 0;
+        let hasSilverTag = false;
+        for (let i = 0; i < tags.length; i++) {
+          if (String(tags[i]).toLowerCase().includes('silver')) { hasSilverTag = true; break; }
+        }
+        if (color.includes('silver') || hasSilverTag || price >= 1100 || (price >= 1.1 && price < 100) || ar > 1.22) {
+          if (!color.includes('gold') || ar > 1.22) return true;
+        }
+      }
       return false;
     }
 
@@ -561,7 +582,10 @@
       if (this.isDropCharm(charm)) return false;
       if (this.isFreeformCharm(charm)) return false;
       const title = String(charm.title || '').toLowerCase();
-      return title.includes('crystal butterfly') || title.includes('lunar glow') || title.includes('elegant');
+      const color = String(charm.color || charm.variant || '').toLowerCase();
+      const meta = this.charmMetaCache && charm.image && this.charmMetaCache[charm.image];
+      const isGoldLunarGlow = title.includes('lunar glow') && (color.includes('gold') || !color.includes('silver') || (meta && meta.aspectRatio <= 1.22));
+      return title.includes('crystal butterfly') || isGoldLunarGlow || title.includes('elegant');
     }
 
     isSlotInChainSpan(index) {
@@ -1876,12 +1900,12 @@
               charm.slots = 4;
             }
 
-            const isDrop = this.isDropCharm(charm);
+            const isDrop = this.isDropCharm(charm) || (charmTitleLower.includes('lunar glow') && aspectRatio > 1.22);
             if (isDrop && charm) {
               charm.type = 'drop';
             }
             const isFreeform = !isChain && !isDrop && this.isFreeformCharm(charm);
-            const isProtruding = !isChain && !isDrop && !isFreeform && (this.isProtrudingCharm(charm) || charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant'));
+            const isProtruding = !isChain && !isDrop && !isFreeform && (this.isProtrudingCharm(charm) || charmTitleLower.includes('crystal butterfly') || (charmTitleLower.includes('lunar glow') && aspectRatio <= 1.22) || charmTitleLower.includes('elegant'));
             const isHanging = !isChain && (isDrop || (charm && (charm.type === 'drop' || charm.type === 'hanging')) || aspectRatio > 1.22);
 
             meta = {
@@ -2230,9 +2254,9 @@
         const isDouble = placed.isDoubleStart;
         const isChain = placed.isChainStart;
         const charmTitleLower = (placed.charm.title || '').toLowerCase();
-        const isDrop = this.isDropCharm(placed.charm);
+        const isDrop = this.isDropCharm(placed.charm) || (meta && meta.aspectRatio > 1.22 && charmTitleLower.includes('lunar glow'));
         const isFreeform = !isChain && !isDrop && this.isFreeformCharm(placed.charm);
-        const isProtruding = !isChain && !isDrop && !isFreeform && (this.isProtrudingCharm(placed.charm) || (meta && meta.isProtruding) || charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant'));
+        const isProtruding = !isChain && !isDrop && !isFreeform && (this.isProtrudingCharm(placed.charm) || (meta && meta.isProtruding) || charmTitleLower.includes('crystal butterfly') || (charmTitleLower.includes('lunar glow') && ((meta && meta.aspectRatio <= 1.22) || (!charmTitleLower.includes('silver') && !(placed.charm.color || '').toLowerCase().includes('silver')))) || charmTitleLower.includes('elegant'));
         const isHanging = !isChain && (isDrop || placed.charm.type === 'drop' || placed.charm.type === 'hanging' || (meta && meta.isHanging));
         const keepBaseLink = !isChain && !placed.isChainEnd && ((meta && meta.keepBaseLink) || isFreeform || isProtruding);
 
@@ -2955,7 +2979,7 @@
         if (this.slots[targetIndex]) {
           this.removeCharmAtSlot(targetIndex, true);
         }
-        const reallyIsDrop = this.isDropCharm(charm);
+        const reallyIsDrop = this.isDropCharm(charm) || ((charm.title || '').toLowerCase().includes('lunar glow') && ((charm.color || '').toLowerCase().includes('silver') || (this.charmMetaCache && this.charmMetaCache[charm.image] && this.charmMetaCache[charm.image].aspectRatio > 1.22)));
         if (reallyIsDrop && charm.type !== 'drop') {
           charm.type = 'drop';
         }
@@ -3624,11 +3648,20 @@
       }
 
       const titleLower = String(prod.title || '').toLowerCase();
+      const colorLower = (charmColor || '').toLowerCase();
+      let hasSilverTag = false;
+      for (const tag of tags) {
+        if (String(tag).toLowerCase().includes('silver')) { hasSilverTag = true; break; }
+      }
       if (titleLower.includes('bows')) {
         charmType = 'double';
         charmSlots = 2;
       } else if (titleLower.includes('letter ') || titleLower.includes('melted heart') || titleLower.includes('pink stone') || titleLower.includes('cinderella') || (titleLower.includes('crystal heart') && !titleLower.includes('gold'))) {
         charmType = 'drop';
+      } else if (titleLower.includes('lunar glow')) {
+        if (colorLower.includes('silver') || hasSilverTag || (!colorLower.includes('gold') && colorLower.length > 0)) {
+          charmType = 'drop';
+        }
       }
 
       const firstVariant = (prod.variants && prod.variants[0]) || {};
