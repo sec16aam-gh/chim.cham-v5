@@ -1619,7 +1619,7 @@
               const r = data[idx];
               const g = data[idx + 1];
               const b = data[idx + 2];
-              if (a < 25 || (r < 50 && g < 50 && b < 50) || (r < 185 && Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b)) < 16)) {
+              if (a < 25 || (r < 50 && g < 50 && b < 50) || (r < 235 && Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b)) < 16)) {
                 darkOrGray++;
               }
             }
@@ -1640,7 +1640,7 @@
               const r = data[idx];
               const g = data[idx + 1];
               const b = data[idx + 2];
-              if (a < 25 || (r < 50 && g < 50 && b < 50) || (r < 185 && Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b)) < 16)) {
+              if (a < 25 || (r < 50 && g < 50 && b < 50) || (r < 235 && Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b)) < 16)) {
                 darkOrGray++;
               }
             }
@@ -1673,10 +1673,10 @@
             const b = data[idx + 2];
             // Dark letterbox borders (e.g. Cinderella top/bottom black bars)
             if (r < 30 && g < 30 && b < 30) return true;
-            // High-brightness studio white with tolerance for JPG compression noise (e.g. Letter H, Letter L)
-            if (r > 210 && g > 210 && b > 210) {
+            // High-brightness studio white background (tolerance for compression noise, preserves metallic highlights & silver stars)
+            if (r > 242 && g > 242 && b > 242) {
               const diff = Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b));
-              if (diff < 32) return true;
+              if (diff < 24) return true;
             }
             return false;
           }
@@ -1868,33 +1868,44 @@
               const rW = (rMaxX > rMinX) ? (rMaxX - rMinX + 1) : 0;
 
               if (lW > 30 && rW > 30) {
-                // Full Anchor Calibration:
-                // Left link clip anchors at Slot 1 (x: 0..64, y: 0)
-                // Right link clip anchors at Slot 4 (x: 192..256, y: 0)
-                // Middle slots (64..192) remain 100% transparent for other charms
-                const linkBodyH = Math.round(lW * 0.86);
-                const clipCropH = Math.min(contentH, Math.round(linkBodyH * 1.38));
+                // Measure rectangular link head height along outer edge (where no loop is present)
+                let botYSum = 0, botYCount = 0;
+                const scanRange = Math.min(lMaxX, lMinX + Math.round(lW * 0.22));
+                for (let x = lMinX + 6; x <= scanRange; x++) {
+                  let colBot = -1;
+                  const searchEnd = Math.min(maxY, minY + Math.round(lW * 1.35));
+                  for (let y = minY; y <= searchEnd; y++) {
+                    if (data[y * canvas.width * 4 + x * 4 + 3] > 25) {
+                      colBot = y;
+                    }
+                  }
+                  if (colBot > minY) {
+                    botYSum += colBot;
+                    botYCount++;
+                  }
+                }
+                const lBotY = botYCount > 0 ? Math.round(botYSum / botYCount) : Math.round(minY + lW * 0.88);
+                const linkH = Math.max(30, lBotY - minY + 1);
 
                 const origLCenter = (lMinX + lMaxX) / 2.0;
                 const origRCenter = (rMinX + rMaxX) / 2.0;
                 const origLoopDist = Math.max(50, origRCenter - origLCenter);
 
-                // On a 256px wide span (4 slots of 64px):
-                // Slot 1 center = 32px, Slot 4 center = 224px. Distance = 192px.
+                // Slot 1 center = 32px, Slot 4 center = 224px. Span distance = 192px.
                 const chainScale = 192.0 / origLoopDist;
                 const chainOrigH = maxY - minY + 1;
                 const destChainH = Math.round(chainOrigH * chainScale);
-                const destCanvasH = Math.max(64, destChainH + 12);
+                const destCanvasH = Math.max(64, destChainH + 20);
 
                 const chainCanvas = document.createElement('canvas');
                 chainCanvas.width = 256;
                 chainCanvas.height = destCanvasH;
                 const cCtx = chainCanvas.getContext('2d');
 
-                // 1. Draw the chain between left loop and right loop
-                const chainCropX1 = Math.round(lMinX + lW * 0.25);
-                const chainCropX2 = Math.round(rMaxX - rW * 0.25);
-                const chainCropY1 = Math.round(minY + linkBodyH * 0.45);
+                // 1. Draw continuous chain connecting left and right loop centers
+                const chainCropX1 = lMinX;
+                const chainCropX2 = rMaxX;
+                const chainCropY1 = Math.round(minY + linkH * 0.65);
                 const chainCropY2 = maxY + 1;
                 const cCropW = chainCropX2 - chainCropX1;
                 const cCropH = chainCropY2 - chainCropY1;
@@ -1902,18 +1913,21 @@
                 if (cCropW > 0 && cCropH > 0) {
                   const cDestW = Math.round(cCropW * chainScale);
                   const cDestH = Math.round(cCropH * chainScale);
-                  const cDestX = Math.round(32 + (192 - cDestW) / 2);
-                  const cDestY = Math.round(32 + (chainCropY1 - (minY + linkBodyH * 0.5)) * chainScale);
+                  const cDestX = Math.round(32 + (chainCropX1 - origLCenter) * chainScale);
+                  const cDestY = Math.round(64 + (chainCropY1 - (minY + linkH)) * chainScale);
                   cCtx.drawImage(canvas, chainCropX1, chainCropY1, cCropW, cCropH, cDestX, cDestY, cDestW, cDestH);
                 }
 
-                // 2. Draw Left Link Clip (Anchors flush on Slot 1: x = 0..64, y = 0..destLH)
-                const destLH = Math.round(clipCropH * (64.0 / lW));
-                cCtx.drawImage(canvas, lMinX, minY, lW, clipCropH, 0, 0, 64, destLH);
+                // 2. Draw Left Link Clip (Slot 1: x = 0..64, metal head spans y = 0..64, loop hangs below y = 64)
+                const loopH = Math.round(linkH * 1.45);
+                const destClipH = Math.round(loopH * (64.0 / linkH));
+                cCtx.drawImage(canvas, lMinX, minY, lW, loopH, 0, 0, 64, destClipH);
 
-                // 3. Draw Right Link Clip (Anchors flush on Slot 4: x = 192..256, y = 0..destRH)
-                const destRH = Math.round(clipCropH * (64.0 / rW));
-                cCtx.drawImage(canvas, rMinX, minY, rW, clipCropH, 192, 0, 64, destRH);
+                // 3. Draw Right Link Clip (Slot 4: x = 192..256, metal head spans y = 0..64, loop hangs below y = 64)
+                cCtx.drawImage(canvas, rMinX, minY, rW, loopH, 192, 0, 64, destClipH);
+
+                // 4. Guarantee middle slots (x: 64..192) are 100% unobstructed from y = 0 to 64 for intermediate charms
+                cCtx.clearRect(64, 0, 128, 64);
 
                 if (!this.calibratedCanvases) this.calibratedCanvases = {};
                 this.calibratedCanvases[imageUrl] = chainCanvas;
