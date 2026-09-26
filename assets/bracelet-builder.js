@@ -344,6 +344,20 @@
             const matchedCharm = this.charms.find(ch => String(ch.id) === String(charmId)) || savedItem.charm;
             if (matchedCharm) {
               const reallyIsChain = this.isChainCharm(matchedCharm);
+              const reallyIsDrop = this.isDropCharm(matchedCharm);
+              const titleL = (matchedCharm.title || '').toLowerCase();
+              const isGoldHeart = titleL.includes('gold crystal heart') || (titleL.includes('crystal heart') && titleL.includes('gold'));
+              // Invalidate stale localStorage cache if Crystal Heart was previously cached as freeform
+              if (titleL.includes('crystal heart') && !isGoldHeart && this.charmMetaCache[matchedCharm.image] && this.charmMetaCache[matchedCharm.image].isFreeform) {
+                delete this.charmMetaCache[matchedCharm.image];
+                delete this.transparentCache[matchedCharm.image];
+                if (this.calibratedCanvases) delete this.calibratedCanvases[matchedCharm.image];
+                savedItem.transUrl = null;
+                savedItem.charmMeta = null;
+              }
+              if (reallyIsDrop && matchedCharm.type !== 'drop') {
+                matchedCharm.type = 'drop';
+              }
               if (savedItem.transUrl && matchedCharm.image) {
                 this.transparentCache[matchedCharm.image] = savedItem.transUrl;
               }
@@ -361,7 +375,7 @@
                 chainStartIndex: reallyIsChain ? savedItem.chainStartIndex : undefined,
                 isDoubleStart: !reallyIsChain && !!savedItem.isDoubleStart,
                 isDoubleEnd: !reallyIsChain && !!savedItem.isDoubleEnd,
-                isHanging: !!savedItem.isHanging
+                isHanging: reallyIsDrop || !!savedItem.isHanging
               };
             }
           }
@@ -513,6 +527,41 @@
         return false;
       }
       return charm.type === 'chain';
+    }
+
+    isDropCharm(charm) {
+      if (!charm) return false;
+      if (this.isChainCharm(charm)) return false;
+      if (charm.type === 'drop' || charm.type === 'hanging') return true;
+      let tags = [];
+      if (Array.isArray(charm.tags)) tags = charm.tags;
+      else if (typeof charm.tags === 'string' && charm.tags.length > 0) tags = charm.tags.split(',');
+      for (let i = 0; i < tags.length; i++) {
+        const t = String(tags[i]).trim().toLowerCase();
+        if (t === 'type:drop' || t === 'drop') return true;
+      }
+      const title = String(charm.title || '').toLowerCase();
+      if (title.includes('letter ') || title.includes('melted heart') || title.includes('pink stone') || title.includes('cinderella')) return true;
+      if (title.includes('crystal heart') && !title.includes('gold')) return true;
+      return false;
+    }
+
+    isFreeformCharm(charm) {
+      if (!charm) return false;
+      if (this.isChainCharm(charm)) return false;
+      if (this.isDropCharm(charm)) return false;
+      const title = String(charm.title || '').toLowerCase();
+      const isGoldCrystalHeart = title.includes('gold crystal heart') || (title.includes('crystal heart') && title.includes('gold'));
+      return isGoldCrystalHeart || title.includes('pink crystal');
+    }
+
+    isProtrudingCharm(charm) {
+      if (!charm) return false;
+      if (this.isChainCharm(charm)) return false;
+      if (this.isDropCharm(charm)) return false;
+      if (this.isFreeformCharm(charm)) return false;
+      const title = String(charm.title || '').toLowerCase();
+      return title.includes('crystal butterfly') || title.includes('lunar glow') || title.includes('elegant');
     }
 
     isSlotInChainSpan(index) {
@@ -1816,6 +1865,9 @@
             const contentH = maxY - minY + 1;
             const aspectRatio = contentH / contentW;
 
+            if (!charm && imageUrl && this.charms && this.charms.length > 0) {
+              charm = this.charms.find(c => c.image === imageUrl);
+            }
             const charmTitleLower = ((charm && charm.title) ? charm.title : (imageUrl ? decodeURIComponent(imageUrl) : '')).toLowerCase();
             const isChain = this.isChainCharm(charm);
 
@@ -1824,9 +1876,13 @@
               charm.slots = 4;
             }
 
-            const isFreeform = !isChain && (charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal'));
-            const isProtruding = !isChain && (charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant'));
-            const isHanging = !isChain && ((charm && (charm.type === 'drop' || charm.type === 'hanging')) || aspectRatio > 1.22);
+            const isDrop = this.isDropCharm(charm);
+            if (isDrop && charm) {
+              charm.type = 'drop';
+            }
+            const isFreeform = !isChain && !isDrop && this.isFreeformCharm(charm);
+            const isProtruding = !isChain && !isDrop && !isFreeform && (this.isProtrudingCharm(charm) || charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant'));
+            const isHanging = !isChain && (isDrop || (charm && (charm.type === 'drop' || charm.type === 'hanging')) || aspectRatio > 1.22);
 
             meta = {
               aspectRatio,
@@ -2174,11 +2230,11 @@
         const isDouble = placed.isDoubleStart;
         const isChain = placed.isChainStart;
         const charmTitleLower = (placed.charm.title || '').toLowerCase();
-        const isFreeformTitle = charmTitleLower.includes('crystal heart') || charmTitleLower.includes('pink crystal');
-        const isProtrudingTitle = charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant');
-        const isHanging = !isChain && (placed.charm.type === 'drop' || placed.charm.type === 'hanging' || (meta && meta.isHanging));
-        const keepBaseLink = !isChain && !placed.isChainEnd && ((meta && meta.keepBaseLink) || isFreeformTitle || isProtrudingTitle);
-        const isProtruding = !isChain && ((meta && meta.isProtruding) || isProtrudingTitle);
+        const isDrop = this.isDropCharm(placed.charm);
+        const isFreeform = !isChain && !isDrop && this.isFreeformCharm(placed.charm);
+        const isProtruding = !isChain && !isDrop && !isFreeform && (this.isProtrudingCharm(placed.charm) || (meta && meta.isProtruding) || charmTitleLower.includes('crystal butterfly') || charmTitleLower.includes('lunar glow') || charmTitleLower.includes('elegant'));
+        const isHanging = !isChain && (isDrop || placed.charm.type === 'drop' || placed.charm.type === 'hanging' || (meta && meta.isHanging));
+        const keepBaseLink = !isChain && !placed.isChainEnd && ((meta && meta.keepBaseLink) || isFreeform || isProtruding);
 
         const isCalibrated = !!(this.transparentCache && this.transparentCache[placed.charm.image]);
         const charmImgSrc = isCalibrated
@@ -2899,11 +2955,16 @@
         if (this.slots[targetIndex]) {
           this.removeCharmAtSlot(targetIndex, true);
         }
+        const reallyIsDrop = this.isDropCharm(charm);
+        if (reallyIsDrop && charm.type !== 'drop') {
+          charm.type = 'drop';
+        }
+        const meta = this.charmMetaCache && this.charmMetaCache[charm.image];
         this.slots[targetIndex] = {
           charm,
           isDoubleStart: false,
           isDoubleEnd: false,
-          isHanging: charm.type === 'drop' || charm.type === 'hanging'
+          isHanging: reallyIsDrop || charm.type === 'drop' || charm.type === 'hanging' || (meta && meta.isHanging)
         };
       }
 
@@ -3566,7 +3627,7 @@
       if (titleLower.includes('bows')) {
         charmType = 'double';
         charmSlots = 2;
-      } else if (titleLower.includes('letter ') || titleLower.includes('melted heart') || titleLower.includes('pink stone')) {
+      } else if (titleLower.includes('letter ') || titleLower.includes('melted heart') || titleLower.includes('pink stone') || titleLower.includes('cinderella') || (titleLower.includes('crystal heart') && !titleLower.includes('gold'))) {
         charmType = 'drop';
       }
 

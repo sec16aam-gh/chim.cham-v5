@@ -33,8 +33,12 @@
         if title_lower contains 'bows'
           assign charm_type = 'double'
           assign charm_slots = 2
-        elsif title_lower contains 'letter ' or title_lower contains 'melted heart' or title_lower contains 'pink stone'
+        elsif title_lower contains 'letter ' or title_lower contains 'melted heart' or title_lower contains 'pink stone' or title_lower contains 'cinderella'
           assign charm_type = 'drop'
+        elsif title_lower contains 'crystal heart'
+          unless title_lower contains 'gold'
+            assign charm_type = 'drop'
+          endunless
         endif
 
         assign prod_img = ''
