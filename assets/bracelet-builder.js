@@ -1868,24 +1868,59 @@
               const rW = (rMaxX > rMinX) ? (rMaxX - rMinX + 1) : 0;
 
               if (lW > 30 && rW > 30) {
-                // Measure rectangular link head height along outer edge (where no loop is present)
-                let botYSum = 0, botYCount = 0;
-                const scanRange = Math.min(lMaxX, lMinX + Math.round(lW * 0.22));
-                for (let x = lMinX + 6; x <= scanRange; x++) {
+                // Measure left rectangular link head height on outer band (8%..18% of lW, well clear of corner bevels and center ring/dangling ornaments)
+                const lx1 = lMinX + Math.round(lW * 0.08);
+                const lx2 = lMinX + Math.round(lW * 0.18);
+                const lyMin = minY + Math.round(lW * 0.72);
+                const lyMax = Math.min(maxY, minY + Math.round(lW * 1.05));
+                const lFreq = {};
+                for (let x = lx1; x <= lx2; x++) {
                   let colBot = -1;
-                  const searchEnd = Math.min(maxY, minY + Math.round(lW * 1.35));
-                  for (let y = minY; y <= searchEnd; y++) {
+                  for (let y = lyMin; y <= lyMax; y++) {
                     if (data[y * canvas.width * 4 + x * 4 + 3] > 25) {
                       colBot = y;
                     }
                   }
-                  if (colBot > minY) {
-                    botYSum += colBot;
-                    botYCount++;
+                  if (colBot > 0) {
+                    lFreq[colBot] = (lFreq[colBot] || 0) + 1;
                   }
                 }
-                const lBotY = botYCount > 0 ? Math.round(botYSum / botYCount) : Math.round(minY + lW * 0.88);
-                const linkH = Math.max(30, lBotY - minY + 1);
+                let lModeY = -1, lMaxCount = 0;
+                for (const yStr in lFreq) {
+                  if (lFreq[yStr] > lMaxCount) {
+                    lMaxCount = lFreq[yStr];
+                    lModeY = parseInt(yStr, 10);
+                  }
+                }
+                const lBotY = lModeY > 0 ? lModeY : Math.round(minY + lW * 0.86);
+                const lLinkH = Math.max(30, lBotY - minY + 1);
+
+                // Measure right rectangular link head height on outer band (82%..92% of rW)
+                const rx1 = rMinX + Math.round(rW * 0.82);
+                const rx2 = rMinX + Math.round(rW * 0.92);
+                const ryMin = minY + Math.round(rW * 0.72);
+                const ryMax = Math.min(maxY, minY + Math.round(rW * 1.05));
+                const rFreq = {};
+                for (let x = rx1; x <= rx2; x++) {
+                  let colBot = -1;
+                  for (let y = ryMin; y <= ryMax; y++) {
+                    if (data[y * canvas.width * 4 + x * 4 + 3] > 25) {
+                      colBot = y;
+                    }
+                  }
+                  if (colBot > 0) {
+                    rFreq[colBot] = (rFreq[colBot] || 0) + 1;
+                  }
+                }
+                let rModeY = -1, rMaxCount = 0;
+                for (const yStr in rFreq) {
+                  if (rFreq[yStr] > rMaxCount) {
+                    rMaxCount = rFreq[yStr];
+                    rModeY = parseInt(yStr, 10);
+                  }
+                }
+                const rBotY = rModeY > 0 ? rModeY : Math.round(minY + rW * 0.86);
+                const rLinkH = Math.max(30, rBotY - minY + 1);
 
                 const origLCenter = (lMinX + lMaxX) / 2.0;
                 const origRCenter = (rMinX + rMaxX) / 2.0;
@@ -1903,9 +1938,10 @@
                 const cCtx = chainCanvas.getContext('2d');
 
                 // 1. Draw continuous chain connecting left and right loop centers
+                // Crop from bottom of the link heads downwards to avoid duplicate ghost bevels
                 const chainCropX1 = lMinX;
                 const chainCropX2 = rMaxX;
-                const chainCropY1 = Math.round(minY + linkH * 0.65);
+                const chainCropY1 = minY + Math.max(lLinkH, rLinkH);
                 const chainCropY2 = maxY + 1;
                 const cCropW = chainCropX2 - chainCropX1;
                 const cCropH = chainCropY2 - chainCropY1;
@@ -1914,17 +1950,19 @@
                   const cDestW = Math.round(cCropW * chainScale);
                   const cDestH = Math.round(cCropH * chainScale);
                   const cDestX = Math.round(32 + (chainCropX1 - origLCenter) * chainScale);
-                  const cDestY = Math.round(64 + (chainCropY1 - (minY + linkH)) * chainScale);
+                  const cDestY = 64;
                   cCtx.drawImage(canvas, chainCropX1, chainCropY1, cCropW, cCropH, cDestX, cDestY, cDestW, cDestH);
                 }
 
                 // 2. Draw Left Link Clip (Slot 1: x = 0..64, metal head spans y = 0..64, loop hangs below y = 64)
-                const loopH = Math.round(linkH * 1.45);
-                const destClipH = Math.round(loopH * (64.0 / linkH));
-                cCtx.drawImage(canvas, lMinX, minY, lW, loopH, 0, 0, 64, destClipH);
+                const lLoopH = Math.round(lLinkH * 1.45);
+                const lDestClipH = Math.round(lLoopH * (64.0 / lLinkH));
+                cCtx.drawImage(canvas, lMinX, minY, lW, lLoopH, 0, 0, 64, lDestClipH);
 
                 // 3. Draw Right Link Clip (Slot 4: x = 192..256, metal head spans y = 0..64, loop hangs below y = 64)
-                cCtx.drawImage(canvas, rMinX, minY, rW, loopH, 192, 0, 64, destClipH);
+                const rLoopH = Math.round(rLinkH * 1.45);
+                const rDestClipH = Math.round(rLoopH * (64.0 / rLinkH));
+                cCtx.drawImage(canvas, rMinX, minY, rW, rLoopH, 192, 0, 64, rDestClipH);
 
                 // 4. Guarantee middle slots (x: 64..192) are 100% unobstructed from y = 0 to 64 for intermediate charms
                 cCtx.clearRect(64, 0, 128, 64);
