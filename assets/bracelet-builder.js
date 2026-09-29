@@ -387,6 +387,10 @@
               };
             }
           }
+          if (this.selectedModel) {
+            const isWatch = this.selectedModel.type === 'watch';
+            this.reconcileSlotsForModelChange(isWatch, this.slotsCount);
+          }
         }
       } catch (err) {
         console.warn('BraceletBuilder: Unable to restore state from localStorage', err);
@@ -600,6 +604,234 @@
         }
       }
       return null;
+    }
+
+    reconcileSlotsForModelChange(isWatch, newSlotsCount) {
+      if (!Array.isArray(this.slots)) {
+        this.slots = new Array(newSlotsCount).fill(null);
+        return { removedChains: [], removedDoubles: [], removedSingles: [], hadAdjustments: false };
+      }
+
+      const oldSlots = this.slots;
+      const newSlots = new Array(newSlotsCount).fill(null);
+      const chainCharms = [];
+      const doubleCharms = [];
+      const singleCharms = [];
+
+      // 1. Extract all placed items
+      for (let i = 0; i < oldSlots.length; i++) {
+        const item = oldSlots[i];
+        if (!item) continue;
+        if (item.isChainStart) {
+          chainCharms.push({
+            charm: item.charm,
+            start: i,
+            end: typeof item.chainEndIndex === 'number' ? item.chainEndIndex : (i + 3)
+          });
+        } else if (item.isChainEnd || item.isDoubleEnd) {
+          continue;
+        } else if (item.isDoubleStart) {
+          doubleCharms.push({
+            charm: item.charm,
+            start: i
+          });
+        } else {
+          singleCharms.push({
+            charm: item.charm,
+            start: i,
+            item: item
+          });
+        }
+      }
+
+      const leftCount = isWatch ? (newSlotsCount / 2) : -1;
+
+      const isValidChain = (s) => {
+        if (s < 0 || s + 3 >= newSlotsCount) return false;
+        if (isWatch && s < leftCount && (s + 3) >= leftCount) return false;
+        return true;
+      };
+
+      const isValidDouble = (s) => {
+        if (s < 0 || s + 1 >= newSlotsCount) return false;
+        if (isWatch && s === leftCount - 1) return false;
+        return true;
+      };
+
+      const unplacedChains = [];
+      const unplacedDoubles = [];
+      const unplacedSingles = [];
+
+      // 2A. Place in-place valid chain charms
+      for (const c of chainCharms) {
+        if (isValidChain(c.start)) {
+          const s = c.start;
+          newSlots[s] = {
+            charm: c.charm,
+            isChainStart: true,
+            isChainEnd: false,
+            chainEndIndex: s + 3,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+          newSlots[s + 3] = {
+            charm: c.charm,
+            isChainStart: false,
+            isChainEnd: true,
+            chainStartIndex: s,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+        } else {
+          unplacedChains.push(c);
+        }
+      }
+
+      // 2B. Place in-place valid double charms
+      for (const d of doubleCharms) {
+        const s = d.start;
+        if (isValidDouble(s) && newSlots[s] === null && newSlots[s + 1] === null) {
+          newSlots[s] = {
+            charm: d.charm,
+            isDoubleStart: true,
+            isDoubleEnd: false,
+            isHanging: d.charm.type === 'drop' || d.charm.type === 'hanging'
+          };
+          newSlots[s + 1] = {
+            charm: d.charm,
+            isDoubleStart: false,
+            isDoubleEnd: true,
+            isHanging: false
+          };
+        } else {
+          unplacedDoubles.push(d);
+        }
+      }
+
+      // 2C. Place in-place valid single charms
+      for (const sItem of singleCharms) {
+        const idx = sItem.start;
+        if (idx < newSlotsCount && newSlots[idx] === null) {
+          newSlots[idx] = sItem.item;
+        } else {
+          unplacedSingles.push(sItem);
+        }
+      }
+
+      // 3. Relocate unplaced chains
+      const removedChains = [];
+      const chainCandidates = [];
+      if (isWatch) {
+        for (let i = 0; i <= leftCount - 4; i++) chainCandidates.push(i);
+        for (let i = leftCount; i <= newSlotsCount - 4; i++) chainCandidates.push(i);
+      } else {
+        for (let i = 0; i <= newSlotsCount - 4; i++) chainCandidates.push(i);
+      }
+
+      for (const c of unplacedChains) {
+        let placed = false;
+        for (const cand of chainCandidates) {
+          if (!isValidChain(cand)) continue;
+          let hasConflict = false;
+          for (let k = 0; k < 4; k++) {
+            const sl = newSlots[cand + k];
+            if (sl && (sl.isChainStart || sl.isChainEnd || sl.isDoubleStart || sl.isDoubleEnd)) {
+              hasConflict = true;
+              break;
+            }
+          }
+          if (!hasConflict) {
+            // Displace any single charms residing on anchor links cand or cand + 3
+            if (newSlots[cand]) {
+              unplacedSingles.push({ charm: newSlots[cand].charm, start: cand, item: newSlots[cand] });
+            }
+            if (newSlots[cand + 3]) {
+              unplacedSingles.push({ charm: newSlots[cand + 3].charm, start: cand + 3, item: newSlots[cand + 3] });
+            }
+            newSlots[cand] = {
+              charm: c.charm,
+              isChainStart: true,
+              isChainEnd: false,
+              chainEndIndex: cand + 3,
+              isDoubleStart: false,
+              isDoubleEnd: false,
+              isHanging: false
+            };
+            newSlots[cand + 3] = {
+              charm: c.charm,
+              isChainStart: false,
+              isChainEnd: true,
+              chainStartIndex: cand,
+              isDoubleStart: false,
+              isDoubleEnd: false,
+              isHanging: false
+            };
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          removedChains.push(c.charm);
+        }
+      }
+
+      // 4. Relocate unplaced double charms
+      const removedDoubles = [];
+      const doubleCandidates = [];
+      if (isWatch) {
+        for (let i = 0; i <= leftCount - 2; i++) doubleCandidates.push(i);
+        for (let i = leftCount; i <= newSlotsCount - 2; i++) doubleCandidates.push(i);
+      } else {
+        for (let i = 0; i <= newSlotsCount - 2; i++) doubleCandidates.push(i);
+      }
+
+      for (const d of unplacedDoubles) {
+        let placed = false;
+        for (const cand of doubleCandidates) {
+          if (!isValidDouble(cand)) continue;
+          if (newSlots[cand] === null && newSlots[cand + 1] === null) {
+            newSlots[cand] = {
+              charm: d.charm,
+              isDoubleStart: true,
+              isDoubleEnd: false,
+              isHanging: d.charm.type === 'drop' || d.charm.type === 'hanging'
+            };
+            newSlots[cand + 1] = {
+              charm: d.charm,
+              isDoubleStart: false,
+              isDoubleEnd: true,
+              isHanging: false
+            };
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          removedDoubles.push(d.charm);
+        }
+      }
+
+      // 5. Relocate unplaced single charms
+      const removedSingles = [];
+      for (const sItem of unplacedSingles) {
+        let placed = false;
+        for (let idx = 0; idx < newSlotsCount; idx++) {
+          if (newSlots[idx] === null) {
+            newSlots[idx] = sItem.item;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          removedSingles.push(sItem.charm);
+        }
+      }
+
+      const hadAdjustments = unplacedChains.length > 0 || unplacedDoubles.length > 0 || unplacedSingles.length > 0;
+      this.slots = newSlots;
+      return { removedChains, removedDoubles, removedSingles, hadAdjustments };
     }
 
     init() {
@@ -1337,6 +1569,9 @@
       const found = this.models.find(m => String(m.id) === String(modelId));
       if (!found) return;
 
+      const isWatch = found.type === 'watch';
+      const prevIsWatch = this.selectedModel ? (this.selectedModel.type === 'watch') : false;
+
       this.selectedModel = found;
       this.slotsCount = parseInt(found.slots, 10) || 16;
       if (found.type === 'watch' && this.slotsCount % 2 !== 0) {
@@ -1349,12 +1584,18 @@
       // Re-populate color dropdown dynamically using this model's Default Metal Color!
       this.renderColorDropdown(true);
 
-      // Resize slots array gracefully preserving placed charms
-      const newSlots = new Array(this.slotsCount).fill(null);
-      for (let i = 0; i < Math.min(this.slots.length, this.slotsCount); i++) {
-        newSlots[i] = this.slots[i];
+      // Reconcile slots gracefully preserving placed charms and resolving watch bridging/overflow
+      const { removedChains, removedDoubles, removedSingles, hadAdjustments } = this.reconcileSlotsForModelChange(isWatch, this.slotsCount);
+
+      if (removedChains.length > 0 || removedDoubles.length > 0 || removedSingles.length > 0) {
+        const parts = [];
+        if (removedChains.length > 0) parts.push(`${removedChains.length} chain charm${removedChains.length > 1 ? 's' : ''}`);
+        if (removedDoubles.length > 0) parts.push(`${removedDoubles.length} 2-link charm${removedDoubles.length > 1 ? 's' : ''}`);
+        if (removedSingles.length > 0) parts.push(`${removedSingles.length} charm${removedSingles.length > 1 ? 's' : ''}`);
+        this.showToast(`Adjusted charms for watch layout. Removed ${parts.join(', ')} that could not fit.`);
+      } else if (hadAdjustments && isWatch) {
+        this.showToast('Adjusted charm positions for watch layout.');
       }
-      this.slots = newSlots;
 
       // Update Toolbar Model Button Text and dropdown highlight
       this.updateModelToolbarUI();
@@ -3222,8 +3463,11 @@
         } else {
           this.dom.charmsList.innerHTML = placedItems.map(({ slotIndex, item }) => {
             const charm = item.charm;
+            const endPos = (item.isChainStart && typeof item.chainEndIndex === 'number')
+              ? item.chainEndIndex + 1
+              : slotIndex + 4;
             const posLabel = item.isChainStart
-              ? `Positions ${slotIndex + 1} & ${slotIndex + 4}/${this.slotsCount}`
+              ? `Positions ${slotIndex + 1} & ${endPos}/${this.slotsCount}`
               : (item.isDoubleStart
                 ? `Positions ${slotIndex + 1}-${slotIndex + 2}/${this.slotsCount}`
                 : `Position ${slotIndex + 1}/${this.slotsCount}`);
@@ -3364,8 +3608,11 @@
       for (let i = 0; i < this.slots.length; i++) {
         const item = this.slots[i];
         if (item && !item.isDoubleEnd && !item.isChainEnd) {
+          const endPos = (item.isChainStart && typeof item.chainEndIndex === 'number')
+            ? item.chainEndIndex + 1
+            : i + 4;
           const pos = item.isChainStart
-            ? `Slots ${i + 1} & ${i + 4}`
+            ? `Slots ${i + 1} & ${endPos}`
             : (item.isDoubleStart ? `Slots ${i + 1}-${i + 2}` : `Slot ${i + 1}`);
           summaryText += `- ${pos}: ${item.charm.title} (${this.formatMoney(item.charm.price)})\n`;
         }
@@ -3465,8 +3712,11 @@
         const item = this.slots[i];
         const charmVarId = (item && !item.isDoubleEnd && !item.isChainEnd && item.charm) ? (item.charm.variantId || item.charm.id) : null;
         if (charmVarId && !String(charmVarId).startsWith('demo-')) {
+          const endPos = (item.isChainStart && typeof item.chainEndIndex === 'number')
+            ? item.chainEndIndex + 1
+            : i + 4;
           const pos = item.isChainStart
-            ? `Slots ${i + 1} & ${i + 4}`
+            ? `Slots ${i + 1} & ${endPos}`
             : (item.isDoubleStart ? `Slot ${i + 1}-${i + 2}` : `Slot ${i + 1}`);
           items.push({
             id: parseInt(charmVarId, 10),
