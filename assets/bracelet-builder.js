@@ -606,6 +606,24 @@
       return null;
     }
 
+    isValidChainSpan(start, slotsCount = this.slotsCount) {
+      if (start < 0 || start + 3 >= slotsCount) return false;
+      if (this.selectedModel && this.selectedModel.type === 'watch') {
+        const leftCount = slotsCount / 2;
+        if (start < leftCount && (start + 3) >= leftCount) return false;
+      }
+      return true;
+    }
+
+    isValidDoubleSpan(start, slotsCount = this.slotsCount) {
+      if (start < 0 || start + 1 >= slotsCount) return false;
+      if (this.selectedModel && this.selectedModel.type === 'watch') {
+        const leftCount = slotsCount / 2;
+        if (start === leftCount - 1) return false;
+      }
+      return true;
+    }
+
     reconcileSlotsForModelChange(isWatch, newSlotsCount) {
       if (!Array.isArray(this.slots)) {
         this.slots = new Array(newSlotsCount).fill(null);
@@ -3244,38 +3262,588 @@
 
       const itemFrom = this.slots[fromIndex];
       const itemTo = this.slots[toIndex];
-
       if (!itemFrom) return;
 
-      if (itemFrom.isChainStart || itemFrom.isChainEnd) {
-        const startIdx = itemFrom.isChainStart ? fromIndex : itemFrom.chainStartIndex;
-        const endIdx = itemFrom.isChainStart ? (itemFrom.chainEndIndex || (fromIndex + 3)) : fromIndex;
-        const chainCharm = itemFrom.charm;
-        this.slots[startIdx] = null;
-        if (typeof endIdx === 'number' && endIdx < this.slotsCount) {
-          this.slots[endIdx] = null;
+      const isFromChain = !!(itemFrom.isChainStart || itemFrom.isChainEnd);
+      const isFromDouble = !!(itemFrom.isDoubleStart || itemFrom.isDoubleEnd);
+      const isFromSingle = !isFromChain && !isFromDouble;
+
+      // =========================================================
+      // CASE 1: Moving a Chain Charm
+      // =========================================================
+      if (isFromChain) {
+        const fromChainStart = itemFrom.isChainStart ? fromIndex : itemFrom.chainStartIndex;
+        const fromChainEnd = typeof this.slots[fromChainStart]?.chainEndIndex === 'number'
+          ? this.slots[fromChainStart].chainEndIndex
+          : (fromChainStart + 3);
+        const chainCharm = (this.slots[fromChainStart] && this.slots[fromChainStart].charm) || itemFrom.charm;
+
+        // Check if user dropped on another chain charm
+        const targetChain = this.isSlotInChainSpan(toIndex);
+
+        // 1A: Dropped directly onto another chain charm -> SWAP BOTH CHAIN CHARMS
+        if (targetChain && targetChain.start !== fromChainStart) {
+          const bStart = targetChain.start;
+          const bEnd = targetChain.end;
+          const bCharm = targetChain.item.charm;
+
+          // Chain A moves to Span B [bStart, bEnd]
+          this.slots[bStart] = {
+            charm: chainCharm,
+            isChainStart: true,
+            isChainEnd: false,
+            chainEndIndex: bEnd,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+          this.slots[bEnd] = {
+            charm: chainCharm,
+            isChainStart: false,
+            isChainEnd: true,
+            chainStartIndex: bStart,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+
+          // Chain B moves to Span A [fromChainStart, fromChainEnd]
+          this.slots[fromChainStart] = {
+            charm: bCharm,
+            isChainStart: true,
+            isChainEnd: false,
+            chainEndIndex: fromChainEnd,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+          this.slots[fromChainEnd] = {
+            charm: bCharm,
+            isChainStart: false,
+            isChainEnd: true,
+            chainStartIndex: fromChainStart,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+
+          // Middle-link single charms stay in their respective slots!
+          this.renderCanvas();
+          this.updateSidebar();
+          this.updateHeaderMeta();
+          this.savePersistedState();
+          return;
         }
-        this.placeCharmAtSlot(chainCharm, toIndex);
-        return;
-      }
 
-      if (itemFrom.isDoubleStart || itemFrom.isDoubleEnd) {
-        const startIdx = itemFrom.isDoubleStart ? fromIndex : (fromIndex - 1);
-        const doubleCharm = itemFrom.charm;
-        this.slots[startIdx] = null;
-        if (startIdx + 1 < this.slotsCount) {
-          this.slots[startIdx + 1] = null;
+        // If dropped inside its own chain span, do nothing
+        if (targetChain && targetChain.start === fromChainStart) {
+          return;
         }
-        this.placeCharmAtSlot(doubleCharm, toIndex);
+
+        // 1B: Moving Chain Charm to empty slots or slots with normal/double charms
+        let targetStart = toIndex;
+        const span = 4;
+        if (targetStart > this.slotsCount - span) {
+          targetStart = this.slotsCount - span;
+        }
+        if (targetStart < 0) targetStart = 0;
+
+        if (this.selectedModel && this.selectedModel.type === 'watch') {
+          const leftCount = this.slotsCount / 2;
+          if (toIndex < leftCount) {
+            if (targetStart + 3 >= leftCount) {
+              targetStart = leftCount - span;
+            }
+          } else {
+            if (targetStart < leftCount) {
+              targetStart = leftCount;
+            }
+          }
+        }
+
+        if (!this.isValidChainSpan(targetStart)) {
+          this.showToast('No room for a chain charm here.');
+          return;
+        }
+
+        // Check if [targetStart, targetStart + 3] collides with another chain charm
+        let collidingChain = null;
+        for (let s = targetStart; s <= targetStart + 3; s++) {
+          const c = this.isSlotInChainSpan(s);
+          if (c && c.start !== fromChainStart) {
+            collidingChain = c;
+            break;
+          }
+        }
+
+        if (collidingChain) {
+          // Collides with another chain charm -> Swap both chain charms
+          const bStart = collidingChain.start;
+          const bEnd = collidingChain.end;
+          const bCharm = collidingChain.item.charm;
+
+          this.slots[bStart] = {
+            charm: chainCharm,
+            isChainStart: true,
+            isChainEnd: false,
+            chainEndIndex: bEnd,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+          this.slots[bEnd] = {
+            charm: chainCharm,
+            isChainStart: false,
+            isChainEnd: true,
+            chainStartIndex: bStart,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+          this.slots[fromChainStart] = {
+            charm: bCharm,
+            isChainStart: true,
+            isChainEnd: false,
+            chainEndIndex: fromChainEnd,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+          this.slots[fromChainEnd] = {
+            charm: bCharm,
+            isChainStart: false,
+            isChainEnd: true,
+            chainStartIndex: fromChainStart,
+            isDoubleStart: false,
+            isDoubleEnd: false,
+            isHanging: false
+          };
+
+          this.renderCanvas();
+          this.updateSidebar();
+          this.updateHeaderMeta();
+          this.savePersistedState();
+          return;
+        }
+
+        if (targetStart === fromChainStart) return;
+
+        // Collect charms at the target anchor positions that need to be displaced
+        // (Middle links targetStart+1 and targetStart+2 single charms remain in place!)
+        const displacedCharms = [];
+
+        const addDisplaced = (idx) => {
+          if (idx === fromChainStart || idx === fromChainEnd) return;
+          const it = this.slots[idx];
+          if (!it) return;
+          if (it.isDoubleEnd && idx > 0 && this.slots[idx - 1]?.isDoubleStart) {
+            if (!displacedCharms.some(d => d.slots.includes(idx))) {
+              displacedCharms.push({ item: this.slots[idx - 1], slots: [idx - 1, idx], isDouble: true });
+            }
+          } else if (it.isDoubleStart) {
+            if (!displacedCharms.some(d => d.slots.includes(idx))) {
+              displacedCharms.push({ item: it, slots: [idx, idx + 1], isDouble: true });
+            }
+          } else if (!it.isDoubleEnd) {
+            if (!displacedCharms.some(d => d.slots.includes(idx))) {
+              displacedCharms.push({ item: it, slots: [idx], isDouble: false });
+            }
+          }
+        };
+
+        addDisplaced(targetStart);
+        addDisplaced(targetStart + 3);
+
+        // Check if middle links have double charm (not allowed under chain)
+        for (let m = targetStart + 1; m <= targetStart + 2; m++) {
+          const midIt = this.slots[m];
+          if (midIt && (midIt.isDoubleStart || midIt.isDoubleEnd)) {
+            addDisplaced(m);
+          }
+        }
+
+        // Clear displaced slots
+        displacedCharms.forEach(d => {
+          d.slots.forEach(s => { this.slots[s] = null; });
+        });
+
+        // Clear old chain anchors
+        this.slots[fromChainStart] = null;
+        this.slots[fromChainEnd] = null;
+
+        // Place new chain anchors
+        const targetEnd = targetStart + 3;
+        this.slots[targetStart] = {
+          charm: chainCharm,
+          isChainStart: true,
+          isChainEnd: false,
+          chainEndIndex: targetEnd,
+          isDoubleStart: false,
+          isDoubleEnd: false,
+          isHanging: false
+        };
+        this.slots[targetEnd] = {
+          charm: chainCharm,
+          isChainStart: false,
+          isChainEnd: true,
+          chainStartIndex: targetStart,
+          isDoubleStart: false,
+          isDoubleEnd: false,
+          isHanging: false
+        };
+
+        // Re-place displaced charms into vacated slots
+        const candidateVacated = [];
+        if (!this.slots[fromChainStart]) candidateVacated.push(fromChainStart);
+        if (!this.slots[fromChainEnd]) candidateVacated.push(fromChainEnd);
+
+        for (let i = 0; i < this.slotsCount; i++) {
+          if (!this.slots[i] && !candidateVacated.includes(i)) {
+            candidateVacated.push(i);
+          }
+        }
+
+        displacedCharms.forEach(d => {
+          if (d.isDouble) {
+            let placedDouble = false;
+            for (let i = 0; i < this.slotsCount - 1; i++) {
+              if (this.isValidDoubleSpan(i) && !this.slots[i] && !this.slots[i + 1]) {
+                this.slots[i] = {
+                  charm: d.item.charm,
+                  isDoubleStart: true,
+                  isDoubleEnd: false,
+                  isHanging: d.item.isHanging
+                };
+                this.slots[i + 1] = {
+                  charm: d.item.charm,
+                  isDoubleStart: false,
+                  isDoubleEnd: true,
+                  isHanging: false
+                };
+                placedDouble = true;
+                break;
+              }
+            }
+            if (!placedDouble) {
+              this.showToast(`Not enough room to place 2-link charm "${d.item.charm.title}".`);
+            }
+          } else {
+            const v = candidateVacated.find(s => !this.slots[s]);
+            if (typeof v === 'number') {
+              this.slots[v] = d.item;
+            }
+          }
+        });
+
+        this.renderCanvas();
+        this.updateSidebar();
+        this.updateHeaderMeta();
+        this.savePersistedState();
         return;
       }
 
-      if (itemTo && (itemTo.isChainStart || itemTo.isChainEnd)) {
-        this.showToast('Anchor link is occupied by chain charm.');
+      // =========================================================
+      // CASE 2: Moving a 2-Link (Double) Charm
+      // =========================================================
+      if (isFromDouble) {
+        const fromDoubleStart = itemFrom.isDoubleStart ? fromIndex : (fromIndex - 1);
+        const doubleCharm = (this.slots[fromDoubleStart] && this.slots[fromDoubleStart].charm) || itemFrom.charm;
+        const isHanging = itemFrom.isHanging || (this.slots[fromDoubleStart] && this.slots[fromDoubleStart].isHanging);
+
+        let targetStart = toIndex;
+        if (targetStart >= this.slotsCount - 1) {
+          targetStart = this.slotsCount - 2;
+        }
+        if (targetStart < 0) targetStart = 0;
+
+        if (this.selectedModel && this.selectedModel.type === 'watch') {
+          const leftCount = this.slotsCount / 2;
+          if (targetStart === leftCount - 1) {
+            if (toIndex < leftCount) {
+              targetStart = leftCount - 2;
+            } else {
+              targetStart = leftCount;
+            }
+          }
+        }
+
+        if (!this.isValidDoubleSpan(targetStart)) {
+          this.showToast('No room for a 2-link charm here.');
+          return;
+        }
+
+        if (targetStart === fromDoubleStart) return;
+
+        // Check if target is another double charm -> direct swap!
+        const targetDoubleItem = this.slots[targetStart] || this.slots[targetStart + 1];
+        if (targetDoubleItem && (targetDoubleItem.isDoubleStart || targetDoubleItem.isDoubleEnd)) {
+          const otherDoubleStart = targetDoubleItem.isDoubleStart
+            ? (this.slots[targetStart]?.isDoubleStart ? targetStart : targetStart + 1)
+            : (this.slots[targetStart]?.isDoubleEnd ? targetStart - 1 : targetStart);
+
+          if (otherDoubleStart !== fromDoubleStart && this.isValidDoubleSpan(fromDoubleStart) && this.isValidDoubleSpan(otherDoubleStart)) {
+            const otherCharm = this.slots[otherDoubleStart].charm;
+            const otherHanging = this.slots[otherDoubleStart].isHanging;
+
+            this.slots[otherDoubleStart] = {
+              charm: doubleCharm,
+              isDoubleStart: true,
+              isDoubleEnd: false,
+              isHanging
+            };
+            this.slots[otherDoubleStart + 1] = {
+              charm: doubleCharm,
+              isDoubleStart: false,
+              isDoubleEnd: true,
+              isHanging: false
+            };
+
+            this.slots[fromDoubleStart] = {
+              charm: otherCharm,
+              isDoubleStart: true,
+              isDoubleEnd: false,
+              isHanging: otherHanging
+            };
+            this.slots[fromDoubleStart + 1] = {
+              charm: otherCharm,
+              isDoubleStart: false,
+              isDoubleEnd: true,
+              isHanging: false
+            };
+
+            this.renderCanvas();
+            this.updateSidebar();
+            this.updateHeaderMeta();
+            this.savePersistedState();
+            return;
+          }
+        }
+
+        // Check if target collides with a chain charm
+        const chainCollision = this.isSlotInChainSpan(targetStart) || this.isSlotInChainSpan(targetStart + 1);
+        if (chainCollision) {
+          this.showToast('Cannot place 2-link charm on a chain charm span.');
+          return;
+        }
+
+        // Target contains single charms or empty slots
+        const displacedCharms = [];
+        for (let s = targetStart; s <= targetStart + 1; s++) {
+          if (s !== fromDoubleStart && s !== fromDoubleStart + 1 && this.slots[s]) {
+            displacedCharms.push({ slot: s, item: this.slots[s] });
+          }
+        }
+
+        displacedCharms.forEach(d => { this.slots[d.slot] = null; });
+        this.slots[fromDoubleStart] = null;
+        this.slots[fromDoubleStart + 1] = null;
+
+        this.slots[targetStart] = {
+          charm: doubleCharm,
+          isDoubleStart: true,
+          isDoubleEnd: false,
+          isHanging
+        };
+        this.slots[targetStart + 1] = {
+          charm: doubleCharm,
+          isDoubleStart: false,
+          isDoubleEnd: true,
+          isHanging: false
+        };
+
+        const vacatedSlots = [fromDoubleStart, fromDoubleStart + 1].filter(s => !this.slots[s]);
+        for (let i = 0; i < this.slotsCount; i++) {
+          if (!this.slots[i] && !vacatedSlots.includes(i)) vacatedSlots.push(i);
+        }
+
+        displacedCharms.forEach(d => {
+          const v = vacatedSlots.find(s => !this.slots[s]);
+          if (typeof v === 'number') {
+            this.slots[v] = d.item;
+          }
+        });
+
+        this.renderCanvas();
+        this.updateSidebar();
+        this.updateHeaderMeta();
+        this.savePersistedState();
         return;
       }
 
-      // Swap slots
+      // =========================================================
+      // CASE 3: Moving a Single Charm
+      // =========================================================
+      const targetChain = this.isSlotInChainSpan(toIndex);
+
+      if (targetChain) {
+        const cStart = targetChain.start;
+        const cEnd = targetChain.end;
+        const cCharm = targetChain.item.charm;
+
+        // If dropped onto a middle link of the chain charm
+        if (toIndex === cStart + 1 || toIndex === cStart + 2) {
+          if (!itemTo) {
+            this.slots[toIndex] = itemFrom;
+            this.slots[fromIndex] = null;
+          } else {
+            this.slots[toIndex] = itemFrom;
+            this.slots[fromIndex] = itemTo;
+          }
+          this.renderCanvas();
+          this.updateSidebar();
+          this.updateHeaderMeta();
+          this.savePersistedState();
+          return;
+        }
+
+        // Dropped onto an anchor of the chain charm (cStart or cEnd) -> SWAP WITH CHAIN CHARM!
+        let bestSpanStart = -1;
+        for (let offset = 0; offset <= 3; offset++) {
+          const cand = fromIndex - offset;
+          if (!this.isValidChainSpan(cand)) continue;
+
+          let collides = false;
+          for (let s = cand; s <= cand + 3; s++) {
+            const ch = this.isSlotInChainSpan(s);
+            if (ch && ch.start !== cStart) {
+              collides = true;
+              break;
+            }
+          }
+          if (collides) continue;
+
+          const a1Ok = (cand === fromIndex || cand === cStart || cand === cEnd || !this.slots[cand]);
+          const a2Ok = (cand + 3 === fromIndex || cand + 3 === cStart || cand + 3 === cEnd || !this.slots[cand + 3]);
+          if (a1Ok && a2Ok) {
+            bestSpanStart = cand;
+            break;
+          }
+        }
+
+        if (bestSpanStart === -1) {
+          for (let offset = 0; offset <= 3; offset++) {
+            const cand = fromIndex - offset;
+            if (!this.isValidChainSpan(cand)) continue;
+            let collides = false;
+            for (let s = cand; s <= cand + 3; s++) {
+              const ch = this.isSlotInChainSpan(s);
+              if (ch && ch.start !== cStart) {
+                collides = true;
+                break;
+              }
+            }
+            if (!collides) {
+              bestSpanStart = cand;
+              break;
+            }
+          }
+        }
+
+        if (bestSpanStart === -1) {
+          this.showToast('Cannot swap: Chain charm needs 4 available links.');
+          return;
+        }
+
+        const displaced = [];
+        if (bestSpanStart !== fromIndex && bestSpanStart !== cStart && bestSpanStart !== cEnd && this.slots[bestSpanStart]) {
+          displaced.push({ slot: bestSpanStart, item: this.slots[bestSpanStart] });
+        }
+        const bestSpanEnd = bestSpanStart + 3;
+        if (bestSpanEnd !== fromIndex && bestSpanEnd !== cStart && bestSpanEnd !== cEnd && this.slots[bestSpanEnd]) {
+          displaced.push({ slot: bestSpanEnd, item: this.slots[bestSpanEnd] });
+        }
+
+        displaced.forEach(d => { this.slots[d.slot] = null; });
+        this.slots[cStart] = null;
+        this.slots[cEnd] = null;
+        this.slots[fromIndex] = null;
+
+        this.slots[toIndex] = itemFrom;
+
+        this.slots[bestSpanStart] = {
+          charm: cCharm,
+          isChainStart: true,
+          isChainEnd: false,
+          chainEndIndex: bestSpanEnd,
+          isDoubleStart: false,
+          isDoubleEnd: false,
+          isHanging: false
+        };
+        this.slots[bestSpanEnd] = {
+          charm: cCharm,
+          isChainStart: false,
+          isChainEnd: true,
+          chainStartIndex: bestSpanStart,
+          isDoubleStart: false,
+          isDoubleEnd: false,
+          isHanging: false
+        };
+
+        const otherAnchor = (toIndex === cStart) ? cEnd : cStart;
+        const candidateVacated = [otherAnchor, fromIndex].filter(s => !this.slots[s]);
+        for (let i = 0; i < this.slotsCount; i++) {
+          if (!this.slots[i] && !candidateVacated.includes(i)) candidateVacated.push(i);
+        }
+
+        displaced.forEach(d => {
+          const v = candidateVacated.find(s => !this.slots[s]);
+          if (typeof v === 'number') {
+            this.slots[v] = d.item;
+          }
+        });
+
+        this.renderCanvas();
+        this.updateSidebar();
+        this.updateHeaderMeta();
+        this.savePersistedState();
+        return;
+      }
+
+      // Dropped onto a double charm
+      if (itemTo && (itemTo.isDoubleStart || itemTo.isDoubleEnd)) {
+        const dStart = itemTo.isDoubleStart ? toIndex : (toIndex - 1);
+        const doubleCharm = this.slots[dStart]?.charm;
+        const doubleHanging = this.slots[dStart]?.isHanging;
+
+        let canPlaceDouble = -1;
+        if (this.isValidDoubleSpan(fromIndex) && (!this.slots[fromIndex + 1] || fromIndex + 1 === dStart || fromIndex + 1 === dStart + 1)) {
+          canPlaceDouble = fromIndex;
+        } else if (fromIndex > 0 && this.isValidDoubleSpan(fromIndex - 1) && (!this.slots[fromIndex - 1] || fromIndex - 1 === dStart || fromIndex - 1 === dStart + 1)) {
+          canPlaceDouble = fromIndex - 1;
+        }
+
+        if (canPlaceDouble !== -1 && doubleCharm) {
+          this.slots[dStart] = null;
+          this.slots[dStart + 1] = null;
+          this.slots[fromIndex] = null;
+
+          this.slots[toIndex] = itemFrom;
+
+          this.slots[canPlaceDouble] = {
+            charm: doubleCharm,
+            isDoubleStart: true,
+            isDoubleEnd: false,
+            isHanging: doubleHanging
+          };
+          this.slots[canPlaceDouble + 1] = {
+            charm: doubleCharm,
+            isDoubleStart: false,
+            isDoubleEnd: true,
+            isHanging: false
+          };
+
+          this.renderCanvas();
+          this.updateSidebar();
+          this.updateHeaderMeta();
+          this.savePersistedState();
+          return;
+        } else {
+          this.showToast('Cannot swap: 2-link charm needs 2 available links.');
+          return;
+        }
+      }
+
+      // Standard single charm swap
       this.slots[toIndex] = itemFrom;
       this.slots[fromIndex] = itemTo;
 
