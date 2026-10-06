@@ -546,44 +546,6 @@
           {%- comment -%} Hydrated dynamically by JS {%- endcomment -%}
         </div>
 
-        {%- if section.settings.enable_order_notes != false -%}
-          {%- comment -%} ORDER NOTES / SPECIAL INSTRUCTIONS ACCORDION {%- endcomment -%}
-          <div class="bb-order-note-accordion" data-order-note-container>
-            <button type="button" class="bb-order-note-toggle" data-order-note-toggle aria-expanded="false" aria-controls="bb-order-note-content-{{ section.id }}">
-              <div class="bb-order-note-toggle-left">
-                <span class="bb-order-note-icon" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
-                </span>
-                <span class="bb-order-note-title">{{ section.settings.order_notes_title | default: 'Add a note or special instructions' }}</span>
-                <span class="bb-order-note-badge" data-order-note-badge style="display: none;">Note added</span>
-              </div>
-              <svg class="bb-order-note-chevron" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </button>
-            <div id="bb-order-note-content-{{ section.id }}" class="bb-order-note-content" data-order-note-content>
-              <div class="bb-order-note-inner">
-                <div class="bb-order-note-field">
-                  <textarea 
-                    class="bb-order-note-input" 
-                    data-order-note-input 
-                    rows="3" 
-                    maxlength="500" 
-                    placeholder="{{ section.settings.order_notes_placeholder | default: 'Special requests, gift messages, or custom sizing instructions...' }}"
-                    aria-label="{{ section.settings.order_notes_title | default: 'Add a note or special instructions' }}"></textarea>
-                  <div class="bb-order-note-footer">
-                    <span class="bb-order-note-subtext">{{ section.settings.order_notes_subtext | default: 'This note will be attached directly to your order.' }}</span>
-                    <span class="bb-order-note-counter" data-order-note-counter>0 / 500</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        {%- endif -%}
-
       </section>
 
     </main>
@@ -1446,6 +1408,45 @@
 
   <script src="{{ 'bracelet-builder.js' | asset_url }}" defer="defer"></script>
     </div>
+
+    {%- if section.settings.enable_order_notes != false -%}
+      {%- comment -%} ORDER NOTES / SPECIAL INSTRUCTIONS ACCORDION (OUTSIDE & BELOW BUILDER) {%- endcomment -%}
+      <div class="bb-order-note-accordion" data-order-note-container>
+        <button type="button" class="bb-order-note-toggle" data-order-note-toggle aria-expanded="false" aria-controls="bb-order-note-content-{{ section.id }}">
+          <div class="bb-order-note-toggle-left">
+            <span class="bb-order-note-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </span>
+            <span class="bb-order-note-title">{{ section.settings.order_notes_title | default: 'Add a note or special instructions' }}</span>
+            <span class="bb-order-note-badge" data-order-note-badge style="display: none;">Note added</span>
+          </div>
+          <svg class="bb-order-note-chevron" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div id="bb-order-note-content-{{ section.id }}" class="bb-order-note-content" data-order-note-content>
+          <div class="bb-order-note-inner">
+            <div class="bb-order-note-field">
+              <textarea 
+                class="bb-order-note-input" 
+                data-order-note-input 
+                rows="3" 
+                maxlength="500" 
+                placeholder="{{ section.settings.order_notes_placeholder | default: 'Special requests, gift messages, or custom sizing instructions...' }}"
+                aria-label="{{ section.settings.order_notes_title | default: 'Add a note or special instructions' }}"></textarea>
+              <div class="bb-order-note-footer">
+                <span class="bb-order-note-subtext">{{ section.settings.order_notes_subtext | default: 'This note will be attached directly to your order.' }}</span>
+                <span class="bb-order-note-counter" data-order-note-counter>0 / 500</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {%- endif -%}
+
   </div>
 </div>
 

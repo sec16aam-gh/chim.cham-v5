@@ -205,12 +205,12 @@
         floatingTrigger: c.querySelector('[data-mobile-summary-trigger]'),
         floatingCount: c.querySelector('[data-floating-count]'),
         floatingPrice: c.querySelector('[data-floating-price]'),
-        orderNoteContainer: c.querySelector('[data-order-note-container]'),
-        orderNoteToggle: c.querySelector('[data-order-note-toggle]'),
-        orderNoteContent: c.querySelector('[data-order-note-content]'),
-        orderNoteInput: c.querySelector('[data-order-note-input]'),
-        orderNoteBadge: c.querySelector('[data-order-note-badge]'),
-        orderNoteCounter: c.querySelector('[data-order-note-counter]')
+        orderNoteContainer: (c.querySelector('[data-order-note-container]') || (c.closest('.bracelet-builder-section-wrap') || c.parentElement || document).querySelector('[data-order-note-container]')),
+        orderNoteToggle: (c.querySelector('[data-order-note-toggle]') || (c.closest('.bracelet-builder-section-wrap') || c.parentElement || document).querySelector('[data-order-note-toggle]')),
+        orderNoteContent: (c.querySelector('[data-order-note-content]') || (c.closest('.bracelet-builder-section-wrap') || c.parentElement || document).querySelector('[data-order-note-content]')),
+        orderNoteInput: (c.querySelector('[data-order-note-input]') || (c.closest('.bracelet-builder-section-wrap') || c.parentElement || document).querySelector('[data-order-note-input]')),
+        orderNoteBadge: (c.querySelector('[data-order-note-badge]') || (c.closest('.bracelet-builder-section-wrap') || c.parentElement || document).querySelector('[data-order-note-badge]')),
+        orderNoteCounter: (c.querySelector('[data-order-note-counter]') || (c.closest('.bracelet-builder-section-wrap') || c.parentElement || document).querySelector('[data-order-note-counter]'))
       };
     }
 

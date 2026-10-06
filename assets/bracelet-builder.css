@@ -1524,7 +1524,8 @@
    ORDER NOTES BOX (Collapsible Accordion Below Charms Grid)
    ========================================================================== */
 .bb-order-note-accordion {
-  margin-top: 24px;
+  margin-top: 0;
+  margin-bottom: 30px;
   width: 100%;
   background: #ffffff;
   border: 1px solid rgba(254, 128, 188, 0.28);
@@ -1726,7 +1727,8 @@ html[lang="ar"] .bb-order-note-input {
 /* Mobile Tweaks */
 @media (max-width: 767px) {
   .bb-order-note-accordion {
-    margin-top: 18px;
+    margin-top: 0;
+    margin-bottom: 28px;
     border-radius: 10px;
   }
   .bb-order-note-toggle {
