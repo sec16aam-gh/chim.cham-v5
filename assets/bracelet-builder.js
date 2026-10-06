@@ -204,7 +204,13 @@
         sidebarClose: c.querySelector('[data-sidebar-close]'),
         floatingTrigger: c.querySelector('[data-mobile-summary-trigger]'),
         floatingCount: c.querySelector('[data-floating-count]'),
-        floatingPrice: c.querySelector('[data-floating-price]')
+        floatingPrice: c.querySelector('[data-floating-price]'),
+        orderNoteContainer: c.querySelector('[data-order-note-container]'),
+        orderNoteToggle: c.querySelector('[data-order-note-toggle]'),
+        orderNoteContent: c.querySelector('[data-order-note-content]'),
+        orderNoteInput: c.querySelector('[data-order-note-input]'),
+        orderNoteBadge: c.querySelector('[data-order-note-badge]'),
+        orderNoteCounter: c.querySelector('[data-order-note-counter]')
       };
     }
 
@@ -863,6 +869,7 @@
       this.renderCatalog();
       this.updateSidebar();
       this.updateHeaderMeta();
+      this.initOrderNotes();
       this.loadRemainingCharms();
     }
 
@@ -4165,6 +4172,117 @@
       this.activeDrawerCharm = null;
     }
 
+    getOrderNoteStorageKey() {
+      return `chimcham_order_note_${this.sectionId || 'main'}`;
+    }
+
+    getOrderNoteText() {
+      if (this.dom && this.dom.orderNoteInput) {
+        return (this.dom.orderNoteInput.value || '').trim();
+      }
+      try {
+        return (localStorage.getItem(this.getOrderNoteStorageKey()) || '').trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    initOrderNotes() {
+      if (!this.dom || !this.dom.orderNoteContainer) return;
+
+      // Restore saved note from localStorage
+      try {
+        const savedNote = localStorage.getItem(this.getOrderNoteStorageKey());
+        if (savedNote && this.dom.orderNoteInput) {
+          this.dom.orderNoteInput.value = savedNote;
+        }
+      } catch (e) {
+        console.warn('BraceletBuilder: Error restoring order note from localStorage', e);
+      }
+
+      this.updateOrderNoteUI();
+
+      // Toggle accordion expansion
+      this.dom.orderNoteToggle?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isExpanded = this.dom.orderNoteContainer.classList.contains('is-expanded');
+        if (isExpanded) {
+          this.dom.orderNoteContainer.classList.remove('is-expanded');
+          this.dom.orderNoteToggle.setAttribute('aria-expanded', 'false');
+        } else {
+          this.dom.orderNoteContainer.classList.add('is-expanded');
+          this.dom.orderNoteToggle.setAttribute('aria-expanded', 'true');
+          setTimeout(() => {
+            this.dom.orderNoteInput?.focus();
+          }, 150);
+        }
+      });
+
+      // Debounce timer for saving note
+      let noteDebounceTimer = null;
+
+      // Input listener on textarea
+      this.dom.orderNoteInput?.addEventListener('input', () => {
+        const val = this.dom.orderNoteInput.value || '';
+        this.updateOrderNoteUI();
+
+        try {
+          if (val.trim()) {
+            localStorage.setItem(this.getOrderNoteStorageKey(), val);
+          } else {
+            localStorage.removeItem(this.getOrderNoteStorageKey());
+          }
+        } catch (e) {
+          console.warn('BraceletBuilder: Error saving order note to localStorage', e);
+        }
+
+        clearTimeout(noteDebounceTimer);
+        noteDebounceTimer = setTimeout(() => {
+          this.syncOrderNoteToCart(val.trim());
+        }, 600);
+      });
+    }
+
+    updateOrderNoteUI() {
+      if (!this.dom || !this.dom.orderNoteInput) return;
+      const text = this.dom.orderNoteInput.value || '';
+      const len = text.length;
+
+      // Character counter
+      if (this.dom.orderNoteCounter) {
+        this.dom.orderNoteCounter.textContent = `${len} / 500`;
+        if (len >= 450) {
+          this.dom.orderNoteCounter.classList.add('is-near-limit');
+        } else {
+          this.dom.orderNoteCounter.classList.remove('is-near-limit');
+        }
+      }
+
+      // Badge indicator
+      if (this.dom.orderNoteBadge) {
+        if (text.trim().length > 0) {
+          this.dom.orderNoteBadge.style.display = 'inline-flex';
+        } else {
+          this.dom.orderNoteBadge.style.display = 'none';
+        }
+      }
+    }
+
+    async syncOrderNoteToCart(note) {
+      try {
+        await fetch('/cart/update.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ note: note || '' })
+        });
+      } catch (err) {
+        console.warn('BraceletBuilder: Error syncing order note to Shopify cart', err);
+      }
+    }
+
     copyDesignSummary() {
       const placedCount = this.getPlacedCharmsCount();
       let summaryText = `CHIM.CHAM Custom Bracelet Build\n`;
@@ -4187,6 +4305,11 @@
       }
 
       summaryText += `\nTotal: ${this.dom.totalAmount?.textContent || ''}`;
+
+      const orderNote = this.getOrderNoteText();
+      if (orderNote) {
+        summaryText += `\nSpecial Instructions / Note: ${orderNote}`;
+      }
 
       navigator.clipboard.writeText(summaryText).then(() => {
         this.showToast(this.settings.copiedToastText || 'Design summary copied to clipboard!');
@@ -4267,6 +4390,10 @@
         if (this.selectedSize) {
           baseProperties['Bracelet Size'] = this.selectedSize;
         }
+        const orderNote = this.getOrderNoteText();
+        if (orderNote) {
+          baseProperties['Special Instructions'] = orderNote;
+        }
 
         items.push({
           id: parseInt(baseVariantId, 10),
@@ -4329,6 +4456,23 @@
         });
 
         if (res.ok) {
+          // If customer provided an order note, sync it directly as Shopify cart.note
+          const checkoutNote = this.getOrderNoteText();
+          if (checkoutNote) {
+            try {
+              await fetch('/cart/update.js', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                body: JSON.stringify({ note: checkoutNote })
+              });
+            } catch (noteErr) {
+              console.warn('BraceletBuilder: Error syncing cart note on checkout', noteErr);
+            }
+          }
+
           if (window.theme && theme.miniCart) {
             if (typeof theme.miniCart.generateCart === 'function') theme.miniCart.generateCart();
             if (typeof theme.miniCart.updateElements === 'function') theme.miniCart.updateElements();
