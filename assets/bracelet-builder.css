@@ -2627,8 +2627,11 @@
     bottom: 0;
     width: min(390px, 88vw);
     max-width: 88vw;
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: 100% !important;
+    height: -webkit-fill-available !important;
+    height: 100dvh !important;
+    max-height: 100% !important;
+    max-height: 100dvh !important;
     background: #ffffff;
     z-index: 99999;
     box-shadow: -10px 0 35px rgba(0, 0, 0, 0.22);
@@ -2640,6 +2643,7 @@
     border-left: 1px solid var(--bb-border-color);
     border-top: none !important;
     overflow: hidden !important;
+    overscroll-behavior: contain;
   }
 
   .bb-sidebar.is-open {
@@ -2683,7 +2687,8 @@
   }
 
   .bb-sidebar-top {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0 !important;
     overflow-y: auto !important;
     overflow-x: hidden;
     padding: 16px 18px 0;
@@ -2693,6 +2698,7 @@
     scrollbar-width: thin;
     scrollbar-color: #c4c2bc #f0eee9;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .bb-charms-list-section {
@@ -2731,14 +2737,17 @@
   }
 
   .bb-sidebar-bottom {
-    position: sticky !important;
-    bottom: 0;
+    position: relative !important;
     z-index: 10;
     background: #ffffff;
     border-top: 1px solid var(--bb-border-color);
-    padding: 14px 18px 18px;
+    padding: 12px 18px max(16px, calc(12px + env(safe-area-inset-bottom, 0px))) !important;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
+  }
+
+  .bb-sidebar-bottom .bb-taxes-note {
+    margin-bottom: 10px;
   }
 
   /* Floating Bottom Trigger Bar (Narrow, Compact, Clean & Crisp) */
