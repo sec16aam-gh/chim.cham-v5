@@ -424,6 +424,8 @@
 .bb-action-icon,
 .bb-help-icon,
 .bb-chevron,
+.bb-order-note-icon svg,
+.bb-order-note-chevron,
 .bb-row-delete-btn svg {
   display: block;
   flex-shrink: 0;
@@ -1583,6 +1585,29 @@
   justify-content: center;
   color: var(--bb-text-primary, #FE80BC);
   flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.bb-order-note-icon svg {
+  display: block !important;
+  width: 18px !important;
+  height: 18px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  overflow: visible !important;
+}
+
+.bb-order-note-icon svg path,
+.bb-order-note-icon svg * {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
 }
 
 .bb-order-note-title {
@@ -1618,9 +1643,27 @@
 }
 
 .bb-order-note-chevron {
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
   color: var(--bb-text-primary, #FE80BC);
   flex-shrink: 0;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible !important;
+}
+
+.bb-order-note-chevron polyline,
+.bb-order-note-chevron * {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
 }
 
 .bb-order-note-accordion.is-expanded .bb-order-note-chevron {
