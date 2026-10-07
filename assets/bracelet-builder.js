@@ -4310,6 +4310,9 @@
       if (orderNote) {
         summaryText += `\nSpecial Instructions / Note: ${orderNote}`;
       }
+      if (this.lastDesignImageUrl) {
+        summaryText += `\nDesign Photo: ${this.lastDesignImageUrl}`;
+      }
 
       navigator.clipboard.writeText(summaryText).then(() => {
         this.showToast(this.settings.copiedToastText || 'Design summary copied to clipboard!');
@@ -4349,10 +4352,117 @@
       return `${amount} ${currencyCode}`;
     }
 
+    async loadHtml2Canvas() {
+      if (typeof window.html2canvas === 'function') return true;
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = this.assetUrls.html2canvas || 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.head.appendChild(script);
+      });
+    }
+
+    async captureBraceletSnapshot() {
+      const row = this.dom.braceletRow;
+      if (!row) return null;
+
+      try {
+        if (typeof window.html2canvas !== 'function') {
+          const loaded = await this.loadHtml2Canvas();
+          if (!loaded || typeof window.html2canvas !== 'function') return null;
+        }
+
+        const canvas = await window.html2canvas(row, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+          imageTimeout: 7000,
+          onclone: (clonedDoc) => {
+            const clonedRow = clonedDoc.querySelector('[data-bracelet-row]');
+            if (clonedRow) {
+              clonedRow.style.zoom = '1';
+              clonedRow.style.transform = 'none';
+              clonedRow.style.overflow = 'visible';
+            }
+          }
+        });
+
+        return new Promise((resolve) => {
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/png', 0.95);
+        });
+      } catch (err) {
+        console.warn('BraceletBuilder: Snapshot capture failed', err);
+        return null;
+      }
+    }
+
+    async uploadSnapshotToCloudinary(blob) {
+      const cloudName = (this.settings.cloudinaryCloudName || '').trim();
+      const uploadPreset = (this.settings.cloudinaryUploadPreset || '').trim();
+      const folder = (this.settings.cloudinaryFolder || 'bracelet-orders').trim();
+
+      if (!cloudName || !uploadPreset || !blob) {
+        return null;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('file', blob, `design-${Date.now()}.png`);
+        formData.append('upload_preset', uploadPreset);
+        if (folder) {
+          formData.append('folder', folder);
+        }
+        formData.append('tags', 'chimcham,bracelet-order');
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          const errData = await res.text();
+          console.warn('BraceletBuilder: Cloudinary upload returned error', errData);
+          return null;
+        }
+
+        const data = await res.json();
+        return data.secure_url || data.url || null;
+      } catch (err) {
+        console.warn('BraceletBuilder: Cloudinary upload request failed', err);
+        return null;
+      }
+    }
+
     async handleCheckout() {
       if (this.dom.checkoutBtn) {
         this.dom.checkoutBtn.disabled = true;
-        this.dom.checkoutBtn.textContent = 'Preparing checkout...';
+        this.dom.checkoutBtn.textContent = 'Saving design & preparing checkout...';
+      }
+
+      // Try capturing & uploading design snapshot to Cloudinary if enabled
+      let designImageUrl = null;
+      if (this.settings.enableDesignSnapshot !== false) {
+        try {
+          const blob = await this.captureBraceletSnapshot();
+          if (blob) {
+            designImageUrl = await this.uploadSnapshotToCloudinary(blob);
+            if (designImageUrl) {
+              this.lastDesignImageUrl = designImageUrl;
+            }
+          }
+        } catch (snapErr) {
+          console.warn('BraceletBuilder: Design snapshot skipped', snapErr);
+        }
       }
 
       const bundleId = `cb-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
@@ -4393,6 +4503,10 @@
         const orderNote = this.getOrderNoteText();
         if (orderNote) {
           baseProperties['Special Instructions'] = orderNote;
+        }
+        if (designImageUrl) {
+          baseProperties['Design Image'] = designImageUrl;
+          baseProperties['_design_image'] = designImageUrl;
         }
 
         items.push({
@@ -4456,9 +4570,13 @@
         });
 
         if (res.ok) {
-          // If customer provided an order note, sync it directly as Shopify cart.note
+          // If customer provided an order note or design image, sync directly as Shopify cart.note
           const checkoutNote = this.getOrderNoteText();
-          if (checkoutNote) {
+          let fullCartNote = checkoutNote || '';
+          if (designImageUrl) {
+            fullCartNote += (fullCartNote ? '\n\n' : '') + `Design Photo: ${designImageUrl}`;
+          }
+          if (fullCartNote) {
             try {
               await fetch('/cart/update.js', {
                 method: 'POST',
@@ -4466,7 +4584,7 @@
                   'Content-Type': 'application/json',
                   'Accept': 'application/json'
                 },
-                body: JSON.stringify({ note: checkoutNote })
+                body: JSON.stringify({ note: fullCartNote })
               });
             } catch (noteErr) {
               console.warn('BraceletBuilder: Error syncing cart note on checkout', noteErr);

@@ -734,6 +734,10 @@
         "copiedToastText": {{ section.settings.copied_toast | default: "Design summary copied to clipboard!" | json }},
         "emptyStateTitle": {{ section.settings.empty_state_title | default: "Your story starts here." | json }},
         "emptyStateSub": {{ section.settings.empty_state_sub | default: "Drag or tap any charm to begin." | json }},
+        "enableDesignSnapshot": {{ section.settings.enable_design_snapshot | default: true | json }},
+        "cloudinaryCloudName": {{ section.settings.cloudinary_cloud_name | default: "" | json }},
+        "cloudinaryUploadPreset": {{ section.settings.cloudinary_upload_preset | default: "" | json }},
+        "cloudinaryFolder": {{ section.settings.cloudinary_folder | default: "bracelet-orders" | json }},
         "swatches": {
           "gold": {{ section.settings.swatch_gold | default: "linear-gradient(135deg, #fff3cf 0%, #ecd38a 35%, #cca54c 70%, #9b7226 100%)" | json }},
           "silver": {{ section.settings.swatch_silver | default: "linear-gradient(135deg, #f5f6f8 0%, #d8dade 40%, #b4b8be 70%, #90949a 100%)" | json }},
@@ -747,6 +751,7 @@
         }
       },
       "assetUrls": {
+        "html2canvas": {{ 'html2canvas.min.js' | asset_url | json }},
         "braceletSilver": {{ 'bracelet-silver.png' | asset_url | json }},
         "braceletGold": {{ 'bracelet-gold.png' | asset_url | json }},
         "braceletRose": {{ 'bracelet-rose-gold.png' | asset_url | json }},
@@ -1406,6 +1411,7 @@
     }
   </script>
 
+  <script src="{{ 'html2canvas.min.js' | asset_url }}" defer="defer"></script>
   <script src="{{ 'bracelet-builder.js' | asset_url }}" defer="defer"></script>
     </div>
 
@@ -1696,6 +1702,36 @@
       "id": "order_notes_subtext",
       "label": "Order Notes Helper Text",
       "default": "This note will be attached directly to your order."
+    },
+    {
+      "type": "header",
+      "content": "Design Photo Snapshot & Cloudinary"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_design_snapshot",
+      "label": "Capture Completed Design Photo on Checkout",
+      "default": true,
+      "info": "Automatically captures a high-resolution snapshot of the customer's completed custom bracelet/watch and attaches the image link to the Shopify order."
+    },
+    {
+      "type": "text",
+      "id": "cloudinary_cloud_name",
+      "label": "Cloudinary Cloud Name",
+      "info": "Your Cloudinary account cloud name (e.g. chimcham or dxxxxxx)."
+    },
+    {
+      "type": "text",
+      "id": "cloudinary_upload_preset",
+      "label": "Cloudinary Unsigned Upload Preset",
+      "info": "The name of your unsigned upload preset in Cloudinary (e.g. bracelet_designs)."
+    },
+    {
+      "type": "text",
+      "id": "cloudinary_folder",
+      "label": "Cloudinary Folder Name",
+      "default": "bracelet-orders",
+      "info": "Optional folder in Cloudinary to organize design images."
     }
   ],
   "blocks": [
