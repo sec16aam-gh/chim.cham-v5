@@ -4373,6 +4373,76 @@
           if (!loaded || typeof window.html2canvas !== 'function') return null;
         }
 
+        // Wait briefly if any child images are still loading
+        const pendingImages = Array.from(row.querySelectorAll('img')).filter(img => !img.complete);
+        if (pendingImages.length > 0) {
+          await Promise.all(pendingImages.map(img => new Promise(res => {
+            img.onload = img.onerror = res;
+            setTimeout(res, 1200);
+          })));
+        }
+
+        // 1. Calculate live bounding box protrusions (unzoomed)
+        let topProtrusion = 0;
+        let bottomHang = 0;
+        let leftProtrusion = 0;
+        let rightProtrusion = 0;
+
+        try {
+          const rowRect = row.getBoundingClientRect();
+          const zoomFactor = rowRect.height > 0 ? (rowRect.height / 64) : 1;
+          const visuals = row.querySelectorAll('.bb-slot, .bb-watch-dial-slot, .bb-slot-charm-img, .bb-slot-base-img, .placed-charm img, .watch-on-bracelet img');
+
+          visuals.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+              const topDiff = (rowRect.top - rect.top) / zoomFactor;
+              const bottomDiff = (rect.bottom - rowRect.bottom) / zoomFactor;
+              const leftDiff = (rowRect.left - rect.left) / zoomFactor;
+              const rightDiff = (rect.right - rowRect.right) / zoomFactor;
+
+              if (topDiff > topProtrusion) topProtrusion = topDiff;
+              if (bottomDiff > bottomHang) bottomHang = bottomDiff;
+              if (leftDiff > leftProtrusion) leftProtrusion = leftDiff;
+              if (rightDiff > rightProtrusion) rightProtrusion = rightDiff;
+            }
+          });
+        } catch (measureErr) {
+          console.warn('BraceletBuilder: Live protrusion measurement error', measureErr);
+        }
+
+        // 2. Safety bounds from model/charms composition to guarantee nothing is ever clipped
+        const isWatch = this.selectedModel && this.selectedModel.type === 'watch';
+        let watchDims = { width: 0, height: 0 };
+        if (isWatch && typeof this.getWatchHorizontalDimensions === 'function') {
+          watchDims = this.getWatchHorizontalDimensions(this.selectedModel) || { width: 0, height: 0 };
+          const extraH = Math.max(0, (((watchDims && watchDims.height) || 240) - 64) / 2);
+          topProtrusion = Math.max(topProtrusion, extraH + 12);
+          bottomHang = Math.max(bottomHang, extraH + 12);
+        }
+
+        if (typeof this.hasChainCharms === 'function' && this.hasChainCharms()) {
+          bottomHang = Math.max(bottomHang, 195);
+        } else {
+          const hasHanging = Array.isArray(this.slots) && this.slots.some(s => s && (s.isChainStart || this.isDropCharm(s.charm) || s.charm.type === 'drop' || s.charm.type === 'hanging'));
+          if (hasHanging) {
+            bottomHang = Math.max(bottomHang, 100);
+          }
+        }
+
+        // Generous breathing room for clean, luxurious jewelry catalog photo presentation
+        const padX = 42;
+        const padY = 38;
+
+        const padTop = Math.ceil(topProtrusion + padY);
+        const padBottom = Math.ceil(bottomHang + padY);
+        const padLeft = Math.ceil(leftProtrusion + padX);
+        const padRight = Math.ceil(rightProtrusion + padX);
+
+        const totalContentWidth = (this.slotsCount * 64) + (isWatch ? Math.max(0, (watchDims.width || 0) - 8) : 0);
+        const totalWidth = padLeft + totalContentWidth + padRight;
+        const totalHeight = padTop + 64 + padBottom;
+
         const canvas = await window.html2canvas(row, {
           backgroundColor: '#ffffff',
           scale: 2,
@@ -4380,12 +4450,77 @@
           allowTaint: false,
           logging: false,
           imageTimeout: 7000,
-          onclone: (clonedDoc) => {
-            const clonedRow = clonedDoc.querySelector('[data-bracelet-row]');
-            if (clonedRow) {
-              clonedRow.style.zoom = '1';
-              clonedRow.style.transform = 'none';
-              clonedRow.style.overflow = 'visible';
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: Math.max(2800, totalWidth + 300),
+          windowHeight: Math.max(1600, totalHeight + 300),
+          onclone: (clonedDoc, clonedRow) => {
+            // 1. Reset all scroll & overflow constraints on scroll containers
+            const clonedWrap = clonedDoc.querySelector('.bb-bracelet-scroll-wrap');
+            if (clonedWrap) {
+              clonedWrap.scrollLeft = 0;
+              clonedWrap.scrollTop = 0;
+              clonedWrap.style.overflow = 'visible';
+              clonedWrap.style.maxHeight = 'none';
+              clonedWrap.style.height = 'auto';
+              clonedWrap.style.width = 'max-content';
+              clonedWrap.style.padding = '0';
+              clonedWrap.style.margin = '0';
+              clonedWrap.style.justifyContent = 'flex-start';
+            }
+
+            const clonedContainer = clonedDoc.querySelector('.bb-canvas-container');
+            if (clonedContainer) {
+              clonedContainer.style.overflow = 'visible';
+              clonedContainer.style.maxHeight = 'none';
+              clonedContainer.style.height = 'auto';
+              clonedContainer.style.width = 'max-content';
+            }
+
+            if (clonedDoc.body) {
+              clonedDoc.body.style.overflow = 'visible';
+              clonedDoc.body.style.backgroundColor = '#ffffff';
+            }
+            if (clonedDoc.documentElement) {
+              clonedDoc.documentElement.style.overflow = 'visible';
+              clonedDoc.documentElement.style.backgroundColor = '#ffffff';
+            }
+
+            // 2. Normalize and pad the bracelet row so all dangling/protruding elements fit completely
+            const targetRow = clonedRow || clonedDoc.querySelector('[data-bracelet-row]');
+            if (targetRow) {
+              targetRow.style.zoom = '1';
+              targetRow.style.transform = 'none';
+              targetRow.style.webkitTransform = 'none';
+              targetRow.style.margin = '0';
+              targetRow.style.marginLeft = '0';
+              targetRow.style.marginRight = '0';
+              targetRow.style.position = 'relative';
+              targetRow.style.left = '0';
+              targetRow.style.top = '0';
+              targetRow.style.display = 'flex';
+              targetRow.style.flexDirection = 'row';
+              targetRow.style.flexWrap = 'nowrap';
+              targetRow.style.alignItems = 'flex-start';
+              targetRow.style.backgroundColor = '#ffffff';
+              targetRow.style.boxSizing = 'content-box';
+              targetRow.style.width = 'max-content';
+              targetRow.style.minWidth = 'max-content';
+              targetRow.style.height = '64px';
+              targetRow.style.minHeight = '64px';
+              targetRow.style.paddingTop = `${padTop}px`;
+              targetRow.style.paddingBottom = `${padBottom}px`;
+              targetRow.style.paddingLeft = `${padLeft}px`;
+              targetRow.style.paddingRight = `${padRight}px`;
+              targetRow.style.overflow = 'visible';
+
+              // Ensure all child items have overflow visible and crossOrigin
+              targetRow.querySelectorAll('*').forEach(el => {
+                el.style.overflow = 'visible';
+              });
+              targetRow.querySelectorAll('img').forEach(img => {
+                img.crossOrigin = 'anonymous';
+              });
             }
           }
         });
